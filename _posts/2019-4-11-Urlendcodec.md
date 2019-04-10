@@ -1,22 +1,19 @@
-
 ---
-
 layout:     post
 title:      C++ Encode 学习笔记
 subtitle:   C++ Encode 详细学习笔记
-date:       2019-4-10
+date:       2019-4-11
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
 catalog: true
 tags:
     - C++
     - encode
-    - utf-8
-    
+    - utf-8 
 ---
 
-
 # C++ byte流和字符串文件编解码
+
 ------
 _参考链接[C++ url编解码类](https://blog.csdn.net/sunflover454/article/details/53885419)_
 
