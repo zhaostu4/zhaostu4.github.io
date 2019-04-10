@@ -12,11 +12,11 @@ tags:
     - linux
 ---
 
-*文章转载自果冻虾仁*；[原文链接]https://github.com/guodongxiaren/README)
-* 文章原文地址 *
-_ [http://blog.csdn.net/guodongxiaren/article/details/23690801](http://blog.csdn.net/guodongxiaren/article/details/23690801) _
-* github 地址 *
-_ [https://github.com/guodongxiaren/README](https://github.com/guodongxiaren/README) _
+*文章转载自果冻虾仁[原文链接](https://github.com/guodongxiaren/README)*
+* _文章原文地址:_
+* _[http://blog.csdn.net/guodongxiaren/article/details/23690801](http://blog.csdn.net/guodongxiaren/article/details/23690801)_
+* _github 地址_
+* _[https://github.com/guodongxiaren/README](https://github.com/guodongxiaren/README)_
 
 README
 ===========================
