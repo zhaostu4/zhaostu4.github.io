@@ -11,15 +11,20 @@ tags:
     - markdown
     - linux
 ---
-*详细内容可以查看[markdown示例](./markdown_example.md)*
+
+
 # github MarkDown 规则
+
+*详细内容可以查看[markdown示例](https://github.com/wangpengcheng/wangpengcheng.github.io/blob/master/_posts/2019-4-10-markdown_example.md)*
+
 ---
 ## 横线
 markdown 使用`***、---、___`可以显示横线效果
-```markdown 
+```
 ***
 ---
 ___
+
 ```
 渲染效果如下：
 ***
@@ -38,10 +43,14 @@ ___
 ---
 markdown语法中，
 加粗是'** **'或者'_ _'
+
 斜体是 '* *'或者'_ _'
+
 删除线 '~~ ~~'
+
 引用文本关键字'>';
-、、、markdown 
+
+```
 *This text will be italic*
 _This will also be italic_
 
@@ -49,10 +58,12 @@ _This will also be italic_
 __This will also be bold__
 
 _You **can** combine them_
+
 > 这是一段引用文本
-、、、
+```
 
 分别表示内容如下：
+
 This text will be italic*
 _This will also be italic_
 
@@ -68,7 +79,8 @@ _You **can** combine them_
 ---
 使用 " * "和" - "表示列表
 >实际代码：
-```markdown
+
+```
 Sometimes you want numbered lists:
 
 1. One
@@ -86,7 +98,9 @@ Alternatively,
 - And if you have sub points, put two spaces before the dash or star:
   - Like this
   - And this
+  
 ```
+
 渲染效果：
 
 Sometimes you want numbered lists:
@@ -126,18 +140,24 @@ int b = 2;
 int c = a+b;
 ```
 ## 使用链接
-> 可以利用"[]()"来使用链接，链接地址可以指向图片，文章锚点或者网页链接
-```markdown
+---
+> 可以利用`[]()`来使用链接，链接地址可以指向图片，文章锚点或者网页链接
+
+```
 [百度](https://www.baidu.com)
 [图片](https://camo.githubusercontent.com/15675678891dead0d516b6ee7a57ed12101ce69a/687474703a2f2f7777772e62616964752e636f6d2f696d672f62646c6f676f2e676966)
 ```
+
 效果：
 [百度](https://www.baidu.com)
 [图片](https://camo.githubusercontent.com/15675678891dead0d516b6ee7a57ed12101ce69a/687474703a2f2f7777772e62616964752e636f6d2f696d672f62646c6f676f2e676966)
 
 ## Extras
+---
 ### 使用表格
+
 markdown 使用如下方式来表示表格
+
 ```markdown
 表头1  | 表头2|
 --------- | --------|
@@ -160,7 +180,9 @@ markdown 使用如下方式来表示表格
 
 ```
 渲染效果：
+
 ------
+
 表头1  | 表头2|
 --------- | --------|
 表格单元  | 表格单元 |
