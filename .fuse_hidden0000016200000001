@@ -1,0 +1,18 @@
+---
+layout:     post
+title:      git 学习笔记
+subtitle:   wangpengcheng 的学习笔记
+date:       2019-4-12
+author:     王鹏程
+header-img: img/post-bg-ios10.jpg
+catalog: true
+tags:
+    - qml
+    - C++
+    - git 
+---
+
+>写作这篇文章是为了自己学习和使用git工具，防止自己遗忘，方便以后复习观看。
+
+---
+_参考链接_：[git book CN](https://git-scm.com/book/zh/v2);[廖雪峰的git教程](Git教程);[]();
