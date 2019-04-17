@@ -13,7 +13,7 @@ tags:
 ---
 
 # 找工作需要学习的东西笔记
-
+_参考链接_：[C++后台开发学习路线](https://zhuanlan.zhihu.com/p/61457047);[C++ 后台开发面试时一般考察什么](https://www.zhihu.com/question/34574154/answer/253165162);
 ## 需要学习的东西
 
 ------
