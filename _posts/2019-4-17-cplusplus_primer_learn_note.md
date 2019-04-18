@@ -356,13 +356,15 @@ decltype 是C++11新引入的关键字，帮助从表达式推断定义的变量
 注意：
 1. decltype 处理顶层const和引用的方式与auto有些许不同；
 2. 如果decltype使用的表达式不是一个变量，则decltype返回表达式结果对应的类型，当有时返回一个引用类型的时候；表达式的结果对象，能够作为一条赋值语句的左值。
+
 ```c++
+
 const int ci=0,&cj=ci;
 decltype(cj) x=0;//x 类型是const int
 decltype(cj) y=x;//y的类型是const int&,y绑定到变量x
 decltype(cj) z;//错误，z是一个引用必须初始化
-//decltype 的结果可以是引用类型
 
+//decltype 的结果可以是引用类型
 int i=42，*p=&i,&r=i;
 decltype(r+0) b;//加法的结果是int，因此b是一个（未初始化的）int
 decltype(*p) c;//错误：c是int&,必须初始化
