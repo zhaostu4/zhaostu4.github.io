@@ -144,18 +144,18 @@ C++中存在预定义的关键字；如下图所示
    _asm是一个语句的分隔符。不能单独出现，必须接汇编指令。一组被大括号包含的指令或一对空括号。
 例：
 ```c++
-    _asm
+_asm
 {
- mov al,2
-      mov dx,0xD007
-      out al,dx
+mov al,2
+mov dx,0xD007
+out al,dx
 }
 ```
     也可以在每个汇编指令前加`_asm`
 ```c++
- _asm  mov al,2
-      _asm  mov dx,0xD007
-      _asm  out al,dx
+_asm  mov al,2
+_asm  mov dx,0xD007
+_asm  out al,dx
 ```
 2. auto 
    auto关键字会根据初始值自动推断变量的数据类型。不是每个编译器都支持auto。
