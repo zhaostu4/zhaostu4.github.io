@@ -137,7 +137,7 @@ _参考链接：_ [CUDA_Compiler_Driver_NVCC](https://docs.nvidia.com/cuda/pdf/C
 
 |Phase|Long Name|Short Name|Default Output File Name|
 |:------:|:------:|:------:|:------:|
-|CUDA compilation to C/C++ source file  | `--cuda`  `-cuda`  | `.cpp.ii` appended to source file name, as in `x.cu.cpp.ii.` This output file can be compiled by the host compiler that was used by nvcc to preprocess the `.cu`file. |
+|CUDA compilation to C/C++ source file  | `--cuda` | `-cuda`  | `.cpp.ii` appended to source file name, as in `x.cu.cpp.ii.` This output file can be compiled by the host compiler that was used by nvcc to preprocess the `.cu`file. |
 |C/C++ preprocessing | `--preprocess`  |  `-E` | <result on standard output> |
  |C/C++ compilation to object file  |  `--compile`  | `-c` | Source file name with suffix replaced by o on Linux and Mac OS X, or obj on Windows |
  |Cubin generation from CUDA source files | `--cubin` | `-cubin` |  Source file name with suffix replaced by `cubin` |
