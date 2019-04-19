@@ -169,7 +169,5 @@ _参考链接：_ [CUDA_Compiler_Driver_NVCC](https://docs.nvidia.com/cuda/pdf/C
 | `--library-path path`,... | `-L` | Specify library search paths (see Libraries).|
 | `--output-directory directory`  |  `-odir` |   Specify the directory of the output file. This option is intended for letting the dependency generation step (see `--generate-dependencies`) generate a rule that defines the target object file in the proper directory. |
 | `--compiler-bindir directory` | `-ccbin` | Specify the directory in which the compiler executable resides. The host compiler executable name can be also specified to ensure that the correct host compiler is selected. In addition, driver prefix options (`--input-drive-prefix`, `--dependency-drive-prefix`, or `--drive-prefix`) may need to be specified, if nvcc is executed in a Cygwin shell or a MinGW shell on Windows. |
-| `--cudart {none/shared/static} ` | `-cudart` | 
-Specify the type of CUDA runtime library to be used: no CUDA runtime library, shared/dynamic CUDA runtime library, or static CUDA runtime library. Allowed values for this option: `none`, `shared`, `static`. Default value: `static`  |
-
+| `--cudart {none/shared/static} ` | `-cudart` | Specify the type of CUDA runtime library to be used: no CUDA runtime library, shared/dynamic CUDA runtime library, or static CUDA runtime library. Allowed values for this option: `none`, `shared`, `static`. Default value: `static`  |
 | `--libdevice-directory directory` | `-ldir`  |  Specify the directory that contains the libdevice library files when option `--dont-use-profile` is used. Libdevice library files are located in the nvvm/libdevice directory in the CUDA Toolkit. |
