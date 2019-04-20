@@ -1014,7 +1014,8 @@ bool x264_encode_frame(x264_t *h, x264_param_t *param, x264_picture_t* pic_in, u
 
 ```
 #### x264函数功能总结
-_参考链接：_ [X264函数功能总结](https://blog.csdn.net/charleslei/article/details/52305632);[x264头文件结构体详解](https://blog.csdn.net/Jammg/article/details/53443167);[FFmpeg实时解码H264](https://blog.csdn.net/qq_41051855/article/details/79051667)
+_参考链接：_ [X264函数功能总结](https://blog.csdn.net/charleslei/article/details/52305632);[x264头文件结构体详解](https://blog.csdn.net/Jammg/article/details/53443167);[FFmpeg实时解码H264](https://blog.csdn.net/qq_41051855/article/details/79051667);
+
 |函数名称 |位置| 完成功能|
 |:---:|:---:|:---:|
 | `void x264_frame_filter` |`common\mc.c` |帧滤波 |
