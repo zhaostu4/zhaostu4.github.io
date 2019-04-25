@@ -42,6 +42,8 @@ int main()
 * 当缓冲区中有残留数据时，`std::cin`会直接去读取缓冲区的数据而不会请求键盘输入。重要的是，回车符也会被存在输入缓冲区中。
 * 当程序中有多个等待循环输入时，需要使用`cin.clear()`来重置循环状态，方便再次输入; 
 
+# 第二章 变量和基本类型
+
 ## C++变量和基本类型
 ### C++中的基本类型
 _参考链接：_[C/C++中基本数据类型所占内存大小](https://blog.csdn.net/zcyzsy/article/details/77935651);[C/C++中基本数据类型在不同系统中所占空间大小](https://blog.csdn.net/yimingsilence/article/details/54730438);
@@ -118,11 +120,13 @@ signed char c2=256; //假设char:占8比特，c2的值是未定义的
 unsigned u=10;
 int i=-42;
 std::cout<<i+i<<std::endl; //正确：输出32
+
 std::cout<<u+i<<std::endl; //如果int占32位，输出4294967264
 //上面讲-42转化为unsigned int 负数转化为无符号函数，类似于直接给无符号数赋值一个负值；等于这个负数加上无符号数的模。  
 
 unsigned ul=42,u2=10;
 std::cout<<u1-u2<<std::endl;//正确：输出32；
+
 std::cout<<u2-u1<<std::endl;//正确：不过，结果是取模后的值；
 
 ```
@@ -136,7 +140,7 @@ _参考链接：_ [C++关键字详解](https://blog.csdn.net/scmuzi18/article/de
 
 C++中存在预定义的关键字；如下图所示
 
-![C++关键字表格](../img/cplusplus_key_words.png);
+![C++关键字表格](https://wangpengcheng.github.io/img/cplusplus_key_words.png)
 
 注：上表中为C++98/03中的63个关键字，其中红色标注为C语言中的32个关键字。C++11中有73个关键字，新增加的10个为：`alignas、alignof、char16_t、char32_t、constexpr、decltype、noexpect、nullptr、static_assert、thread_local`
 
@@ -146,23 +150,23 @@ C++中存在预定义的关键字；如下图所示
 ```c++
 _asm
 {
-mov al,2
-mov dx,0xD007
-out al,dx
+  mov al,2
+  mov dx,0xD007
+  out al,dx
 }
 ```
     也可以在每个汇编指令前加`_asm`
 ```c++
-_asm  mov al,2
-_asm  mov dx,0xD007
-_asm  out al,dx
+  _asm mov al,2
+  _asm mov dx,0xD007
+  _asm out al,dx
 ```
 2. auto 
    auto关键字会根据初始值自动推断变量的数据类型。不是每个编译器都支持auto。
    例：
 ```c++
-       auto  x = 7;  //使用整数7对变量x进行初始化，可推断x为int型。
-       auto  y=1.234;  //使用浮点数1.234对变量y进行初始化，可推断y为double型。
+    auto  x = 7;  //使用整数7对变量x进行初始化，可推断x为int型。
+    auto  y=1.234;  //使用浮点数1.234对变量y进行初始化，可推断y为double型。
 ```
 
 3. *_cast
@@ -254,8 +258,8 @@ C++中的复合类型是指基于其他类型定义的类型；C++语言中基�
     * 指针无需在定义时赋值。和其它的内置类型一样，在块作用域内定义的指针如果没有初始化，也将拥有一个不确定的值。
 指针操作中`&`操作符，表示取地址作用
 ```c++
-int ival=42;
-int *p=&ival;//p存放变量ival的地址,即p指针指向ival;
+  int ival=42;
+  int *p=&ival;//p存放变量ival的地址,即p指针指向ival;
 ```
 指针的值：
 1. 指向一个对象
@@ -271,8 +275,8 @@ void* 指针是C语言中的保留项目，它是一种特殊的指针类型；�
 但是因为void* 指针的不确定性，也意味着我们无法确定能够在这个对象上进行哪些操作。
 注意：
 ```c++
-int* p1,p2;//p1指向int的指针；p2是int类型 
-int** pi//一个指向int指针的指针
+  int* p1,p2;//p1指向int的指针；p2是int类型 
+  int** pi//一个指向int指针的指针
 ```
 #### const 关键字
 ##### const * int 和int *const、const int * cosnt、const int &
@@ -293,21 +297,27 @@ _参考链接：_[const int、const int *、int *cosnt、const int * const、con
 **常量表达式:（const expression）**是指不会改变并且在编译过程中就能得到计算结果的表达式；一个对象/表达式是不是常量表达式；由它的数据类型和初始值共同决定。例：
 ```c++
 const int max_files=20;//max_files 是常量表达式
+
 const int limit=max_files+1;//limit 是常量表达式
+
 int staff_size=27;//staff_size 不是常量表达式
+
 const int sz=get_size();//运行时才知道值，因此不是常量；
 ```
 **constexpr变量**
 C++11允许将变量声明为`constexpr`类型以便由编译器来验证变量的值是否是一个常量表达式。声明为constexpr的变量移动是一个产量，而且必须用常量表达式初始化：
 ```c++
 constexpr int mf=20;//20是常量表达式
+
 constexpr int limit=mf+1;//mf+1是常量表达式
+
 constexpr int sz=size();//只有当size是一个constexpr函数时才是一条正确的声明语句
 ```
 **指针和constexpr**
 在constexpr声明中如果定义了一个指针，限定符constexpr仅对指针有效，与指针所指对象无关；
 ```c++
 const int *p=nullptr;//p是一个指向整型常量的指针
+
 constexpr int *q=nullptr;//q是一个指向整数的常量指针；constexpr把她所东一的对象置为了顶层const
 ```
 
@@ -315,7 +325,7 @@ constexpr int *q=nullptr;//q是一个指向整数的常量指针；constexpr把�
 - `typedef int my_int`:将`int `取别名为`my_int`;
 - `typede 函数`：定义函数类型(常用语C语言中；C++慎用)；例：
 
-```C++
+```c++
 typedef long SetStringPtr(char *);//预定于函数输入输出类型
 typedef long GetStringPtr(char *, long);//预定于函数输入输出类型
 
@@ -356,9 +366,9 @@ decltype 是C++11新引入的关键字，帮助从表达式推断定义的变量
 注意：
 1. decltype 处理顶层const和引用的方式与auto有些许不同；
 2. 如果decltype使用的表达式不是一个变量，则decltype返回表达式结果对应的类型，当有时返回一个引用类型的时候；表达式的结果对象，能够作为一条赋值语句的左值。
+3. dectype((variable))(注意是双层括号)的结果永远是引用，而decltype(variable)结果只有当variable本身就是一个引用时才是。
 
 ```c++
-
 const int ci=0,&cj=ci;
 decltype(cj) x=0;//x 类型是const int
 decltype(cj) y=x;//y的类型是const int&,y绑定到变量x
@@ -370,4 +380,3 @@ decltype(r+0) b;//加法的结果是int，因此b是一个（未初始化的）i
 decltype(*p) c;//错误：c是int&,必须初始化
 
 ```
-3. dectype((variable))(注意是双层括号)的结果永远是引用，而decltype(variable)结果只有当variable本身就是一个引用时才是。
