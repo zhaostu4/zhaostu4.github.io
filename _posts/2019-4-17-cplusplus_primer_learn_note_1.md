@@ -310,7 +310,184 @@ c++中的隐式类型转换，已经在之前介绍过了，同时c++中还存�
 是特意用于底层的强制转型，导致实现依赖（就是说，不可移植）的结果，例如，将一个指针转型为一个整数。这样的强制类型在底层代码以外应该极为罕见。操作 结果只是简单的从一个指针到别的指针的值得二进制拷贝。在类型之间指向的内容不做任何类型的检查和转换。
 new_type必须是一个指针、引用、算术类型、函数指针或者成员指针。它可以把一个指针转换成一个整数，也可以把一个整数转换成一个指针（先把一个指针转换成一个整数，再把该整数转换成原类型的指针，还可以得到原先的指针值）。
 
+##### 运算符优先级表格如下
 
+
+<table>
+    <thead>
+        <tr>
+            <th>优先级 </th>
+            <th>运算符 </th>
+            <th>说明  </th>
+            <th>结合性 </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td>::</td>
+            <td>范围解析</td>
+            <td rowspan="6">自左向右</td>
+        </tr>
+        <tr>
+            <td rowspan="5">2</td>
+            <td>++ - - </td>
+            <td>后缀自增/后缀自减</td>
+        </tr>
+        <tr>
+            <td>()</td>
+            <td>括号</td>
+        </tr>
+        <tr>
+            <td>[]</td>
+            <td>数组下标</td>
+        </tr>
+        <tr>
+            <td>.</td>
+            <td>成员选择(对象)</td>
+        </tr>
+        <tr>
+            <td>-&gt;</td>
+            <td>成员选择(指针)</td>
+        </tr>
+        <tr>
+            <td rowspan="9">3</td>
+            <td>++ - -</td>
+            <td>前缀自增/前缀自减</td>
+            <td rowspan="9">自右向左</td>
+        </tr>
+        <tr>
+            <td>+ -</td>
+            <td>加减</td>
+        </tr>
+        <tr>
+            <td>! ~</td>
+            <td>逻辑非/按位取反</td>
+        </tr>
+        <tr>
+            <td>(type)</td>
+            <td>强制类型转换</td>
+        </tr>
+        <tr>
+            <td>*</td>
+            <td>取指针指向的值</td>
+        </tr>
+        <tr>
+            <td>&amp;</td>
+            <td>某某的地址</td>
+        </tr>
+        <tr>
+            <td>sizeof</td>
+            <td>某某的大小</td>
+        </tr>
+        <tr>
+            <td>new,new[]</td>
+            <td>动态内存分配/动态数组内存分配</td>
+        </tr>
+        <tr>
+            <td>delete,delete[]</td>
+            <td>动态内存分配/动态数组内存释放</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>.* -&gt;* - -</td>
+            <td>成员对象选择/成员指针选择</td>
+            <td rowspan="12">自左向右</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>* / %</td>
+            <td>乘法/除法/取余</td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td>+ -</td>
+            <td>加号/减号</td>
+        </tr>
+        <tr>
+            <td>7</td>
+            <td>&lt;&lt; &gt;&gt;</td>
+            <td>位左移/位右移</td>
+        </tr>
+        <tr>
+            <td rowspan="2">8</td>
+            <td> &lt; &lt;=</td> 
+            <td>小于/小于等于</td>
+        </tr>
+        <tr>
+            <td> &gt; &gt;=</td> 
+            <td>大于/大于等于</td>
+        </tr>
+        <tr>
+            <td>9</td>
+            <td>== !=</td>
+            <td>等于/不等于</td>
+        </tr>
+        <tr>
+            <td>10</td>
+            <td>&amp;</td>
+            <td>按位与</td>
+        </tr>
+        <tr>
+            <td>11</td>
+            <td>^</td>
+            <td>按位异或</td>
+        </tr>
+        <tr>
+            <td>12</td>
+            <td>|</td>
+            <td>按位或</td>
+        </tr>
+        <tr>
+            <td>13</td>
+            <td>&amp;&amp;</td>
+            <td>与运算</td>
+        </tr>
+        <tr>
+            <td>14</td>
+            <td>||</td>
+            <td>或运算</td>
+        </tr>
+        <tr>
+            <td>15</td>
+            <td>?:</td>
+            <td>三目运算符</td>
+            <td rowspan="7">自右向左</td>
+        </tr>
+        <tr>
+            <td rowspan="5">16</td>
+            <td>=</td>
+            <td>赋值</td>
+        </tr>
+        <tr>
+            <td>+= -=</td>
+            <td>相加后赋值/相减后赋值</td>
+        </tr>
+        <tr>
+            <td>*= /= %=</td>
+            <td>相乘后赋值相值/取余后赋值</td>
+        </tr>
+        <tr>
+            <td>&lt;&lt;= &gt;&gt;=</td>
+            <td>位左移赋值/位右移赋值</td>
+        </tr>
+        <tr>
+            <td>&amp;= ^= |=</td>
+            <td>位与运算后赋值/位异或运算后赋值/位或运算后赋值</td>
+        </tr>        
+        <tr>
+            <td>17</td>
+            <td>throw</td>
+            <td>抛出异常</td>
+        </tr>        
+        <tr>
+            <td>18</td>
+            <td>,</td>
+            <td>逗号</td>
+            <td>自左向右</td>
+        </tr>
+    </tbody>
+</table>
 
 
 
