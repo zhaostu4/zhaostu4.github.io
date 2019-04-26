@@ -24,13 +24,13 @@
 
 */
 /*
-主要思路： 首先，因为割张取拍，因此偶数(0,2,4,6...)编号必定有序递增；
-		其次，奇数(1,3,5,7...);不断后移，偶数项拿完之后必定，剩余奇数相再排列；直到只剩最后一张牌为止。
+主要思路： 上述过程的逆过程，需要先将最大的放在第一位，插入第二大的作为首位，最后将下标1的与最后一位交换
 
 		解决思路;
-		1.数组排序：选出最小一半，排在偶数号未上。
-		2.对剩余数目，选出最小一半，排在相对偶数未上，剩下奇数位再排序。
-		3.循环直到最后一位。
+		1.排序获得最大到最小
+		2.依次插入
+		3.将最后一个插到开始
+		
 */
 
 #include <iostream>
@@ -54,7 +54,7 @@ vector<int> deckRevealedIncreasing(std::vector<int>& deck) {
 			for (int j= 0; j < deck.size()-i-1; ++j)
 			{
 				/* code */
-				if(deck[j]>deck[j+1]){
+				if(deck[j]<deck[j+1]){
 					int temp=deck[j];
 					deck[j]=deck[j+1];
 					deck[j+1]=temp;
@@ -69,16 +69,16 @@ vector<int> deckRevealedIncreasing(std::vector<int>& deck) {
 		//迭代插入
 		for(int i=0;i<deck.size();++i)//每次处理一半的数据
 		{
-			//先插一半
-			for (int i = 0; i < deck.size()/2; ++i)
-			{
-				/* code */
-				result.insert(result.begin()+i,deck[i]);
-
+			//将最大的插入
+			result.insert(result.begin(),deck[i]);
+			//交换下标为1的和最后一位
+			if(result.size()>2){
+				int temp_size=result.size();
+				int temp=result[temp_size-1];
+				result.insert(result.begin()+1,temp);
+				result.pop_back();
 			}
-			//再插剩下的一半的一半
 		}
-		print_vector(deck);
 		return result;
 
     };
@@ -90,9 +90,31 @@ int main(int argc, char const *argv[]) {
 	std::vector<int> output={2,13,3,11,5,17,7};
 	//my result number
 	auto  my_result=deckRevealedIncreasing(input);
-	print_vector(input);
+	print_vector(my_result);
 	
 
 	//print_vector(my_result);
 	return 0;
 }
+/*
+//优质解答：
+//思路首先升序排序；然后将其依次插入新数组，再将最后一个插入第二个位置
+
+vector<int> deckRevealedIncreasing(vector<int>& deck) {
+		//排序
+        sort(deck.begin(), deck.end());
+        //获取长度
+        int len = deck.size();
+        if(len <= 1){
+            return deck;
+        } 
+        //间隔取数
+        for(int i = 0; i < len - 2; i++){
+            deck.insert(deck.end() - 2 - i, deck.back());//返回当前末尾元素的使用
+            deck.erase(deck.end()-1);//删除最后一个元素
+        }
+        cout<<*deck.end();//输出
+        return deck;
+    }
+
+*/
