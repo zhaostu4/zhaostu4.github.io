@@ -160,6 +160,104 @@ print(begin(j),end(j));//调用函数3
 3. 当函数传入参数是拷贝传递时`const int a`与`int a`是同一个函数，即重写了前一个函数。当使用`&`作为引用参数时，使用`const`为新参数。例如`int &a`与`const int &a`是两个不同的函数。
 4. 注意当查找同名函数时，编译器首先查找当前作用域(局部作用域)内的同名函数。
 
+##### overload 、override、overwrite 之间的区别
+
+##### Overload  重载
+在C++程序中，可以将语义、功能相似的几个函数用同一个名字表示，但参数不同（包括类型、顺序不同），即**函数重载**。条件：
+
+    - 相同的范围(在同一个类中)
+    - 函数名字相同
+    - 参数不同
+    - 重载解析中不考虑返回类型，而且在不同的作用域里声明的函数也不算是重载。重载可以理解为一个类内部的函数重载
+
+#####  Override 覆盖
+是指派生类函数覆盖基类函数，实际上是c++多态的衍生品；特征是：
+
+    - 不同的范围(分别位于派生类与基类)
+    - 函数名字相同；
+    - 参数名字相同
+    - 基类函数必须有`virtual`关键字。
+
+示例：
+
+```c++
+#include <iostream>
+using namespace std;
+class base
+{
+  public:
+  virtual void Fun1()
+    {
+        
+        cout<<"Base Fun1..."<<endl;
+     }
+ 
+      virtual void Fun2()
+     {
+         cout<<"Base Fun2..."<<endl;
+     }
+ 
+      void Fun3()
+    {
+        
+        cout<<"Base Fun3..."<<endl;
+     }
+};
+ 
+class Derived:public Base
+{
+   public:
+   void Fun1()
+    {
+        
+        cout<<"Derived Fun1..."<<endl;
+     }
+ 
+    void Fun1()
+    {
+        
+        cout<<"Derived Fun2..."<<endl;
+     }
+ 
+      void Fun3()
+    {
+        
+        cout<<"Derived Fun3..."<<endl;
+     }
+};
+ 
+ 
+int main()
+{
+  Base* p;
+  Derived d;
+  p=&d;
+ 
+ p->Fun1();  //因为Fun1是虚函数，所以调p指向的对象的Fun1
+ p->Fun2();   //同Fun1
+ p->Fun3();   //Fun3不是虚函数，所以根据指针的类型，是基类指针，调基类的Fun3
+  
+return 0;
+}
+/*
+结果：
+Derived Fun1...
+Derived Fun2...
+Base Fun3...
+*/
+```
+#####  overwrite：重定义
+是指派生类的函数屏蔽了与其同名的基类函数，规则如下：
+    
+- 如果派生类的函数与基类的函数同名，但是参数不同。此时，不论有无`virtual`关键字，基类的函数将被隐藏。
+- 如果派生类的函数与基类的函数同名，并且参数也相同，但是基类函数没有`virtual`关键字。此时，基类的函数被隐藏（注意别与覆盖混淆)
+- 重定义分两种：
+    + 对基类数据成员的重定义：不改变基类的数据成员，改变派生类的数据成员。
+    + 对基类成员函数的重定义
+        * 派生类的成员函数与基类完全相同；基类中的函数被隐藏
+        * 派生类的成员函数与语言基类成员函数名相同但参数不同；使用派生类的函数，如果要方位基类方法使用`<class_name>.Base::<function>`或者`<class_name>.Base::<成员变量名>`；
+
+
 #### 特殊用途语言实参
 c++中存在特殊用途的语言实参：
 
