@@ -49,7 +49,7 @@ _参考链接：_ [H264 编解码协议详解](https://blog.csdn.net/qq_19923217
 ##### H264中的I帧、P帧和B帧
 正如上文所说;H264除了使用帧内压缩之外，还使用了帧间压缩；H264采用了独特的I帧、P帧和B帧策略来实现，连续帧之间的压缩；
 
-![I帧、P帧和B帧结构](https://img-blog.csdn.net/20171002114031322?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcGRzNTc0ODM0NDI0/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast);
+![I帧、P帧和B帧结构](http://wangpengcheng.github.io/img/x264-ibp.png)
 
 如上图所示；
 
