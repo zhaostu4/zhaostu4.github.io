@@ -28,8 +28,7 @@ bool isShorter(const string &sl;const string &s2)
 {
     return s1.size()<s2.size();
 }
-```
-```c++
+
 int  main(int argc,char *argv[])
 {
 
@@ -62,11 +61,11 @@ int main(int argc, char const **argv) {
     </thead>
     <tbody>
         <tr>
-            <td><code>initializer_list <T> lst </code></td>
+            <td><code>"initializer_list <T> lst"</code></td>
             <td>默认初始化；类型的空列表</td>
         </tr>
         <tr>
-            <td><code>initializer_list <T> lst {a,b,c...}; </code></td>
+            <td><code>initializer_list <T> lst {a,b,c...}</code></td>
             <td>lst的元素数量和初始值一样多；lst的元素是对应初始值的副本；列表中的元素是const</td>
         </tr>
         <tr>
@@ -74,7 +73,7 @@ int main(int argc, char const **argv) {
             <td>拷贝复制一个元素</td>
         </tr>
         <tr>
-            <td><code> lst.size() `</td>
+            <td><code> lst.size()</code></td>
             <td align="center">列表中的元素数量</td>
         </tr>
         <tr>
