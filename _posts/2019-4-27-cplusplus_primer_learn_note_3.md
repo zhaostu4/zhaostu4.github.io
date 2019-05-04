@@ -48,7 +48,8 @@ int main(int argc, char const **argv) {
 ### initialzer_list 形参
 
 当函数的实参数量未知；但是全部实参的类型相同，我们可以使用initializer_list类型的形参。详细描述如下表：
- 
+
+
 <table>
     <thead>
         <tr>
@@ -86,6 +87,7 @@ int main(int argc, char const **argv) {
         </tr>
     </tbody>
 </table>
+
 
 下面是代码示例：
 
