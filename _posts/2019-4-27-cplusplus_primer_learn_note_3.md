@@ -49,50 +49,18 @@ int main(int argc, char const **argv) {
 
 当函数的实参数量未知；但是全部实参的类型相同，我们可以使用initializer_list类型的形参。详细描述如下表：
 
-
-<table>
-    <thead>
-        <tr>
-            <th colspan="2">initializer_list 提供的操作</th>
-        </tr>
-        <tr>
-            <th>操作</th>
-            <th>解释</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><code>"initializer_list <T> lst"</code></td>
-            <td>默认初始化；类型的空列表</td>
-        </tr>
-        <tr>
-            <td><code>initializer_list <T> lst {a,b,c...}</code></td>
-            <td>lst的元素数量和初始值一样多；lst的元素是对应初始值的副本；列表中的元素是const</td>
-        </tr>
-        <tr>
-            <td><code>lst2(lst) | lst2=lst </code></td>
-            <td>拷贝复制一个元素</td>
-        </tr>
-        <tr>
-            <td><code> lst.size()</code></td>
-            <td align="center">列表中的元素数量</td>
-        </tr>
-        <tr>
-            <td><code> lst.begin() </code></td>
-            <td>返回指向lst中首元素的指针</td>
-        </tr>
-        <tr>
-            <td><code>lst.end()</code></td>
-            <td>返回指向lst中尾元素下一位置的指针</td>
-        </tr>
-    </tbody>
-</table>
+|操作|解释|
+|:---|:---|
+|`initializer_list <T> lst`|默认初始化；类型的空列表|
+|`initializer_list <T> lst {a,b,c...}`|lst的元素数量和初始值一样多；lst的元素是对应初始值的副本；列表中的元素是const|
+|`lst2(lst) or lst2=lst`|拷贝复制一个元素|
+|`lst.size()`|列表中的元素数量|
+|`lst.begin()`|返回指向lst中首元素的指针|
+|`lst.end()`|返回指向lst中尾元素下一位置的指针|
 
 
 下面是代码示例：
-
 ```c++
-
 void error_msg(initializer_list<string> il)
 {
     for(auto beg=il.begin();beg!=il.end();++beg)
