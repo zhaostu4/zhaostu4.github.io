@@ -93,14 +93,15 @@ void foo(...);
     
 ```c++
     //func 接受一个int类型的实际参数，返回一个指针，该指针指向含有10个整数的数组
+    
     auto funct(int i) -> int(*)[10];
-
     int odd[]={1,3,5,7,9};
     int odd[]={2,4,6,8,10};
 
     decltype(odd) *arrPtr(int i)
     {
         return (i%2)?&odd:&even;//返回一个指向数组的指针
+
     }
 ```
 
@@ -112,14 +113,21 @@ _参考链接：_ [C++的重载(overload)与重写(override)](https://www.cnblog
 
 ```c++
 //定义重载函数
+
 void print(const char *cp);//函数1
+
 void print(const int *beg,const int *end);//函数2
+
 void print(const int ia[],size_t size);//函数3
 
 //接受参数不同，使用也不相同
+
 int j[2]={0,1};
+
 print("Hello word ");//调用函数1
+
 print(j,end(j),-begin(j));//调用函数2
+
 print(begin(j),end(j));//调用函数3
 
 ```
@@ -204,7 +212,9 @@ int main()
   p=&d;
  
  p->Fun1();  //因为Fun1是虚函数，所以调p指向的对象的Fun1
+
  p->Fun2();   //同Fun1
+ 
  p->Fun3();   //Fun3不是虚函数，所以根据指针的类型，是基类指针，调基类的Fun3
   
 return 0;
@@ -284,18 +294,22 @@ time20:39:05
 ```c++
 
 //定义函数function2
+
 bool function2(const string &,const string &);
 //定义指针指定输入参数的指针
+
 bool *pf(const string &,const string &);
 
 pf=function2;//将指针pf指向lengthCompare的函数
 
 auto b1=pf("hello","goodbye");//调用函数
+
 auto b2=(*pf)("hello","goodbye");//一个等价的调用
 
 //使用指针函数，方便我们在某些状况下使用指定的重载函数，避免产生隐式转换的错误
 
 void ff(int* )//重载函数1
+
 void ff(unsigned int)//重载函数2
 
 //定义函数指针，并初始化
@@ -306,10 +320,14 @@ void (*pf1)(unsigned int )=ff;
 
 ```c++
 using F=int(int*,int);//F是函数类型，不是指针
+
 using PF=int(*)(int *,int);//PF是指针类型
 
+
 PF f1(int);//正确：PF是指向函数的指针，f1返回指向函数的指针
+
 F f1(int); //错误：F是函数类型，f1不能返回一个函数
+
 F *f1(int)；//正确：显式地指定返回类型是指向函数的指针
 
 ```
