@@ -23,6 +23,8 @@ _参考链接_：[C++后台开发学习路线](https://zhuanlan.zhihu.com/p/6145
 * [ ] 计算机组成原理
 * [ ] 数字逻辑电路
 * [ ] 嵌入式开发
+* [ ] CSAPP
+* [ ] ARM嵌入式系统编程与优化
 * [ ] OpenMP
 * [ ] OpenCL
 * [ ] 计算机是怎样跑起来的
@@ -78,11 +80,20 @@ _参考链接_：[C++后台开发学习路线](https://zhuanlan.zhihu.com/p/6145
 * [ ] 数据库系统概念 第6版
 * [ ] mysql必知必会
 * [ ] 高性能MySQL 
-* [ ] radio 原理与解析
+* [ ] radio原理与解析
 
 ### 分布式
 * [ ] 分布式服务架构：原理、设计与实战
 * [ ] 分布式系统概念与设计（原书第4版）
 * [ ] 分布式系统原理与范型（第2版）
 * [ ] 大型分布式网站架构设计与实践
-* [ ] 大型网站技术架构：核心原理与案例分析   
+* [ ] 大型网站技术架构：核心原理与案例分析 
+
+### Golang
+* [ ]  [官网参考手册](https://golang.org/)
+* [ ]  [Go编程指南](https://tour.go-zh.org/welcome/1)
+* [ ]  [Go语言圣经](https://legacy.gitbook.com/book/yar999/gopl-zh/details)
+* [ ]  [深入解析Go](https://tiancaiamao.gitbooks.io/go-internals/content/zh/index.html)
+* [ ]  [Go Web编程](https://astaxie.gitbooks.io/build-web-application-with-golang/zh/)
+* [ ]  [学习 Go 语言](https://github.com/gunsluo/Learning-Go-zh-cn)
+* [ ]  [学习路线](https://zhuanlan.zhihu.com/p/25493806)
