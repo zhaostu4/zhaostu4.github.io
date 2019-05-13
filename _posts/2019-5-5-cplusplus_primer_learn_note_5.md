@@ -508,10 +508,165 @@ array<int>::size_type j; //错误:array<int>不是一个类型
 |`c.insert(p,b,e)`|将迭代器b和e指定的范围内的元素插入到迭代器p指向的元素之前，返回指向新添加元素第一个元素的迭代器；若p为空则返回p|
 |`c.insert(p,il)`|il是一个花括号包围的元素值列表。将这些给定值插入到迭代器p指向的元素之前，返回指向新添加的第一个元素的迭代器|
 
-注意： 向一个`vector`、`string`或者`deque`插入元素会使所有指向容器的迭代器、引用和指针失效。
+注意： 
+
+- 向一个`vector`、`string`或者`deque`插入元素会使所有指向容器的迭代器、引用和指针失效。
+- 容器元素插入和初始化都是拷贝
+- 使用插入`insert`的时候会返回插入的值
+
+**使用emplace操作**
+
+新标准中引入了三个新成员函数-`emplace_front`、`emplace`和`emplace_back`它们与`insert`系列操作相同，
+注意：
+
+- `emplace`函数在容器中直接构造元素，传递给`emplace`函数的参数必须与元素类型的构造函数相匹配。
+
+例如：
+```c++
+c.emplace_back("99999",25,15.99);//错误没有接受三个参数的`push_back`版本
+
+c.push_back("99999",25,15.99);//正确创建一个临时的`push_back`版本
+```
+
+##### 顺序容器中访问元素操作
+
+|操作|含义|
+|:---|:---|
+|`c.back()`|返回c中尾元素的引用。若c空，函数行为未定义|
+|`c.front()`|返回c中首元素的引用。若c空，函数行为未定义|
+|`c[n]`|返回c中下标为n元素的引用。若c空，n>=c.size()函数行为未定义|
+|`c.at(n)`|返回c中下标为n元素的引用。若越界抛出异常|
+
+建议：尽量使用at函数，避免下标越界
 
 
+##### 顺序容器中删除元素操作
+
+|操作|含义|
+|:---|:---|
+|`c.pop_back()`|删除c中尾部元素，若c空，函数行为未定义|
+|`c.pop_front()`|删除c中首元素的引用。若c空，函数行为未定义|
+|`c.erase(n)`|删除迭代器p所指的元素，返回一个指向被删除元素之后元素的迭代器|
+|`c.erase(b,e)`|删除迭代器b和e所指定范围内的元素。返回指向最后一个被删除元素之后元素的迭代器|
+|`c.clear()`|删除c中所有元素。返回`void`|
+
+注意对于单链表而言有许多不同之处
+
+![](https://github.com/wangpengchengwangpengcheng.github.io/img/fowrd_list_insert.png)
+
+当在forword_list中添加或者删除元素时，我们必须关注两个迭代器-一个指向我们要处理的元素，另外一个指向其前驱元素。例如：
+
+```c++
+forward_list<int> flst={0,1,2,3,4,5,6,7,8,9}；
+auto prev=flst.before_begin(); //表示flst的首前元素
+
+auto curr=flst.begin();   //表示flst中的第一个元素
+
+while(curr!=flst.end()) {
+    if(*curr%2){
+        curr=flst.erase_after(prev); //删除并移动curr
+
+    }else{
+        prev=curr;//移动迭代器curr,指向下一个元素，prev指向curr之前的元素
+        
+        ++curr;
+    }
+}
 
 
+```
+##### 容器操作可能会使迭代器失效
+
+_参考链接：_ [C++迭代器失效的几种情况总结](https://www.cnblogs.com/fnlingnzb-learner/p/9300073.html)；[C++之迭代器失效及解决](https://blog.csdn.net/Yinghuhu333333/article/details/80744440)；
+
+在向容器中添加元素之后：
+
+- 如果容器是`vector`或者`string`，且存在存储空间被重新分配，则指向容器的迭代器、指针和引用内存都会失效。如果没有重新分配内存，指向插入位置之前的元素的迭代器、指针和引用仍然有效，但是指向插入之后的元素迭代器、指针和引用都会失效
+- 对于`deque`插入到除首尾位置之外的任何位置都会导致迭代器、指针和引用失效。如果在首尾位置添加元素，迭代器会失效，但是指向存在的元素的引用和指针不会失效。
+- 对于`list`和`forward_list`指向容器的迭代器（包括尾后迭代器和首前迭代器）、指针和引用仍有效。
+
+在删除一个元素后
+
+- 对于`list`和`forward_list`指向容器其它位置的迭代器、引用指针任然有效。
+- 对于`deque`如果在首尾之外的任何位置删除元素，那么指向被删除元素之外其它元素的迭代器、引用或者指针也会失效。如果删除的是尾部元素，则尾后的迭代器也会失效，但其它迭代器、引用和指针不受影响；如果删除首尾元素，这些也不会受影响。
+- 对于`vector`和`string`,指向被删除元素之前元素的迭代器、引用和指针仍然有效。注意当我们删除元素时，尾后迭代器总是会失效。
+
+因为添加删除原来的元素后，`end`迭代器总是会失效，因此尽量不要保存`end`返回的迭代器
+
+vector和string 的容器大小管理操作
+`capacity()`容器在不扩张内存空间的情况下可以容纳多少个元素，`reserve`允许我们通知容器它应该准备保存多少个元素
+
+
+|操作|含义|
+|:---|:---|
+|`c.shrink_to_fit()`|将`capacity（）`减小为和`size`相同大小|
+|`c.capacity()`|不重新分配内存空间的话，c可以保存多少元素|
+|`c.reserve(n)`|分配至少能容纳n个元素的内存空间|
+
+注意： reserve并不改变容器元素中的数量，它仅仅影响vector预先分配多大的内存空间。
+
+
+##### 额外的string操作
+
+|操作|含义|
+|:---|:---|
+|`s.insert(pos,args)`|在迭代器pos之前插入args指定的字符|
+|`s.erase(pos,len)`|删除从位置`pos`开始的`len`个字符。如果len 被省略则删除从`pos`开始至s末尾的所有字符。返回一个指向`s`的引用|
+|`s.assign(args)`|将`s`中的字符串替换为`args`指定的字符。返回一个指向`s`的引用|
+|`s.append(args)`|将`s`后添加`args`指定的字符。返回一个指向`s`的引用|
+|`s.replace(range,args)`|删除`range`范围内的字符，替换为`args`指定的字符，返回`s`的引用|
+
+
+**string搜索操作**
+
+|操作|含义|
+|:---|:---|
+|`s.find(args)`|查找`s`中第一次出现的位置|
+|`s.rfind(args)`|查找`s`中最后一次出现的位置|
+|`s.find_frist_of(args)`|在`s`中查找`args`中任何一个字符，第一次出现的位置|
+|`s.find_last_of(args)`|在`s`中查找`args`中任何一个字符，最后一次出现的位置|
+|`s.find_frist_not_of(args)`|在`s`中查找第一个不在`args`中的字符|
+|`s.find_last_not_of(args)`|在`s`中查找最后一个不在`args`中的字符|
+
+```c++
+//循环查找下一个数
+
+string::size_type pos=0;
+while((pos=name.find_frist_of(number,pos))!=string::npos) {
+    cout<<"found number at index: "<<pos
+        <<"element is "<<name[pos]<<endl;
+        ++pos;//移动到下一个字符    
+}
+
+```
+
+`compare`比较字符串；`to_string()`将数字转化为字符串。
+
+**string和数值之间的转换**
+
+|操作|含义|
+|:---|:---|
+|`to_string(val)`|将任意一种算术类型`val`转化为`string`|
+|`stoi(s,p,b)`|返回s的起始字符子串(整数内容)的数值 `int`,b是转换基数，p是`size_t`指针|
+|`stol(s,p,b)`|返回s的起始字符子串(整数内容)的数值 `long`,b是转换基数，p是`size_t`指针|
+|`stoul(s,p,b)`|返回s的起始字符子串(整数内容)的数值 `unsigned long`,b是转换基数，p是`size_t`指针|
+|`stoll(s,p,b)`|返回s的起始字符子串(整数内容)的数值 `long long`,b是转换基数，p是`size_t`指针|
+|`stoull(s,p,b)`|返回s的起始字符子串(整数内容)的数值 `unsigned long long`,b是转换基数，p是`size_t`指针|
+|`stof(s,p)`|返回s的起始字符子串(整数内容)的数值 `float`,b是转换基数，p是`size_t`指针|
+|`stod(s,p)`|返回s的起始字符子串(整数内容)的数值 `long long`,b是转换基数，p是`size_t`指针|
+|`stold(s,p)`|返回s的起始字符子串(整数内容)的数值 `long double`,b是转换基数，p是`size_t`指针|
+
+### 容器适配
+
+出来标准容器外还有三个顺序容器适配器： `stack`、`queue`和`proiority_queue`。本质上，一个适配器是一种机制，能使某种事物的行为看起来像另外一种事物一样。例如`stack`适配器接受一个顺序容器，并使其操作像一个stack一样。下面是使用示例：
+
+```c++
+stack<int> stk(deq);//从deq拷贝元素到stk
+
+stack<string ,std::vector<string> > str_stk;//在vector上实现的空栈
+
+stack<string ,vector<string > > str_stk2(svec);//str_stk2在vector上实现，初始化时保存svec的拷贝
+
+```
 
 
