@@ -92,3 +92,50 @@ _参考链接：_ [c++11 lambda 表达式](https://www.cnblogs.com/DswCnblog/p/5
 2. `params list`: 形参列表
 3. `mutable`:用来说明是否可以修改捕获的变量
 4. `exception`:异常设定
+5. `return type`:返回类型
+6. `function body`:函数体
+
+省略的常见表达式有：
+
+|序号|格式|
+|:---|:---|
+|1|`[capture list] (params list) -> return type {function body}`|
+|2|`[capture list] (params list) {function body}`|
+|3|`[capture list] {function body}`|
+
+其中：
+
+- 格式1声明了const类型的表达式，这种类型的表达式不能修改捕获列表中的值。
+- 格式2省略了返回值类型，但编译器可以根据以下规则推断出Lambda表达式的返回类型： （1）：如果function body中存在return语句，则该Lambda表达式的返回类型由return语句的返回类型确定； （2）：如果function body中没有return语句，则返回值为void类型。
+- 格式3中省略了参数列表，类似普通函数中的无参函数。
+
+```c++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+bool cmp(int a, int b)
+{
+    return  a < b;
+}
+
+int main()
+{
+    vector<int> myvec{ 3, 2, 5, 7, 3, 2 };
+    vector<int> lbvec(myvec);
+
+    sort(myvec.begin(), myvec.end(), cmp); // 旧式做法
+    
+    cout << "predicate function:" << endl;
+    for (int it : myvec)
+        cout << it << ' ';
+    cout << endl;
+
+    sort(lbvec.begin(), lbvec.end(), [](int a, int b) -> bool { return a < b; });   // Lambda表达式
+    cout << "lambda expression:" << endl;
+    for (int it : lbvec)
+        cout << it << ' ';
+}
+
+```
