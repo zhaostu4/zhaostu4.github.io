@@ -552,7 +552,7 @@ c.push_back("99999",25,15.99);//正确创建一个临时的`push_back`版本
 
 注意对于单链表而言有许多不同之处
 
-![](https://github.com/wangpengchengwangpengcheng.github.io/img/fowrd_list_insert.png)
+![链表操作](http://wangpengcheng.github.io/img/fowrd_list_insert.png)
 
 当在forword_list中添加或者删除元素时，我们必须关注两个迭代器-一个指向我们要处理的元素，另外一个指向其前驱元素。例如：
 
