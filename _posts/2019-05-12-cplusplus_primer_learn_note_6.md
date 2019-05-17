@@ -1,15 +1,14 @@
 ---
 layout:     post
-title:      C++ Primer 学习笔记 (六)
-subtitle:   C++ Primer 学习记录 (六)
-date:       2019-5-12
+title:      C++ Primer 学习笔记(六)
+subtitle:   C++ Primer 学习记录(六)
+date:       2019-05-12
 author:     王鹏程
-header-img: img/post-bg-miui6.jpg
+header-img: img/post-bg-ios10.jpg
 catalog: true
 tags:
     - C++
     - 基础编程
-    - std 标准库
 ---
 
 >>2019-5-12 :19:44:52
