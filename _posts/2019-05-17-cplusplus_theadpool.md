@@ -84,22 +84,25 @@ void enqueue(T& t) {
 
 auto submit(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
     // Create a function with bounded parameters ready to execute
-    std::function<decltype(f(args...))()> func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-    // Encapsulate it into a shared ptr in order to be able to copy construct / assign 
-    auto task_ptr = std::make_shared<std::packaged_task<decltype(f(args...))()>>(func);
 
+    std::function<decltype(f(args...))()> func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+    // Encapsulate it into a shared ptr in order to be able to copy construct // assign 
+
+    auto task_ptr = std::make_shared<std::packaged_task<decltype(f(args...))()>>(func);
     // Wrap packaged task into void function
+
     std::function<void()> wrapper_func = [task_ptr]() {
       (*task_ptr)(); 
     };
 
     // Enqueue generic wrapper function
+
     m_queue.enqueue(wrapperfunc);
-
     // Wake up one thread if its waiting
-    m_conditional_lock.notify_one();
 
+    m_conditional_lock.notify_one();
     // Return future from promise
+
     return task_ptr->get_future();
 }
 
@@ -114,9 +117,11 @@ auto submit(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
 #pragma once
 
 #include <mutex>
+
 #include <queue>
 
 // Thread safe implementation of a Queue using a std::queue
+
 template <typename T>
 class SafeQueue {
 private:
@@ -185,11 +190,17 @@ _参考链接：_ [std::bind](http://www.cplusplus.com/reference/functional/bind
 #pragma once
 
 #include <functional>
+
 #include <future>
+
 #include <mutex>
+
 #include <queue>
+
 #include <thread>
+
 #include <utility>
+
 #include <vector>
 
 #include "SafeQueue.h"
@@ -334,6 +345,7 @@ _参考连接：_ [std::random_device](http://www.cplusplus.com/reference/random
  
 ```c++
 #include <iostream>
+
 #include <random>
 
 #include "../include/ThreadPool.h"
