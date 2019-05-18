@@ -154,3 +154,100 @@ Lambda表达式通过在最前面的方括号[]来明确指明其内部可以访
 |`[=, &x]`| 变量x以引用形式捕获，其余变量以传值形式捕获|
 |`[&, x] `| 变量x以值的形式捕获，其余变量以引用形式捕获|
 
+注意：如果一个lambda体包含`return`之外的任何语句，则编译器假定lambda返回`void`；被推断`void`的lambda不能返回值。因此当重写排序等操作的时候，只能有一句`return`语句；例如：
+
+```c++
+transform(vi.begin(),vi.end(),vi.begin(),
+    [](int i){
+        return i<0?-i:i;//返回绝对值
+
+    });
+
+transform(vi.begin(),vi.end(),vi.begin(),
+    [](int i){
+        if(i<0){
+            return -i;
+        }else{
+            return i;
+        }
+        //错误，有多余语句，判定返回void
+
+    });
+
+```
+
+因此当我们使用一个lambda定义返回类型的时候，必须使用尾置返回类型，声明返回类型；例如：
+
+```c++
+transform(vi.begin(),vi.end(),vi.begin(),
+    [](int i)->int 
+    {
+        if(i<0){
+            return -i;
+        }else{
+            return i;
+        }
+        //返回绝对值
+
+    });
+```
+
+#### lambda 参数绑定
+lambda表达式，虽然可以进行简单的参数绑定，但是对于复杂的参数绑定而言，还是存在许多问题，因此可以利用函数对lambda表达式进行参数绑定。大致步骤如下：
+ 
+ 1. 使用`std:bind`函数对函数参数和函数进行绑定
+ 2. 使用`placeholderd`进行参数占位符的使用。
+
+调用`bind`一般形式为：
+`auto newCallable=bind(callable,arg_list);`
+
+`newCallable`本身是一个可以调用对象，`arg_list`是一个逗号分隔的参数列表，对应给定的`callable`的参数，即调用的实际参数。
+`arg_list`中的参数可能包含形如`_n`的名字，其中`n`是一个整数。表示占位符，数值`n`表示生成的可调用对象中参数的位置：`_1`为`newCallble`的第一个参数，`_2`为第二个参数。`_n`为第`n`个参数。
+使用：
+`auto g=bind(f,a,b,_2,c,_1);`
+生成一个新的可调用函数对象，它有两个参数，分别使用占位符`_2`和`_1`表示。使得原本需要输入5个参数的函数变为，只需要2个参数的函数，对函数进行了再一次封装。`f(a,b,_1,c,_2)`等价于`g(_1,_2)`减少了函数的复杂程度。
+
+`std::ref()`：传递给`bind`一个对象但是不拷贝它
+
+例如：
+
+```c++
+//1. 定义比较string大小函数
+
+bool check_size(const string &s,string::size_type sz){
+    return s.size()>=sz;
+}
+
+//2. 使用bind绑定函数和参数
+//将输入比较顺序颠倒，将单词长度由长至短排序
+
+sort(words.begin(),words.end(),bind(isShorter,_2,_1));
+
+//使用lambda表达式，输出表达式，os是一个局部变量，引用一个输出流
+
+for_each(word.begin(),words.end(),[&os,c](const string &s){
+    os<<s<<c;
+});
+//bind相同的效果 
+
+ostream &print(ostream &os,const string &s,char c){
+    return os<<s<<c;
+}
+//ref返回一个对象，包含给定的引用，此对象是可以拷贝的
+
+for_each(words.begin(),words.end(),
+        bind(print,std::ref(os),_1,' '));
+
+
+``` 
+
+#### 再探迭代器
+
+##### 插入迭代器
+插入迭代器有三种基本类型
+
+- `back_inserter`: 创建一个使用`push_back`的迭代器。
+- `front_inserter`:创建一个使用`push_front`的迭代器。 
+- `inserter`:创建一个使用`inserter`的迭代器。此函数接受第二个参数，这个参数必须是一个指向容器的迭代器。元素将被插入到给定迭代器所表示的元素制之前。
+
+注意： 只有在容器支持`push_front/push_back`的情况下，我们才可以使用`front_inserter/back_inserter`。
