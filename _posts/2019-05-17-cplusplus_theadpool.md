@@ -51,7 +51,7 @@ _参考链接：_ [基于C++11实现线程池的工作原理](https://www.cnblog
 
 _参考链接：_[Thread pool](https://github.com/mtrebi/thread-pool/blob/master/README.md); [ThreadPool](https://github.com/progschj/ThreadPool);
 
-![线程池结构](../img/thread_pool.png)
+![线程池结构](http://wangpengcheng.github.io/img/thread_pool.png)
 
 
 线程池的主要组成有上面三个部分：
