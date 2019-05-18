@@ -79,7 +79,7 @@ void enqueue(T& t) {
 - 立即返回“东西”以避免阻塞主线程。 此返回的对象最终应包含操作的结果。
 完整的提交函数如下所示：
 
-```
+```c++
 // Submit a function to be executed asynchronously by the pool template<typename F, typename...Args>
 
 auto submit(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
@@ -108,7 +108,7 @@ auto submit(F&& f, Args&&... args) -> std::future<decltype(f(args...))> {
 ### 队列完整源代码
 
 
-```
+```c++
 // SafeQueue.h
 
 #pragma once
@@ -179,7 +179,7 @@ public:
 
 _参考链接：_ [std::bind](http://www.cplusplus.com/reference/functional/bind/?kw=bind);[std::forward](http://www.cplusplus.com/reference/utility/forward/);[std::packaged_task](http://www.cplusplus.com/reference/future/packaged_task/)
 
-```
+```c++
 //ThreadPool.h
 
 #pragma once
@@ -332,7 +332,7 @@ public:
 使用样例代码
 _参考连接：_ [std::random_device](http://www.cplusplus.com/reference/random/random_device/);[std::mt19937](http://www.cplusplus.com/reference/random/mt19937/);[std::uniform_int_distribution](http://www.cplusplus.com/reference/random/uniform_int_distribution/);[]();
  
-```
+```c++
 #include <iostream>
 #include <random>
 
