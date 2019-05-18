@@ -226,7 +226,7 @@ _参考链接：_ [深入浅出GNU X86-64 汇编](https://blog.csdn.net/pro_tech
 归类
 
 |文件 | 种类 | 属性|说明|
-|:---|:---|:---|
+|:---|:---|:---|:---|
 |`.bbs`  |  `SHT_NOBITS` | `SHF_ALLOC + SHF_WRITE`|主要存放0或者无初始值的全局变量和0或者无初始值的静态局部变量|
 |`.data` |  `SHT_PROGBITS` |   `SHF_ALLOC + SHF_WRITE`|主要存放初始值是0以外的全局变量和初始值为0以外的静态局部变量|
 |`.text` |  `SHT_PROGBITS`  |  `SHF_ALLOC + SHF_EXECINSTR`|机械语跟代码|
