@@ -9,6 +9,9 @@ catalog: true
 tags:
     - C++
     - C
+    - java
+    - 汇编
+    - 反汇编
     - 基础操作符：
 ---
 
@@ -362,6 +365,7 @@ ADDQ $8, %rsp #%rsp指针值减8
 ```
 
 #### 函数调用
+_参考链接：_ [32位汇编语言学习笔记(13)--函数的调用](https://blog.csdn.net/swordmanwk/article/details/41626127);[数据传送指令详解](https://blog.csdn.net/shanyongxu/article/details/47726015)
 
 在大多数汇编程序中(X86-64不是)，调用约定是简单的把每个参数都压栈，然后调用函数。被调用的函数从栈中获取参数，完成操作，把返回值保存到寄存器中并返回。调用方再把参数从栈pop出来(其实X86 32就是这样的)。
 
@@ -631,40 +635,42 @@ public class a{
 
 ```
 可以看出同样的式子，和C++计算结果完全不同
-指令生成汇编代码``
+_参考链接：_ [Java反汇编及JVM指令集](https://blog.csdn.net/wangfantastic/article/details/79736860);[查看Java的汇编指令](https://blog.csdn.net/ljheee/article/details/82218156)
+
+指令生成汇编代码` javap -c a.class`
 
 ```
 Compiled from "a.java"
 public class a {
   public a();
     Code:
-       0: aload_0
+       0: aload_0 
        1: invokespecial #1                  // Method java/lang/Object."<init>":()V
        4: return
 
   public static void main(java.lang.String[]);
     Code:
-       0: bipush        10
-       2: istore_1
-       3: iload_1
-       4: iload_1
-       5: iload_1
-       6: iload_1
-       7: imul
-       8: dup
-       9: istore_1
-      10: isub
-      11: dup
-      12: istore_1
-      13: iadd
-      14: istore_1
+       0: bipush        10 //将10压入栈
+       2: istore_1 //将int类型值存入局部变量1
+       3: iload_1  //读取局部变量1 注意这里读取了四个局部变量，每个都为10
+       4: iload_1   //读取局部变量1
+       5: iload_1   //读取局部变量1
+       6: iload_1   //读取局部变量1
+       7: imul    //执行乘法 10*10=100
+       8: dup     //复制一个栈顶内容 100
+       9: istore_1 //存入局部变量1 100
+      10: isub    //执行减法-> 10-100=-90
+      11: dup   //复制栈顶元素 -90
+      12: istore_1 //存储元素 -90
+      13: iadd //加法： -90+10=-80；注意10一直在栈中没有取出
+      14: istore_1 //将-80存入局部变量1
       15: getstatic     #2                  // Field java/lang/System.out:Ljava/io/PrintStream;
       18: new           #3                  // class java/lang/StringBuilder
-      21: dup
-      22: invokespecial #4                  // Method java/lang/StringBuilder."<init>":()V
+      21: dup //复制栈顶内容 -80
+      22: invokespecial #4                  // Method java/lang/StringBuilder."<init>":()V 
       25: ldc           #5                  // String a value is:
       27: invokevirtual #6                  // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
-      30: iload_1
+      30: iload_1  //加载局部变量1 -80
       31: invokevirtual #7                  // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
       34: invokevirtual #8                  // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
       37: invokevirtual #9                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V
@@ -672,5 +678,5 @@ public class a {
 }
 
 ```
-
+从上面汇编代码可以看出；Java执行是直接将四个初始化临时的变量，每个给予初始值10；依次进行`*`、`-`、`+`运算；每次的值变化为：100，-90，-80；因此最终结果是-80；所以c++和java的不同，是由于其内部的编译器语法解析方式所决定的。也可以看出，Java真的比较耗性能。
 
