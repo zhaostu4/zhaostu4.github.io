@@ -251,3 +251,297 @@ for_each(words.begin(),words.end(),
 - `inserter`:创建一个使用`inserter`的迭代器。此函数接受第二个参数，这个参数必须是一个指向容器的迭代器。元素将被插入到给定迭代器所表示的元素制之前。
 
 注意： 只有在容器支持`push_front/push_back`的情况下，我们才可以使用`front_inserter/back_inserter`。
+
+使用示例：
+
+```c++
+
+*it=val;
+it=c.insert(it,val);//it指向插入的新元素
+
+++it;//递增it使它指向原来的元素
+
+list<int> lst={1,2,3,4};
+list<int> lst2，lst3;//空list
+//拷贝完成之后，lst3包含1 2 3 4
+
+copy(lst.cbegin(),lst.cend(),front_inserter(lst2));
+//拷贝完成之后，lst3包含1 2 3 4
+
+copy(lst.cbegin(),lst.cend(),inserter(lst3,lst3.begin()));
+
+```
+
+##### iostream 迭代器
+
+- `istream_iterator`:读取输入流。
+- `ostream_iterator`:向输出流写数据。
+
+**`istream_iterator`操作** 
+
+|操作|含义|
+|:---|:---|
+|`istream_iterator<T> in(is)`|`in`从输入流`is`读取类型为`T`的值|
+|`istream_iterator<T> end`|读取类型为`T`的值的`istream_iterator`迭代器，表示尾后位置|
+|`in1=(!)=in2`|`in1`和`in2`必须读取相同类型。如果他们都是尾后迭代器，或绑定到相同输入，则二者相等|
+|`*in`|返回从流中读取的值|
+|`in->mem`|与`(*in).mem`的含义相同|
+|`++in,in++`|使用元素类型所定义的`>>`运算符从输入流中读取下一个值，并且前置版本返回一个指向递增后迭代器的引用，后置版本返回旧值|
+
+操作示例：
+
+```c++
+istream_iterator<int > int_it(cin); //从cin读取int
+
+istream_iterator<int> int_eof; //尾后迭代器
+
+ifstream in("afile");  
+istream_iterator<string> str_it(in); //从"afile"读取字符串
+
+//读入数据并存储到vector向量组
+
+while(int_it!=eof) {
+    //后置递增运算读取流，返回迭代器的旧值
+    //解引用迭代器，获得从流读取的前一个值
+
+    vec.push_back(*in_iter++);
+}
+//循环读取其中的int值存储在vec中
+
+//使用算法操作流迭代器
+
+istream_iterator<int > in(cin),eof;
+cout<<accumulate(in,eof,0)<<endl;
+//输入：23 109 45 89 6 34 12 90 34 23 56 23 8 89 23
+
+//输出：664
+
+
+```
+注意：当我们将一个`istream_iterator`绑定到一个流时，标准库并不保证迭代器立即从流中读取数据。直到使用迭代器时才正真读取。标准库中的实现所保证的是，我们第一次解引用迭代器之前，从六中的数据操作已经完成了。
+
+##### `ostream_iterator`操作
+
+|操作|含义|
+|:---|:---|
+|`ostream_iterator<T> out(os)`|`out`将类型为`T`的值写入到流`os`中|
+|`ostream_iterator<T> out(os,d)`|将类型为`T`的值写到输出流`os`中，每个值后面都输出一个`d`。`d`指向一个空字符结尾的字符数组|
+|`out=val`|`out`和`val`必须类型兼容。用运算符`<<`将`val`写入到`out`输出流中|
+|`*out,++out,out++`|这些运算符是存在的，但是不对`out`做任何事情。每个运算符都返回`out`|
+
+### 泛型算法结构
+对于向一个算法传递错误类别的迭代器的问题，很多编译器不会给出任何警告或者提示。因此需要迭代器类型的支持和认证。
+
+**迭代器类别**
+
+|类别|含义|
+|:---|:---|
+|输入迭代器|只读，不写；单遍扫描，只能递增|
+|输出迭代器|只写，不读；单遍扫描，只能递增|
+|前向迭代器|可读写；多遍扫描，只能递增|
+|双向迭代器|可读写；多遍扫描，可递增递减|
+|随机访问迭代器|可读写；多遍扫描，支持全部迭代运算|
+
+## 第11章 关联容器
+
+关联容器支持高效的关键字查找和访问。两个主要的关联容器类型是`map`和`set`；关联容器不支持顺序容器的位置相关的操作。也不支持构造函数或者插入操作这些接受一个元素值和一个数量值的操作。
+
+使用示例：
+```c++
+std::map<string, size_t;> word_count;//空容器
+
+set<string> exclude={"the","but","and","or","an","a"};
+
+//三个元素；authors将姓映射为名
+
+map<string ,string> authors={
+    {"Joyce","James"},
+    {"Austen","Jane"},
+    {"Dickens","Charles"}
+};
+```
+
+注意：一个`map`或者`set`中的关键字必须是唯一的。但是`multimap`和`multiset`没有这个限制。允许多个元素，拥有相同的关键字。
+
+#### 11.2.2 关键字类型要求
+传递给排序算法的可调用对象，必须满足于关联容器中关键字一样的类型要求。
+
+#### 11.2.3 `pair`类型
+
+`pair`主要保存，两个数据成员，必须提供2个类型名，`pair`的数据成员，将具有应对的类型。
+
+```c++
+pair<string ,string > anon; //保存两个string
+
+pair<string ,size_t> word_count; //保存一个string和一个size_t
+
+pair<string ,vector<int>> line; //保存string和vector<int>
+
+```
+
+**`pair`上的操作**
+
+|操作|含义|
+|:---|:---|
+|`pair <T1,T2> p`|p是一个`pair`，两个类型分别为`T1`和`T2`的成员都进行了初始化|
+|`pair <T1,T2> p(v1,v2)`|p是一个`pair`，两个类型分别为`T1`和`T2`的`v1`和`v2`都进行了初始化|
+|`pair <T1,T2> p={v1,v2}`|意义同上|
+|`make_pair(v1,v2)`|返回一个用`v1`,`v2`初始化的`pair`。`pair`的类型从`v1`和`v2`的类型中推断出来|
+|`p.first`|返回`p`的名称为`first`的公有数据成员|
+|`p1 relop p2`|关系运算符(<、>、<=、>=)按照字典序定义：例如对应成立时返回`true`|
+
+### 11.3 关联容器操作
+
+|操作类型|含义|
+|:---|:---|
+|`key_type`|此容器类型的关键字类型|
+|`mapped_type`|每个关键字关联的类型；只适用于`map`|
+|`value_type`|对于`set`,与`key_type`相同；对于`map`，为`pair<const key_type,mapped_type>`|
+
+```c++
+set<string>::value_type v1; //v1是一个string
+
+set<string>::key_type v2; //v2是一个string
+
+map<string,int>::value_type v3;//v3是一个pair <const string ,int>
+
+map<string,int>::key_type v4; //v4是一个string
+
+map<string,int>::mapped_type v5; //v5是一个int
+
+```
+注意：
+
+- 一个`map`的`value_type`是一个`pair`,我们可以改变`pair`的值，但不能改变关键字成员的值。
+- `set`的迭代器是`const`的，只能读取，不能修改。
+
+#### 11.3.1 关联容器迭代器
+使用示例：
+
+```c++
+auto map_it=word_count.begin();  //*map_it 是一个指向pair<const string,size_t>对象的引用
+
+cout<<map_it->first; //打印此元素的关键字
+
+cout<<""<<map_it->second; //打印此元素的值
+
+map_it->first="new key"; //错误：关键字是const的
+
+++map_it->second; //正确：我们可以通过迭代器改变元素
+
+```
+因为关联容器`set`的迭代元素是`const`的，`map`中的元素是`pair`，其第一个成员是`const`的，因此关联容器，通常用于值读取元素的算法,多为搜索排序。
+同时使用`insert`来添加元素
+
+```c++
+vector<int> ivec={2,4,6,8,10};//ivec有8个元素
+
+set<int> set2; //空集合
+
+set2.insert(ivec.cbegin(),ivec.cend());//set2有4个元素
+
+set2.insert({1,3,5,7,9});//set2现在有8个元素
+
+```
+关联容器操作：
+`emplace(args)`:对于`map`和`set`,只有当元素的关键字不在`c`中时才插入(或者构造)元素。函数返回一个`pair`,包含一个迭代器，指向具体有指定关键字的元素，以及一个指示插入是否成功的bool值。
+
+注意插入操作返回的是一个`pair`对象，第一个元素是差诶迭代器的坐标，第二个值是一个`bool`值，确定是否插入成功。
+
+```c++
+//统计每个单词在输入中出现的次数
+
+map<string ,size_t> word_count;//从string到size_t的空map
+
+string word;
+
+while(cin>>word){
+    //插入一个元素，关键字等于word，值为1；
+    //若word已载word_count中，insert什么也不做
+    auto ret=word_count.insert({word,1});
+
+    if(!ret.second)  //word已经在word_count中
+
+        ++ret.first->second; //递增计数器
+
+/*
+
+等价形式 ++((ret.first)->second);
+ret 保存insert返回的值，是一个pair
+ret.first 是pair的第一个成员，是一个map迭代器，指向具有给定关键字的元素
+ret.first-> 解引用此迭代器，提取map中的元素，元素也是一个pair
+ret.first->second; map中元素值的部分
+++ ret.first->second; 递增此值
+*/
+}
+```
+#### 11.3.3 删除元素
+使用`erase`函数来删除和释放元素;
+```c++
+auto cnt=authors.erase("Barth,Johns");
+```
+
+#### 11.3.4 map的下表操作
+
+|操作|含义|
+|`c[k]`|返回关键字为`k`的元素；如果`k`不在`c`中，添加一个关键字为`k`的元素，对其进行值初试化|
+|`c.at(k)`|访问管家字为`k`的元素|
+
+示例：
+```c++
+map <string ,size_t> word_count; //empty map
+
+//插入一个关键字为Anna的元素，关联值进行值初试化；然后将1赋予它
+
+word_count["Anna"]=1;
+
+```
+注意：
+
+- 对一个`map`使用下表操作，使用一个不在容器中的关键字作为下表，会添加一个具有此关键字的元素到`map`中
+- 与`vector`与`string`不同，`map`的下标运算符，返回的类型与解引用`map`迭代器得到的类型不同。
+- `map`使用`find`代替下标操作
+- `lower_bound`和`upper_bound`不适用于无序容器
+- 下标和`at`操作只适用于非`const`的`map`和`unordered_map`
+
+**关联容器中查找元素的操作**
+
+|操作|含义|
+|:---|:---|
+|`c.find(k)`|返回一个迭代器，指向第一个关键字为`k`的元素，若`k`不在容器中则返回尾后迭代器|
+|`c.count(k)`|返回关键字等于`k`的元素的数量。对于不允许重复关键字的容器，返回值永远是0或者1|
+|`c.lower_bound(k)`|返回一个迭代器，指向第一个关键字不小于`k`的元素|
+|`c.upper_bound(k)`|返回一个迭代器，指向第一个关键字不大于`k`的元素|
+|`c.equal_range(k)`|返回一个迭代器`pair`，指向第一个关键字等于`k`的元素|
+
+注意：
+ 
+- 当我们遍历一个`multimap`或者`multiset`时，保证可以得到序列中所有具有给定关键字的元素。
+- `lower_bound`返回的迭代器可能指向一个具有给定关键字的元素，但也可能不指向。如果关键字不在容器中，则`lower_bound`会返回关键字的第一个安全插入点--不影响容器中元素顺序的插入位置。
+- 如果`lower_bound`和`upper_bound`返回相同的迭代器，则给定关键字不在容器中。
+
+### 11.4 无序容器
+无序关联容器总共有4个：`unordered_map`和`unordered_set`;
+
+**桶管理**
+无序容器在存储组织上为一组桶，每个桶保存0个或者多个元素。无序容器使用一个哈希函数将元素映射到桶。
+
+**无序容器管理操作**
+
+|操作|含义|
+|:---|:---|
+|**桶接口**|  |
+|`c.bucket_count()`|正在使用的桶的数目|
+|`c.max_bucket_count()`|容器能容纳的最多的桶的数量|
+|`c.bucket_size(n)`|第n个桶中有多少个元素|
+|`c.bucket(k)`|关键字为`k`的元素在那个桶中|
+|**桶迭代**||
+|`local_iterator`|可以用来访问桶中元素的迭代器类型|
+|`const_local_iterator`|桶迭代器的`const`版本|
+|`c.begin(n),c.end(n)`|与前两个函数类似，但返回`const_local_iterator`|
+|**哈希策略**||
+|`c.load_factor()`|每个桶的平均元素数量。返回`float`值|
+|`c.max_load_factor()`|c维护桶的大小，返回`float`值。c会在需要时添加新的桶。以使得`load_factor<=max_load_factor`|
+|`c.rehash(n)`|重组存储，使得`bucket_count>=n`且`bucket_count>size/max_load_factor`|
+|`c.reserve(n)`|重组存储，使得c可以保存`n`个元素且不必`rehash`|
+
