@@ -357,7 +357,8 @@ Foo& Foo::operator=(const Sales_data &rhs){
 注意：
 
 - 析构函数调用时，先调用父类，再调用子类；与构造函数正好相反。
-- 当指向一个对象的引用或者指针离开作用域时，析构函数不会执行
+- 当指向一个对象的引用或者指针离开作用域时，析构函数不会执行。
+- delete 删除指针，是删除指针指向的那块内存，指针本身仍旧存在，因此需要，键指针指向NULL防止错误
 
 **三/五法则**
 三个基本操作可以控制类的拷贝操作：
@@ -368,7 +369,368 @@ Foo& Foo::operator=(const Sales_data &rhs){
 - 如果一个类需要自定义析构函数，几乎可以肯定它也需要自定义拷贝赋值运算符和拷贝构造函数；反之亦然。
 - 可以通过使用`=default`来显示地要求编译器生成合成的版本(默认构造函数)。
 - 可以使用`=delete`来阻止默认的拷贝个赋值函数。
-- 将拷贝和赋值拷贝设为私有函数，将使得用户代码不能拷贝这个类型的函数，用户代码在编译时错误，成员函数或者有元函数在连接诶时错误
+- 将拷贝和赋值拷贝设为私有函数，将使得用户代码不能拷贝这个类型的函数，用户代码在编译时错误，成员函数或者有元函数在连接诶时错误。
+- 希望阻止拷贝的类应该使用`=delete`来定义他们自己的拷贝构造函数和拷贝赋值运算符，而不应该将他们声明为`private`的。
+
+```c++
+HasPtr HasPtr::operator=(const HasPtr &rhs)
+{
+    auto newp=new string(*rhs.ps) ;// 拷贝底层string
+
+    delete ps; //释放旧内存
+
+    ps=newp; //从右侧运算对象拷贝数据到本对象
+
+    i=rhs.i;
+    return this; //返回对象本身
+
+}
+```
+当编写一个赋值运算符的时候，最好先将右侧运算对象拷贝到一个局部临时对象。当拷贝完成后，销毁左侧运算对象的现有成员就是安全的了。一旦左侧运算对象的资源被销毁，就只剩下将数据从临时对象拷贝到左侧运算对象的成员中了。
+
+拷贝赋值运算符通常执行拷贝构造函数和析构函数也要做的工作，公共的工作应该放在`private`的工具函数中。
+
+### 13.5 动态内存管理
+
+简单标准库vector类的简化实现版本。
+
+```c++
+//stdvec.h
+//类vector类内存分配策略的简化实现
+
+class StrVec{
+public:
+    StrVec():
+        elements(nullptr),first_free(nullptr),cap(nullptr){}
+    StrVec(const StrVec&); //拷贝构造函数
+
+    StrVec &operator=(const StrVec&); //拷贝赋值运算符
+
+    ~StrVec();  //析构函数
+
+    void push_back(const std::string&);  //拷贝元素
+
+    size_t size() const {return first_free-elements;}
+    size_t capacity() const {return cap-elements;}
+    std::string *begin() const {return elements;}
+    std::string *end() const {return first_free;}
+    // ...
+private:
+    Static std::allocator<std::string> alloc; //分配元素
+    //被添加元素的函数所使用
+    
+    void chk_n_alloc() {if(size()==capacity()) reallocate();}
+    //工具函数，被拷贝构造函数、赋值运算符和析构函数所使用
+    
+    std::pair<std::string*,std::string*> alloc_n_copy(const std::string*,const std::string*);
+    void free();  //销毁元素并释放内存
+
+    void reallocate();  //获得更多内存并拷贝已有元素
+
+    std::string *elemets;  //指向数组首元素的指针
+
+    std::string *frist_free; //指向数组第一个空闲元素的指针
+
+    std::string *cap; // 指向数组尾后位置的指针
+
+};
+
+//strvec.cpp
+
+void Strvec::push_back(const string& s)
+{
+    chk_n_alloc();  //确保有空间容纳新元素
+
+    //在frist_free指向的元素中构造s的副本
+    
+    alloc.construct(first_free++,s);
+};
+
+std::pair<std::string*,std::string*> alloc_n_copy(const std::string* b,const std::string* e)
+{
+    //分配空间保存给定范围中的元素
+    
+    auto data=alloc.allocate(e-b);
+    //初始化并返回一个pair,该pair由data和uninitialized_copy的返回值构成
+    
+    return {data.uninitialized_copy(b,e,data)};
+}
+
+void StrVec::free()
+{
+    //不能传递给deallocate 一个空指针，如果elements为0，函数什么也不做
+    
+    if(elements){
+        //逆序销毁旧元素
+        
+        for(auto p=first_free;p!=elements;)
+        {
+            alloc.destory(--p);
+            alloc.deallocate(elements,cap-elements);
+        }
+    }
+}
+
+StrVec::StrVec(const StrVec &s)
+{
+    //调用alloc_n_copy 分配内存空间以容纳与s中一样多的元素
+    
+    auto newdata=alloc_n_copy(s.begin(),s.end());
+    elements=newdata.frist;
+    frist_free=cap=newdata.second;
+}
+
+StrVec::~StrVec(){free();}
+
+StVec &StrVec::operator=(const StrVec &rhs)
+{
+    //调用alloc_n_copy 分配内存，大小与rhs中元素占用空间一样多
+    
+    auto data=alloc_n_copy(rhs.begin(),rhs.end());
+    free();
+    elements=data.first;
+    frist_free=cap=data.second;
+    return *this;
+}
+
+void StrVec::reallocate()
+{
+    //我们将分配当前大小两倍的内存空间
+    
+    auto newcapacity=size()?2*size():1;
+    //分配新内存
+    
+    auto newdata=alloc.allocate(newcapacity);
+    //将数据从旧内存移动到新内存
+    auto dest=newdata;  //指向新数组中下一个空闲位置
+
+    auto elem=elements; //指向旧数组中下一个元素
+
+    for(size_t i=0;i!=size();++i)
+    {
+        alloc.construct(dust++,std::move(*elem++));
+    }
+    free(); //一旦我们移动完成元素就释放旧内存空间
+
+    //更新我们的数据结构，执行新元素
+    elements=newdata;
+    first_free=dest;
+    cap=element+newcapacity;
+
+}
+```
+
+### 13.6 对象移动
+
+注意：标准容器库、string和shared_ptr类既支持移动也支持拷贝。IO类和unique_ptr类可以移动但不能拷贝。
+
+使用`&&`来进行右值引用。右值引用--只能绑定到一个将要销毁的对象。**左值持久；右值短暂**。右值引用只能绑定到临时对象。
+
+对于右值有：
+
+- 所引用的对象，将要被销毁
+- 该对象没有其他用户
+- 使用右值引用的代码可以自由地接管所引用的对象的资源
+- 变量是左值，因此我们不能将一个右值引用直接绑定到一个变量上，即使这个变量是右值引用类型。
+- 可以销毁一个移后对象，也可以赋予它新值，但不能够使用一个移后源对象的值。
+
+使用move来获得绑定到左值上的右值引用`int &&rr3=std::move(rr1);`
+
+注意：
+
+- 不抛出异常的移动构造函数和移动赋值运算符必须标记为`noexcept`。
+- 只有当一个类没有定义任何自己版本的拷贝控制成员，且它的所有数据成员都能移动构造或者移动赋值时，编译器才会为它合成移动构造函数或者移动赋值运算符。
+- 定义了一个移动构造函数或者移动赋值运算符符类，必须也定义自己的拷贝构造操作。否则，这些成员默认地被定义为删除的。
+- 如果一个类有一个可用的拷贝构造函数而没有移动构造函数，则其对象是通过拷贝构造函数来“移动”的。拷贝赋值运算符和移动赋值运算符的情况类似。
+- 移动赋值函数，相对拷贝构造函数，更减少资源的使用。
+- 对象移动数据并不会销毁此对象，但有时在移动完之后，源对象会被销毁。编写移动操作时，必须保证源对象可以析构。
+- 一个类集邮移动构造，又有拷贝构造，则移动是右值，拷贝是左值。
+- 没有移动构造函数，右值也会被拷贝。但是编译器不会合成移动构造函数。即便是使用std::move也是调用的拷贝构造函数。
+- 不要随意使用移动操作，一个移动源对象具有不确定的状态。当我们使用`move`时，必须绝对确认移后源对象没有其它用户。
+- 移动接收`T&&`,拷贝接收`T&`
+
+**左值和右值引用成员函数**
+c++中允许右值进行赋值例如：
+
+```c++
+auto s1="hello";
+auto s2="word";
+s1+s2="wow!";
+```
+为了阻止这种情况的发生，使用 **引用限定符**：`&` 来强制指定左侧运算对象(即，this指向的对象)是一个左值。或者使用`&&`，强制指明，左侧运算对象是一个右值，例如：
+
+```c++
+class Foo{
+public:
+    Foo &operator=(const Foo&) &; //只能向可修改的左值赋值
+
+}
+
+class Foo{
+public:
+    Foo someMem() & const; //错误限定符const 必须在前
+    
+    Foo anotherMem() const &; //正确
+}
+
+Foo &retFoo();  //返回一个引用；retFoo调用时一个左值
+
+Foo retVal();  // 返回一个值；retVal调用时一个右值
+
+Foo i,j; //i,j均是左值
+
+i=j; //正确：i是左值
+
+retFoo()=j ;// 正确:retFoo()返回一个左值
+
+retVal()=j; //错误:retVal()返回一个右值
+
+i=retVal();  //正确：我们将一个右值作为赋值操作的右侧运算对象
+
+//成员函数可以根据const区分其重载版本，引用也可以区分重载版本
+
+class Foo{
+public:
+    Foo sorted() &&;  //可用于可改变的右值
+
+    Foo sorted() const &; //可用于任何类型的Foo
+}
+
+//本对象为右值，因此可以原址排序
+
+Foo Foo::sorted() &&
+{
+    sort(data.begin(),data.end());
+    return *this;
+}
+
+//本对象是const或者是一个左值，不论何种情况我们都不能对其进行原址排序
+Foo Foo::sorted() const & {
+    Foo ret(*this);  //拷贝一个副本
+
+    sort(ret.data.begin(),ret.data.end());  //排序副本
+
+    return ret;  //返回副本
+
+}
+
+//这里编译器会根据sorted 的对象的左值/右值属性来确定使用那个sorted版本
+
+
+```
+注意： 如果一个成员函数有引用限定符，则具有相同参数列表的所有版本都必须有引用限定符。
+
+## 第14 章 重载运算符与类型转换
+
+重载的运算符是具有特殊名字的函数；他们的名字由关键字，operator和其后要定义的运算符共同组成。
+注意：
+- 一个类成员运算符函数，第一个运算对象绑定到隐式的`this`指针上。因此成员函数运算符函数的显示参数数量比运算符的运算对象，总少一个。
+- 我们无法改版内置类型的运算符含义。
+- 我们只能重载已有的运算符，而无权发明新的运算符号。例如我们不能提供operator**来执行幂操作。
+
+**可重载运算符**
+
+|运算符类型|运算符种类|
+|:--|:---|
+|双目算术运算符| `+ (加)，-(减)，*(乘)，/(除)，% (取模)`|
+|关系运算符  | `==(等于)，!= (不等于)，< (小于)，> (大于>，<=(小于等于)，>=(大于等于)`|
+|逻辑运算符  | `//(逻辑或)，&&(逻辑与)，!(逻辑非)`|
+|单目运算符  | `+ (正)，-(负)，*(指针)，&(取地址)`|
+|自增自减运算符 | `++(自增)，--(自减)`|
+|位运算符 |   `/ (按位或)，& (按位与)，~(按位取反)，^(按位异或),，<< (左移)，>>(右移)`|
+|赋值运算符  | `=, +=, -=, *=, /= , % = , &=, /(其实是竖着的)=, ^=, <<=, >>=`|
+|空间申请与释放| `new, delete, new[ ] , delete[]`|
+|其他运算符 |  `()(函数调用)，->(成员访问)，,(逗号)，[](下标)`|
+
+**不可重载的运算符列表**
+
+|运算符|含义|
+|:---|:---|
+|`.`|成员访问运算符|
+|`.*, ->*`|成员指针访问运算符|
+|`::`|域运算符|
+|`sizeof`|长度运算符|
+|`?:`|条件运算符|
+|`#`| 预处理符号|
+
+注意：
+
+1. 运算重载符不可以改变语法结构。
+2. 运算重载符不可以改变操作数的个数。
+3. 运算重载符不可以改变优先级。
+4. 运算重载符不可以改变结合性。
+
+**类重载、覆盖、重定义之间的区别：**
+
+重载指的是函数具有的不同的参数列表，而函数名相同的函数。重载要求参数列表必须不同，比如参数的类型不同、参数的个数不同、参数的顺序不同。如果仅仅是函数的返回值不同是没办法重载的，因为重载要求参数列表必须不同（发生在同一个类里）。
+
+覆盖是存在类中，子类重写从基类继承过来的函数。被重写的函数不能是static的。必须是virtual的。但是函数名、返回值、参数列表都必须和基类相同（发生在基类和子类）
+
+重定义也叫做隐藏，子类重新定义父类中有相同名称的非虚函数 ( 参数列表可以不同 ) （发生在基类和子类）。
+
+操作符的等价调用：
+```c++
+data1+data2; //普通的表达式
+
+operator+(data1,data2); //等价的函数调用
+
+data1.operator+=(data2); //等价的函数调用
+
+```
+
+注意：尽量明智地使用运算符重载。只有当操作的含义对于用户磊说清晰明了时才能使用运算符。当其存在二意性时，最好不要使用。
+
+### 14.2 输入和输出运算符
+
+输出`<<`重载示例:
+
+```c++
+ostream &operator<<(ostream &os,const Sales_data &item)
+{
+    os<<item.isbn()<<" "<<item.units_sold<<""
+    <<item.revenue<<" "<<item.avg_price();
+
+    return os;
+}
+```
+注意： 
+- 输出运算符应该主要负责打印对象的内容而非控制格式，输出运算符不应该打印换行符。
+- 输入输出运算符必须是非成员函数，不能是类的成员函数。否则，他们左侧运算对象将是我们的类的一个对象。
+
+输入`>>`重载示例：
+
+```c++
+istream &opertaor>>(istream &is,Sales_data &item)
+{
+    double price;// 不需要初始化，因为我们将先读入数据到`price`,之后才使用它
+
+    is>>item.bookNo>>iten.units_sold>>price;
+    //检查输入是否成功
+
+    if(is)
+    {
+        item.revenue=item.units_sold*price;
+    }else{
+        item=Sales_data(); //输入失败：对象呗赋予默认的状态
+
+    }
+    return is;
+
+
+}
+```
+注意：
+
+1. 当流含有错误类型的数据时，读取操作可能失败。之后的其他使用都将失败
+2. 当读取操作达到文件末尾或者遇到输入流的其它错误时，也会失败
+3. 当读取操作发生错误时，输入运算符应该负责从错误中恢复。
+
+
+
+
+
+
+
 
 
 
