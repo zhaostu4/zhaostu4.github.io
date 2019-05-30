@@ -261,10 +261,12 @@ cout<<*q<<endl;  // 灾难： q指向未构造的内存。
 
 while (q!=p)
     alloc.destory(--q);  //释放我们真正构造的string，此时元素被销毁，可以重新使用这部分内存来保存其它string
+
 alloc.deallocate(p,n);  //释放内存操作
 
 ```
 **allocator 算法**
+
 |算法|含义|
 |:---|:---|
 |`uninitialized_copy(b,e,b2)`|将迭代器b和e之间的输入，拷贝到迭代器b2指定的未构造的原始内存中，b2指向的内存必须足够大，能够容纳输入序列中元素的拷贝|
@@ -605,6 +607,7 @@ Foo Foo::sorted() &&
 }
 
 //本对象是const或者是一个左值，不论何种情况我们都不能对其进行原址排序
+
 Foo Foo::sorted() const & {
     Foo ret(*this);  //拷贝一个副本
 
@@ -724,6 +727,318 @@ istream &opertaor>>(istream &is,Sales_data &item)
 1. 当流含有错误类型的数据时，读取操作可能失败。之后的其他使用都将失败
 2. 当读取操作达到文件末尾或者遇到输入流的其它错误时，也会失败
 3. 当读取操作发生错误时，输入运算符应该负责从错误中恢复。
+
+### 14.3 算术和关系运算符
+
+注意：
+
+- 如果同时定义了算术运算符和相关的复合赋值运算符，则通常情况下应该使用复合赋值来实现算术运算符。
+- 如果某个类在逻辑上有相等性的含义，则该类应该定义`operator==`。
+- 如果存在唯一一种可靠的`<`定义，则应该考虑为这个类定义`<`运算符。如果类同时还包含`==`，则当且仅当`<`的定义和`==`产生的结果一致时才睡定义`<`运算符。
+- 重载赋值运算符。不论形参的类型是什么，赋值运算符都必须定义为成员函数。
+- 赋值运算符必须定义为类的成员，复合赋值运算符通常情况下也应该这样做。这两类运算符都应该返回左侧运算对象的引用。
+
+使用示例：
+
+```c++
+//重载赋值运算符
+StrVec &StrVec::operator=(initializer_list<string> il)
+{
+    //alloc_copy分配内存空间，并从给定安慰内拷贝元素
+    
+    auto data=alloc_n_copy(il.begin(),il.end());
+    free();  // 销毁对象中的元素并释放内存空间
+
+    elements=data.frist;//更新数据成员，使其指向新空间
+
+    first_free=cap=data.second; 
+    return *this;  
+
+} 
+
+//重载复合赋值运算符
+
+StrVec &StrVec::operator+=(initializer_list<string> il)
+{
+    unit_sold+=rhs.units_sold;
+    revenue+=rhs.revenue;
+    return *this;
+}
+```
+### 14.5 下标运算符 `operator [] `
+注意：
+
+-  下标运算符必须是成员函数。
+-  如果一个类包含下标运算符，则它通常会定义两个版本；一个返回普通引用，一个是类的常量成员并且返回常量引用。
+
+使用示例:
+
+```c++
+class StrVec{
+public:
+    std::string& operator [](std::size_t n){return elements[n];}
+
+    const std::string& operator[] (std::size_t n) const
+    { return element[n];}
+
+private:
+    std::string *elements;  //指向数组首元素的指针
+}
+
+const StrVec cvec=svec;  //把svec的元素拷贝到cvec中
+
+//如果svec中含有元素，对第一个元素运行string的empty函数
+
+if(svec.size()&&svec[0].empty){
+    svec[0]="zero";  //正确：下标运算符返回string的引用
+
+    svec[0]="Zip";  //错误；对cvec取下标返回的是常量引用
+}
+```
+
+### 14.6 递增和递减运算符
+
+注意：
+
+- 定义递增和递减运算符的类应该同时定义前置版本和后置版本。这些运算符通常应该被定义成类的成员。
+- 为了与内置版本保持一致，前置运算符应该返回递增或者递减后对象的引用。
+- 为了与内置版本保持一致，后置运算符应该返回对象的原值(递增或者递减之前的值)，返回的形式是一个值而非引用。
+- 因为我们不会用到`int`形参，所以无需为其命名。
+
+```c++
+//前置版本：返回递增/递减对象的引用
+
+StrBlobPtr& StrBlobPtr::operator++()
+{
+    //如果curr已经指向了容器的尾后位置，则无法递增它
+    
+    check(curr,"xxxx");
+    ++curr;  //将curr在当前状态下向前移动一个元素
+
+    return *this;
+} 
+
+//后置版本:递增/递减对象的值，但是返回原值
+StrBlobPtr StrBlobPtr::operator++(int)
+{
+    //此处无需检查有效性，调用前置递增运算时才需要检查
+    
+    StrBlobPtr ret=*this;  //记录当前的值
+
+    ++*this   //向前移动一个元素，前置++需要检查递增的有效性
+
+    return ret;  //返回之前记录的状态
+
+}
+
+```
+**C++中 i++ 与++i 的区别**
+
+- i++ 是指先使用i，只用之后再讲i的值加一，
+- ++i 是将i的值先加一，然后在使用i；
+
+如果i是一个整型变量那么i++ 与++i 几乎是没有区别的，在学习C++的后面会有迭代器，迭代器是一个对象，当i是迭代器时，那么++i的效率运行速度就比i++快；所以我们在一般的for循环语句中当i++与++i都可以使用时，可以考虑使用++i，养成一种良好的风格。
+
+### 14.7 成员访问运算符
+
+成员访问运算符，在 迭代器及智能指针类中常常见到解引用运算符`*`和箭头运算符`->`。我们以如下形式向`StrBlobPtr`类添加这两种运算符：
+
+```c++
+class StrBlobPtr{
+public:
+    std::string& operator*() const
+    {
+        auto p=check(curr,"dereference past end");
+        return (*p)[curr];  //(*p)是对象所指的vector
+
+    }
+    std::string* operator->() const
+    {
+        //将实际工作委托给解引用运算符
+        return& this->operator*();
+    }
+    //将两个运算符定义成了const成员，这是因为与递增和递减预算符不一样，获取一个元素并不会改变StrBlobPtr对象的状态
+}
+```
+注意：
+
+- 箭头运算符必须是类的成员。解引用运算符通常也是类的成员，尽管并非必须如此。
+- 重载的箭头运算符必须返回类的指针或者自定义了箭头运算符的某个类的对象
+
+### 14.8 函数调用运算符
+如果类重载了函数调用运算符，则我们可以像使用函数一样灵活使用该类的对象。因为这样的类同时也能存储状态，所以与普通函数相比它们更加灵活。例如：
+
+```c++
+strcut absInt{
+    int operator()(int val) const
+    {
+        return val<0?-val:val;
+    }
+};
+
+//使用
+
+int i=-42; 
+absInt absObj;  // 含有函数调用运算符符对象
+
+int ui=absObj(i);  //将i传递给absObj.operator()
+```
+
+注意：
+- 函数调用运算符必须是成员函数。一个类可以定义多个不同版本的调用运算符，相互之间应该在参数数量或者类型上有所区别。
+- 如果类定义了调用运算符，则该类的对象称作 **函数对象**。因为可以调用这种对象，所以我们说这些对象的“行为就像函数一样”。
+- lambda是就是一个典型的函数对象。但是lambda表达式的类不含默认构造函数、赋值运算符及默认析构函数；它是否含有默认的拷贝/移动构造函数则通常要视捕获的数据成员类型而定。
+- 对于比较两个无关指针的内存地址，将产生未定义的行为，标准函数库提供了相关函数兑现进行定义。
+
+**标准库函数对象**
+
+|算术|关系|逻辑|
+|:---|:---|:---|
+|`plus<Type>`|`equal_to<Type>`|`logical_and<Type>`|
+|`minus<Type>`|`not_equal_to<Type>`|`logical_or<Type>`|
+|`multiplies<Type>`|`greater<Type>`|`logical_not<Type>`|
+|`divides<Type>`|`greater_equal<Type>`||
+|`modulus<Type>`|`less<Type>`||
+|`negate<Type>`|`less_equal<Type>`||
+
+```c++
+vector<string  *> nameTable; //指针的vector
+//错误会产生未定义的行为
+
+sort(nameTable.begin(),nameTable.end(),[](string *a,string *b){return a<b;});
+//正确：标准库规定指针的less是定义良好的
+
+sort(nameTable.begin(),nameTable.end(),less<string *>());
+
+```
+
+**可调用对象与function**
+c++中的可调用对象：
+
+- 函数
+- 函数指针
+- lambda表达式
+- bind创建的对象
+- 重载了函数调用运算符的类
+
+对于相似操作但是输入参数不同的情况，我们可以使用一个名为`function`的新标准库类型解决上述问题,`function`定义在`functional`头文件中。
+
+**function的操作**
+
+|操作|含义|
+|:---|:---|
+|`function<T> f`|f是一个用来存储可调用对象的空`function`,这些课调用对象的调用形式应该与`T`相同|
+|`function<T> f(nullptr)`|显示构造一个空`function`|
+|`function<T> f(obj)`|在f中存储可调用对象`obj`的副本|
+|` f`|将f作为条件:当f含有一个可调用对象时为真；否则为假|
+|`f(args)`|调用f中的对象，参数时`args`|
+
+**定义为function<T>的成员类型**
+|类型|含义|
+|:---|:---|
+|`result_type`|该function类型的可调用对象返回的类型|
+|`argument_type`|当T有一个或者两个实参时定义的类型。T只有一个实参|
+|`frist_argument_type`|当T有一个或者两个实参时定义的类型。T只有两个实参,第一个参数|
+|`second_argument_type`|当T有一个或者两个实参时定义的类型。T只有一个实参,第二个参数|
+
+使用示例：
+
+```c++
+function<int(int,int)> f1=add;  //函数指针
+
+function<int(int,int)> f2=divide();  //函数对象类的指针
+
+function<int(int,int)> f3=[](int i,int l){return i*j;};  //函数指针
+
+cout<<f1(4,2)<<endl;  //打印
+
+cout<<f2(4,2)<<endl;  //打印
+
+cout<<f3(4,2)<<endl;  //打印8
+
+//使用map映射
+
+map<string,function<int(int,int)> > binops={
+    {"+",add},  //函数指针
+
+    {"-",std::minus<int>()},  //标准库函数对象
+
+    {"/",divide()},  // 用户定义的函数对象
+
+    {"*",[](int i,int j){return i*j;}},  //未命名的lambda
+
+    {"%",mod} //已命名的lambda对象
+};
+```
+注意：
+新版本标准库中的`function`类与旧版本中的`unary_function`和`binary_function`没有关联，后两个类已经被更加通用的`bind`函数代替了。
+
+### 14.9 重载、类型转换和运算符
+
+**类类型转换：** 将实参类型对象隐式转换为类类型，转换构造函数和类型转换运算符共同定义类类型转换，也称作 **用户定义的类类型转换**。
+
+例如：`double b=3.141516;int a=(int)b;`
+
+**类型转换运算符：** 将一个类类型的值转换成其它类型。一般形式如下:
+`operator type() const`
+
+
+注意：
+
+- 一个类型转换函数必须是类的成员函数；它不能声明返回类型，形参类表也必须为空。类型转换函数通常应该是`const`。
+- 类型转换运算符可能产生意外结果，例如bool类型转换，能被隐式地转换为int类型输出。
+- 为了防止上一条情况发撒恒，c++11定义了显示的类型转换运算符；例如：
+
+```c++
+class SmallInt{
+public:
+    //编译器不会自动执行这一类型转换
+
+    explicit operator int() const {return val;}
+}
+//显式地请求类型转换
+
+SmallInt si=3;
+static_cast<int>(si)+3;
+```
+- 向bool的类型转换通常用在条件部分，因此`operator bool`一般定义成`explicit`的。
+- 通常情况下，不要为类定义相同的类型转换，也不要在类中定义两个及两个以上转换源或者转换目标是算术类型的转换。
+- 当我们使用两个用户定义的类型转换时，如果转换函数之前或者之后存在标准类型转换，则标准类型转换将决定最佳匹配到底是哪个
+- 除了显式向bool类型的转换为，应该尽量避免定义类型转换函数并尽可能地限制“显然正确”的非显式构造函数。
+- 如果在调用重载函数时，需要构造函数或者强制类型转换来改变实参类型，则这通常意味着程序设计存在不足。
+- 在调用重载函数时，如果需要额外的标准类型转换，则该转换的级别只有当所有可行函数都请求同一个用户定义的类型转换时才有用。如果所需的用户定义的类型不止一个，则该调用具有二义性。
+
+#### 14.9.3 函数匹配与重载运算符
+
+注意：
+
+- 表达式中运算符的候选函数集即应该包括成员函数，也应该包括非成员函数。
+- 如果我们对同一个类既提供了转换目标是算术类型的类型转换，也提供了重载的运算符，则将会遇到运算符与内置运算符符二义性问题。
+
+例如：
+```c++
+class SmallInt{
+    friend SmallInt operator+ (const SmallInt&,const SmallInt&);
+public:
+    SmallInt(int =0);  // 转换源为int的类型转换
+
+    operator int() const {return val;} //转换目标为int的类型转换
+
+private:
+    std::size_t val;
+};
+
+SmallInt s1,s2;
+SmallInt s3=s1+s2;   //使用重载的operator+
+
+int i=s3+0;  //二义性错误
+
+```
+
+
+
+
+
 
 
 
