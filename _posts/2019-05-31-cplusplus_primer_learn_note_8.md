@@ -1082,5 +1082,34 @@ remove_reference<decltype(std::move(i)>::type c;
 **特例化成员**
 
 ```c++
+template <typename T> struct Foo
+{
+    Foo(const T &t=T()):mem(t) { }
+    void Bar() {/*...*/}
+
+    T mem;
+
+    ...
+    
+};
+//特例化模板函数
+
+template <>
+void Foo<int>::Bar()
+{
+    //进行应用于int的特例化处理
+
+}
+//实例化操作
+
+Foo<string > fs; //实例化Foo<string>::Foo()
+
+fs.Bar();  //实例化 Foo<string>::Bar()
+
+Foo<int> fi; //实例化 Foo<string>::Foo()
+
+fi.Bar();  //使用我们特例化版本的Foo<int>::Bar()
+
+
 
 ```
