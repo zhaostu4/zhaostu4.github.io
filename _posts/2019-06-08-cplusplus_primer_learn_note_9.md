@@ -117,7 +117,7 @@ bitset<32> bitvec5(str,5,4); // 从str[5]开始的四个二进制位，1100
 bitset<32> bitvec6(str,str.size()-4); //使用最后四个字符
 ```
 
-![初始化流程](../img/2019-06-09-bitset-string.png)
+![初始化流程](wangpengcheng.github.io/img/2019-06-09-bitset-string.png)
 
 #### 17.2.2 bitset操作
 
@@ -430,7 +430,9 @@ sub and sequence
  */
 
 ```
-|flag*  | effects| notes|
+
+
+|flag* | effects| notes|
 |:---|:---|:---|
 |`match_default` |  Default| Default matching behavior. This constant has a value of zero**.|
 |`match_not_bol`  | Not Beginning-Of-Line  | The first character is not considered a beginning of line ("^" does not match).|
