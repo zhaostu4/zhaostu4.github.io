@@ -431,6 +431,7 @@ sub and sequence
 
 ```
 
+**正则表达式匹配选项**
 
 |flag* | effects| notes|
 |:---|:---|:---|
@@ -449,6 +450,7 @@ sub and sequence
 |`format_first_only`|  First only | Only the first occurrence of a regular expression is replaced.|
 
 ```c++
+
 string fmt="$2.$5.$7"; //将号码格式改为 ddd.ddd.dddd
 
 regex r(phone);  //用来寻找模式的regex对象
@@ -489,6 +491,8 @@ vector<unsigned> good_randVec()
 ```
 **随机数引擎基本操作**
 
+|操作|含义|
+|:---|:---|
 |`Engine e`|默认构造函数；使用该引擎类型默认的种子|
 |`Engine e(s)`|使用整型值s作为种子|
 |`e.seed(s)`|使用种子s重置引擎的状态|
