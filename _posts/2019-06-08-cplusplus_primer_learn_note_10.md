@@ -483,18 +483,26 @@ extern "C" double calc(double dparm){
 extern "C"
 {
 #endif
+
 #include <stdio.h>
+
 #include <stdlib.h>
+
 #include "libavcodec/avcodec.h"
+
 #include "libavformat/avformat.h"
 #include "libavutil/pixfmt.h"
+
 #include "libavutil/mathematics.h"
+
 #include "libavutil/time.h"
+
 #include "libswscale/swscale.h"
 
 #if defined(__cplusplus) || defined (c_plusplus)
 }
 #endif
+
 ```
 
 注意：extern "..."的重载和链接与语言本身有关。
