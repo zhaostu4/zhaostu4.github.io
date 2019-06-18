@@ -1,8 +1,8 @@
 ---
 layout:     post
-title:      C++ Primer 学习笔记 (二)
-subtitle:   C++ Primer 学习记录 (二)
-date:       2019-4-25
+title:      C++ Primer 学习笔记
+subtitle:   C++ Primer 学习记录
+date:       2019-4-17
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
 catalog: true
@@ -11,493 +11,389 @@ tags:
     - 基础编程
 ---
 
->2019-4-25 12:31:29 编写笔记如下
+# C++ Primer学习笔记
+> 2019-4-17 12:31:29 编写记录如下；
 
-## 第三章 字符串、向量和数组
+## 第1章 开始
+### std::cin 中的循环流使用
+_参考链接：_[while(cin >> num)循环输入问题](https://bbs.csdn.net/topics/390809866)[C++ cin输入流 详细用法](https://blog.csdn.net/imkelt/article/details/51925479);
 
-### 使用using name space
-c++中使用`using name space ` 来进行命名空间的选择，但是一般不建议直接在声明中使用。建议使用`spacename:: function`的格式；例如`std::cout`;并且头文件中，不应该包括`using`声明。
-
-### 标准库类型 string
-下面展示string的常用初始化方法：
-
+C++ 中可以使用`while(std::cin >> value){//Code }`的方式来进行循环数据的读入，直到没有输出为止；示例代码如下：
 ```c++
-    std::string s1; //默认初始化，s1市一个空字符
-    std::string s2=s1; //s2是s1的副本
-    std::string s3="hiya";//s3市该字符串字面值的副本
-    std::string s5("hiya");//s3是字面值“value”的副本，除了字面值最后的那个空字符除外
-    std::string s4(10,'c'); //s4 的内容是cccccccccc
-```
-`os<<s`、`is>>s`；从字符串的输入，输出流。例如：
-
-```c++
-#include <iostream>
-using namespace std;
-int main(int argc, char const *argv[])
+/*
+输入样例： 3 4 5 6
+输出 ： Sum is :18
+ */
+#inlude <iostream>
+int main()
 {
-    string s;
-    cin>>s; //将string 对象读入s,遇到空白停止
-    cout<<s<<endl;//输出
+    int sum =0;value=0;
+    //循环读取数据
+    while(std::cin>>value){
+        sm+=value;
+    }
+    std::out<<"Sum is:"<<sum<<std:endl;
     return 0;
 }
 ```
-`getline()`:读取函数整行，直到遇到换行符为止。
-注意`string 对象的size()`函数返回值类型是`string::size_type`;当他与一个具有负号的n比较时，肯定为true，因此建议使用`auto`来进行返回值的定义。防止`int`和`unsigned`可能带来的问题。
+注意：
 
-#### 标准库string重点字符处理--<cctype>头文件
+* 当键盘向程序中输入数据时，对于文件结束；Windows是`Ctrl+Z`然后 `Enter`或者`Return`;UNIX 中是`Ctrl+D` 然后再加`enter`;
+* 当缓冲区中有残留数据时，`std::cin`会直接去读取缓冲区的数据而不会请求键盘输入。重要的是，回车符也会被存在输入缓冲区中。
+* 当程序中有多个等待循环输入时，需要使用`cin.clear()`来重置循环状态，方便再次输入; 
 
-|函数名称|功能|
-|:---:|:---|
-|`isalnum(c)`|当c是字母或数字时为真|
-|`isalpha(c)`|当c是字母时为真|
-|`iscntrl(c)`|当c是控制字符时为真|
-|`isdigit(c)`|当c是数字时为真|
-|`isgraph(c)`|当c不是空格但可以打印时为真|
-|`isalower(c)`|当c是小写字母时为真|
-|`isprint(c)`|当c是可打印字符时为真|
-|`ispunct(c)`|当c是标点符号时为真|
-|`isspace(c)`|当c是空白时为真（空格，制表符、回车符、换行符、进纸符中的一种）|
-|`issupper(c)`|当c是大写字母时为真|
-|`isxdigit(c)`|当c是十六进制数字时为真|
-|`tolower(c)`|转换字母为小写|
-|`toupper(c)`|转换字母为大写|
+# 第二章 变量和基本类型
 
-使用示例：
+## C++变量和基本类型
+### C++中的基本类型
+_参考链接：_[C/C++中基本数据类型所占内存大小](https://blog.csdn.net/zcyzsy/article/details/77935651);[C/C++中基本数据类型在不同系统中所占空间大小](https://blog.csdn.net/yimingsilence/article/details/54730438);
+
+C++中定义了算术类型(arithmetic type)和空类型(void)在内的基础数据结构算术类型表如下：
+
+| 类型 | 含义 | 最小尺寸 |
+|:------------:|:---------------:|:-----:|
+| bool         | 布尔类型| 未定义 |
+| char | centered | 8位 |
+| wchart_t | 宽字符 | 16位 |
+| chart16_t | Unicode字符 | 16位 |
+| chart32_t | Unicode字符 | 32位 |
+| short | 短整型 | 16位 |
+| int | 整型 | 16位 |
+| long | 长整型 | 32位 |
+| long long | 长整型 | 64位 |
+| float | 单精度浮点数 | 6位有效数字 |
+| double | 双精度浮点数 | 10位有效数字 |
+| long double | 扩展精度浮点数 | 10位有效数字 |
+
+注意：
+
+* 关于不同类型，字节内存分配的问题，不同的操作系统存在不同的内存分配策略；因此不一定按照上面的进行分配；详细内容参看参考链接。
+* 对于C++中的字节对齐内容需要重点考虑([C++ 字节对齐的总结(原因和作用)](https://blog.csdn.net/sweetfather/article/details/78487563);[C/C++ 字节对齐](https://blog.csdn.net/chengonghao/article/details/51674166));
+* c++中除去布尔类型和扩展的字符类型之外，其它类型可以划分为带符号的(signed)和无符号的(unsigned)两种；无符号仅能表示大于0的值。器字节内存分配也有所不同；（[C/C++ unsigned 详细探讨](https://blog.csdn.net/zhenlin123/article/details/81062635)）;
+
+### C++中的声明和定义
+C++中使用分离式编译机制，允许每个文件被单独编译；为了支持这种模式；C++语言将声明和定义区分开来；声明(declaration) 使得名字为程序所知；定义（definition）负责创建与名字关联的实体。
+如果想要声明一个变量而非定义它，就在变量名字前添加关键字`extern`;而且不要显示的初始化变量：
+```c++
+extern int i ;//声明i 而非定义i
+int j;//声明并定义j
+```
+### C++中的类型转换：
+C++中的类型转换分为显式转换和隐式转换2种；显式转换直接在代码中注明其转换类型;如`double a=1.002;int i=(int)a;`将类型进行显式转换；同时也存在隐式转换；如`int i=10/1.0`;其中`10/1.0`即包含隐式的`int`到`double`的转换，`=`又进行了一次`double`到`int`的隐式转换；隐式转换在编码规范中不推荐；应该劲量使用显式转换；
 
 ```c++
-string s("hello word !!!");
-decltype(s.size()) punct_cnt=0;
-for (auto c : s)//注意这里auto是拷贝无法改变其中的char的值，可以使用&c进行值的改变。
-{
-    if(ispunct(c))
-    {
-        ++punct_cnt;//标点负号计数值加1；
-    }
-    cout<<punct_cnt
-        <<"punctuation characters in"<<s<<endl;
-}
-//输出结果
-3 punctuation characters in hello word!!!
+bool b=42;      //b为真
+int i=b;        //i的值为1
+i=3.14;         //i的值为3
+double pi=i;    //pi的值为3.0
+unsigned char c=-1; //假设char占a比特，c的值为255
+signed char c2=256; //假设char:占8比特，c2的值是未定义的
 ```
-将输入十进制数字转化为十六进制：
+* 当数字加减超过数据类型的取值范围的时候，就会按照位运算进行取模，输出结果是取模之后的结果（[C++ 带符号和无符号char类型赋值超出表示范围的情况](https://blog.csdn.net/eastlhu/article/details/72809256)）；
 
+例如：8比特大小的unsigned char可以表示0至255区间内的值，如果我们赋了一个区间以外的值，则实际的结果是该值对256（总数）取模后所得的余数。
+因此，把-1赋给8比特大小的unsigned char所得的结果是255，使用2种方法计算：
+
+> 有整数a和b，a对b进行取模或取余运算
+> 
+> 1、求整数商：c=a/b
+> 
+> * 取模运算在计算商值向负无穷方向舍弃小数位
+> * 取余运算在计算商值向0方向舍弃小数位
+>
+> 2、计算模或者余数：r=a-(c*b)
+> 
+> * 取模运算遵循尽可能让商小，取余运算遵循尽可能让余数的绝对值小。因此，取模和取余的结果不同。
+> * mod为取模，rem为取余，取模和取余所得的结果在a和b(同为整数) 符号相同 的时候是相等的
+> * 当a和b符号一致时，求模运算和求余运算所得的c的值一致，因此结果一致。但是当符号不一致的时候，结果不一样。
+> * 具体来说，求模运算结果的符号和b一致，求余运算结果的符号和a一致
+
+在本例中，将-1和256带入a和b，c=-1/256，向负无穷方向舍弃小数得-1，计算得r=255.
+> 计算机中带符号的整数采用二进制的补码进行存储;
+> 正数的补码等于其二进制编码;
+> 负数的补码等于其绝对值的二进制编码，取反，再加1;
+> 在本例中，-1的绝对值是1，二进制编码为0000 0001，取反加1就是1111 1111;
+> unsigned是无符号数，会把1111 1111看成正数，刚好是255的二进制编码。
+
+```c++
+
+unsigned u=10;
+int i=-42;
+std::cout<<i+i<<std::endl; //正确：输出32
+
+std::cout<<u+i<<std::endl; //如果int占32位，输出4294967264
+//上面讲-42转化为unsigned int 负数转化为无符号函数，类似于直接给无符号数赋值一个负值；等于这个负数加上无符号数的模。  
+
+unsigned ul=42,u2=10;
+std::cout<<u1-u2<<std::endl;//正确：输出32；
+
+std::cout<<u2-u1<<std::endl;//正确：不过，结果是取模后的值；
+
+```
+
+GCC编译器32位机和64位机各个类型变量所占字节数
+
+|C类型| 32位机器(字节)| 64位机器(字节)|
+|:---|:---|:---|
+|`char` | 1 |1|
+|`short`| 2| 2|
+|`int`| 4 |4|
+|`long int`|  4| 8|
+|`long long`| 8| 8|
+|`char *` | 4 |8|
+|`float`| 4| 4|
+|`double`|  8| 8|
+
+
+
+
+### 字面常量值：
+字面常量值就是常量；如`10/*十进制*/`；`014/*八进制*/`；`0x14/*十六进制*/`；包含整数和字符；C++11标准中允许使用`{}`进行数据对象的初始化，但是C++98中并不允许；例
+```c++
+vector<int > main_test={1,2,3};
+```
+### C++中的关键字
+_参考链接：_ [C++关键字详解](https://blog.csdn.net/scmuzi18/article/details/53696778);
+
+C++中存在预定义的关键字；如下图所示
+
+![C++关键字表格](https://wangpengcheng.github.io/img/cplusplus_key_words.png)
+
+注：上表中为C++98/03中的63个关键字，其中红色标注为C语言中的32个关键字。C++11中有73个关键字，新增加的10个为：`alignas、alignof、char16_t、char32_t、constexpr、decltype、noexpect、nullptr、static_assert、thread_local`
+
+1. asm
+   _asm是一个语句的分隔符。不能单独出现，必须接汇编指令。一组被大括号包含的指令或一对空括号。
+例：
+```c++
+_asm
+{
+  mov al,2
+  mov dx,0xD007
+  out al,dx
+}
+```
+    也可以在每个汇编指令前加`_asm`
+```c++
+  _asm mov al,2
+  _asm mov dx,0xD007
+  _asm out al,dx
+```
+2. auto 
+   auto关键字会根据初始值自动推断变量的数据类型。不是每个编译器都支持auto。
+   例：
+```c++
+    auto  x = 7;  //使用整数7对变量x进行初始化，可推断x为int型。
+    auto  y=1.234;  //使用浮点数1.234对变量y进行初始化，可推断y为double型。
+```
+
+3. *_cast
+   即 `const_cast`、`dynamic_cast`、`reinterpret_cast`、`static_cast`。
+   C++类型风格来性转换。`const_cast`删除const变量的属性，方便赋值；`dynamic_cast`用于将一个父类对象的指针转换为子类对象的指针或引用；`reinterpret_cast`将一种类型转换为另一种不同的类型；`static_cast`用于静态转换，任何转换都可以用它，但他不能用于两个不相关的类型转换。
+4. `bool、true、false`
+
+`bool`即为布尔类型，属于基本类型中的整数类型，取值为真和假。`true`和`false`是具有布尔类型的字面量，为右值，即表示真和假。
+注`：`字面量`：`用于表达源代码中一个固定值的表示法。
+5. `break`、`cotinue`、`goto` 
+   `break`用于跳出`for`、`while`循环或`switch`语句。`continue`用于调到一个循环的起始位置。goto用于无条件跳转到函数内得标号处。一般情况不建议使用`goto`，风险较大。
+
+6. `switch`、`case`、`default`
+   `switch`分支语句的起始，根据`switch`条件跳转到`case`标号或`defalut`标记的分支上。
+
+7. `catch`、`throw`、`try`
+   用于异常处理。`try`指定`try`块的起始，`try`块后的`catch`可以捕获异常。异常由`throw`抛出。`throw`在函数中还表示动态异常规范。
+8、`char`、`wchar_t`
+   表示字符型和宽字符型这些整数类型（属于基本类型），但一般只专用于表示字符。`char`（和`signed char`、`unsigned char`一起）事实上定义了字节的大小。`char`表示单字节字符，`wchar_t`表示多字节字符。
+9. `const`、`volatile`
+   `const`和`volatile`是类型修饰符，语法类似，用于变量或函数参数声明，也可以限制非静态成员函数。`const`表示只读类型（指定类型安全性，保护对象不被意外修改），`volatile`指定被修饰的对象类型的读操作是副作用（因此读取不能被随便优化合并，适合映射I/O寄存器等）。
+  * `volatile`:
+        * 当读取一个变量时，为提高存取速度，编译器优化时有时会先把变量读取到一个寄存器中，以后再取变量值时，就直接从寄存器中取值。
+        * 优化器在用到`volatile`变量时必须每次都小心地重新读取这个变量的值，而不是使用保存到寄存器里的备份。
+        `volatile`适用于多线程应用中被几个任务共享的变量。
+10. `struct`、`class`、`union`
+  用于类型声明。`class`是一般的类类型。`struct`在C++中是特殊的类类型，声明中仅默认隐式的成员和基类访问限定与`class`不同（`struct`是`public`，`class`是`private`）。`union`是联合体类型。满足特定条件类类型——`POD struct`或`POD union`可以和C语言中的`struct`和`union`对应兼容。
+注：POD类型（Plain Old Data）,plain---代表普通类型，old---代表可以与C语言兼容。
+11. `new`、`delete`
+   `new`、`delete`属于操作符，可以被重载。`new`表示向内存申请一段新的空间，申请失败会抛出异常。`new`会先调用`operator new`函数，再在`operator new`函数里调用`malloc`函数分配空间，然后再调构造函数。`delete`不仅会清理资源，还会释放空间。`delete`县调用析构函数，其次调用`operator delete`函数，最后在`operator delete`函数里面调用`free`函数。`malloc`申请内存失败会返回空。`free`只是清理了资源，并没有释放空间。
+12. `do`、`for`、`while`
+  循环语句的组成部分，C和C++都支持这3种循环。
+13. 数值类型，如 `int`、`double`、`float`、`short`、`long`、`signed`、`unsigned`
+　　`signed`和`unsigned`作为前缀修饰整数类型，分别表示有符号和无符号。`signed`和`unsigned`修饰`char`类型，构成`unsigned char`和`signed char`，和`char`都不是相同的类型；不可修饰`wchar_t`、`char16_t`和`char32_t`。其它整数类型的`signed`省略或不省略，含义不变。`signed`或`unsigned`可单独作为类型，相当于`signed int`和`unsigned int`。
+　　`double`和`float`专用于浮点数，`double`表示双精度，精度不小于`float`表示的浮点数。`long double`则是C++11指定的精度不小于`double`的浮点数。
+14. `if`和`else`
+   条件语句的组成部分。if表示条件，之后else表示否定分支。
+15. `enum`
+  构成枚举类型名的关键字。
+16. `explicit`
+    该关键字的作用就是避免自定义类型隐式转换为类类型。
+17. `export`
+　　使用该关键字可实现模板函数的外部调用。对模板类型，可以在头文件中声明模板类和模板函数；在代码文件中，使用关键字export来定义具体的模板类对象和模板函数；然后在其他用户代码文件中，包含声明头文件后，就可以使用该这些对象和函数。
+18. `extern`
+  当出现`extern "C"`时，表示 `extern "C"`之后的代码按照C语言的规则去编译；当`extern`修饰变量或函数时，表示其具有外部链接属性，即其既可以在本模块中使用也可以在其他模块中使用。
+19. `friend`
+  友元。使其不受访问权限控制的限制。例如，在1个类中，私有变量外部是不能直接访问的。可是假如另外1个类或函数要访问本类的1个私有变量时，可以把这个函数或类声明为本类的友元函数或友元类。这样他们就可以直接访问本类的私有变量。
+20. `inline`
+     内联函数，在编译时将所调用的函数代码直接嵌入到主调函数中。各个编译器的实现方式可能不同。
+21. `mutable`
+　　`mutable`也是为了突破`const`的限制而设置的。被`mutable`修饰的变量，将永远处于可变的状态，即使在一个`const`函数中。
+22. `namespace`
+　　C++标准程序库中的所有标识符都被定义于一个名为`std`的`namespace`中。命名空间除了系统定义的名字空间之外，还可以自己定义，定义命名空间用关键字`namespace`，使用命名空间时用符号`::`指定。
+23. `operator`　　
+   和操作符连用，指定一个重载了的操作符函数，比如，operator+。
+24. `public`、`protected`、`private`
+   这三个都为权限修饰符。`public`为公有的，访问不受限制；`protected`为保护的，只能在本类和友元中访问；`private`为私有的，只能在本类、派生类和友元中访问。
+25. `register`
+　　提示编译器尽可能把变量存入到CPU内部寄存器中。
+26. `return`：`return`表示从被调函数返回到主调函数继续执行，返回时可附带一个返回值，由return后面的参数指定。return通常是必要的，因为函数调用的时候计算结果通常是通过返回值带出的。如果函数执行不需要返回计算结果，也经常需要返回一个状态码来表示函数执行的顺利与否（-1和0就是最常用的状态码），主调函数可以通过返回值判断被调函数的执行情况.
+27. `static`：可修饰变量（静态全局变量，静态局部变量），也可以修饰函数和类中的成员函数。static修饰的变量的周期为整个函数的生命周期。具有静态生存期的变量，只在函数第一次调用时进行初始化，在没有显示初始化的情况下，系统把他们初始化微0.
+28. `sizeof`
+   返回类型名或表达式具有的类型对应的大小。
+29. `template`
+    声明一个模板，模板函数，模板类等。模板的特化。
+30. `this`
+    每个类成员函数都隐含了一个`this`指针，用来指向类本身。`this`指针一般可以省略。但在赋值运算符重载的时候要显示使用。静态成员函数没有`this`指针。
+31. `typedef`
+    `typedef`声明，为现有数据类型创建一个新的名字。便于程序的阅读和编写。
+32. `virtual`
+    声明虚基类，虚函数。虚函数=0时，则为纯虚函数，纯虚函数所在的类称为抽象类。
+33. `typeid`
+    `typeid`是一个操作符，返回结果为标准库种类型的引用。
+34. `typename`
+    `typename`关键字告诉编译器把一个特殊的名字解释为一个类型。
+35. `using`
+     (1)、在当前文件引入命名空间，例`using namespace std`;
+     (2)、在子类中使用，`using`声明引入基类成员名称。
+36. `void`
+    特殊的"空"类型，指定函数无返回值或无参数。
+
+### 复合类型
+C++中的复合类型是指基于其他类型定义的类型；C++语言中基本的复合类型有：引用(&)和指针(*);
+
+引用(&)主要是为对象起了另外一个名字；注意引用类型的初始值必须是一个对象。
+#### 指针
+指针(*)也是间接指向另外一种类型的复合类型；但其相对引用有一下不同点：
+    * 指针本身是一个对象，允许对指针赋值和拷贝;而且在指针的声明周期内它可以先后指向几个不同的对象
+    * 指针无需在定义时赋值。和其它的内置类型一样，在块作用域内定义的指针如果没有初始化，也将拥有一个不确定的值。
+指针操作中`&`操作符，表示取地址作用
+```c++
+  int ival=42;
+  int *p=&ival;//p存放变量ival的地址,即p指针指向ival;
+```
+指针的值：
+1. 指向一个对象
+2. 指向紧邻对象所占空间的下一个位置
+3. 空指针，意味着指针没有指向任何对象
+4. 无效指针，上述情况之外的其它值。
+注意：
+1. 如果指针指向了一个对象；则允许使用解应用符`*`来访问对象。
+2. 对于指针变量，初始化时可以使用NULL来方便内存分配判断；但是在C++11标准中对象指针使用nullptr;对于未初始化的int 等基本数据类型可以使用NULL;
+
+#### void* 指针
+void* 指针是C语言中的保留项目，它是一种特殊的指针类型；可以用于存放任意对象的地址；
+但是因为void* 指针的不确定性，也意味着我们无法确定能够在这个对象上进行哪些操作。
+注意：
+```c++
+  int* p1,p2;//p1指向int的指针；p2是int类型 
+  int** pi//一个指向int指针的指针
+```
+#### const 关键字
+##### const * int 和int *const、const int * cosnt、const int &
+_参考链接：_[const int、const int *、int *cosnt、const int * const、const int &的区别](https://blog.csdn.net/itworld123/article/details/78967080);
+
+- `const int *`:该指针变量指向的是常量，即该指针变量的内容可以改变，但是该内容指向的内容不可改变！;即底层const(常量指针)；（其与`const int *`相同）；
+- `int *const`:声明该指针变量为常变量，即指针变量里面的内容不可改变，但是该内容指向的内容可以改变;即为常指针。
+- `const int * cosnt`:指向一个内容不可变的指针，且指向对象地址不能变；
+- `const int &`:在引用前面加上const，代表该引用为常引用，即被引用的对象不可改变。若是在形参中使用，则不可达到在函数里面修改变量值的目的。
+
+`const`关键字修饰的变量会在编译的时候将定义的字符串替换掉，为了提高编译效率和防止文件冲突，默认状态下const对象仅在文件内有效；
+注意：
+
+ 1. `const`是变量的值无法改变（有待商榷）；`static`是指变量直接在堆上分配内存，内存不会销毁，但是值可以改变；
+ 2. 当某一个文件中的const变量希望它能够在其它文件之间共享的时候；即在一个问价中定义const，而在其它多个文件中使用它，需要在`const`关键字前添加`extern`关键字；
+ 
+##### constexpr和常量表达式
+**常量表达式:（const expression）**是指不会改变并且在编译过程中就能得到计算结果的表达式；一个对象/表达式是不是常量表达式；由它的数据类型和初始值共同决定。例：
+```c++
+const int max_files=20;//max_files 是常量表达式
+
+const int limit=max_files+1;//limit 是常量表达式
+
+int staff_size=27;//staff_size 不是常量表达式
+
+const int sz=get_size();//运行时才知道值，因此不是常量；
+```
+**constexpr变量**
+C++11允许将变量声明为`constexpr`类型以便由编译器来验证变量的值是否是一个常量表达式。声明为constexpr的变量移动是一个产量，而且必须用常量表达式初始化：
+```c++
+constexpr int mf=20;//20是常量表达式
+
+constexpr int limit=mf+1;//mf+1是常量表达式
+
+constexpr int sz=size();//只有当size是一个constexpr函数时才是一条正确的声明语句
+```
+**指针和constexpr**
+在constexpr声明中如果定义了一个指针，限定符constexpr仅对指针有效，与指针所指对象无关；
+```c++
+const int *p=nullptr;//p是一个指向整型常量的指针
+
+constexpr int *q=nullptr;//q是一个指向整数的常量指针；constexpr把她所东一的对象置为了顶层const
+```
+
+#### 类型别名typedef关键字
+- `typedef int my_int`:将`int `取别名为`my_int`;
+- `typede 函数`：定义函数类型(常用语C语言中；C++慎用)；例：
+
+```c++
+typedef long SetStringPtr(char *);//预定于函数输入输出类型
+typedef long GetStringPtr(char *, long);//预定于函数输入输出类型
+
+typedef struct {
+   SetStringPtr * SetString;//初始化函数指针
+   GetStringPtr * GetString;//初始化函数指针
+   DWORD          count;
+   char           buffer[80];
+} IExample;
+//实例化函数
+long SetString(char * str)
+{
+   return(0);
+}
+
+IExample * example;//使用结构体对象
+example->SetString = SetString;//使用函数；
+```
+
+#### auto关键字；
+auto关键字在C++11中得到了广泛使用；但是他是基于C++模板类型推断的，因此需要慎重使用；多用于循环迭代中；例：
 ```c++
 #include <iostream>
-#include <stack>
-#include <sstream>
-#include <string>
+#include <vector>
 using namespace std;
-
-int main(int argc, char const *argv[]) {
-    const string test="0123456789ABCDEF";
-    cout<<"please input number between 0 and 15"<<endl;
-    string::size_type n, temp;//用于保存从输入流读取的数;
-    while((cin.peek()!=EOF)&&(cin.peek()!='\n'))
-    {
-        cin>>n;
-        string result;//用于保存十六进制的字符串
-       //else if(n>test.size()){
-            for(int i=n;i>0;){
-                temp=i%16;
-                auto s1 = test[temp];//转化为十六进制
-                result=s1+result;
-                i=i>>4;
-            }
-        printf("%X\n",n);
-        std::cout<<"this result is :"<<result<<std::endl;
-        //result.clear();
+int main(int arc,char const *argv[])
+{
+    std::vector<int> v={1,1,12,3};
+    for(auto temp : v){
+        std::cout<<temp<<'\t'<<std::endl;;
     }
-    printf("hello word");
     return 0;
 }
 ```
-### vector 向量介绍
-#### 迭代器(iterator)介绍
-迭代器类似于指针但是不同于指针；利用地址进行一次间接的迭代访问。
-标准迭代器的运算符：
 
-|运算符|功能|
-|:---:|:---:|
-|*iter|返回迭代器iter所指元素的引用|
-|iter->mem|解引用iter并获取该元素的名为mem的成员，等价于(*iter).mem|
-|++iter|令iter指示容器的下一个元素|
-|--iter|令iter指示容器的上一个元素|
-|iter1==iter2|判断是否指向同一个元素|
-|iter1!=iter2|判断是否指向同一个元素|
-
-```c++
-string s("some string ");
-if(s.begin()!=s.end())
-{
-    auto it=s.begin();//it表示s的第一个字符
-    *it=toupper(*it);//当前字符改写成大写格式
-}
-```
+#### decltype类型指示符
+decltype 是C++11新引入的关键字，帮助从表达式推断定义的变量的类型。
 注意：
-1. c++中定义了箭头运算符：(`->`)把解引用和成员访问两个操作结合在一起，`it->mem`和`(*it).mem`表达的意思相同。
-2. 两个迭代器相减结果是它们之间的距离。迭代器加整数还是迭代器。
-
-### 数组
-
-使用数组下标的时候，通常将其定义为`size_t`类型；
-```c++
-unsigned scores[11]={};//11个分数段，全部初始化为0
-unsigned grade;
-while(cin>>grade) {
-    /* code */
-    if (grade<=100)
-    {
-        /* code */
-        ++scores[grade/10];//将当前分数段的计数值加1
-    }
-}
-```
-注意：
-1. 数组中的 `int *parr[10]`表示含有10个整型指针的数组;`int (*parr)[10]`表示指向含有10个整数的数组的指针。`int *(&array)[10]`表示含有10个int型指针的数组的引用。
-
-#### c 风格字符串
-c++中支持c风格字符串，但是在c++程序中最好还是不要使用他们。因为字符串使用起来不太方便，而且极易产生程序内存泄露
-c++中string对象使用c_str()函数，实现string对象到 char*[]的转换。
-尽量使用标准类库而非数组。
-
-#### 多维数组的初始化：
-```c++
-int ia[3][4]={
-    //内嵌`{`并不是必须的但是，可以似的文件更加整洁，代码更加规范
-    {0,1,2,3},
-    {4,5,6,7},
-    {8,9,10,11}
-}
-```
-
-## 第四章 表达式
-### 左值和右值问题
-_参考链接_：[理解C和C++中的左值和右值](https://blog.csdn.net/xuwqiang1994/article/details/79924310);[C++11 左值、右值、右值引用详解](https://blog.csdn.net/hyman_yx/article/details/52044632);
-
-左值：代表一个在内存中占有确定位置的对象(存在地址);例如`int a=0;`中`a`就是一个左值
-右值：通过排他性来定义，每个表达式不是lvalue就是rvalue。因此从上面的lvalue的定义，rvalue是在不在内存中占有确定位置的表达式。
-
-**左值引用**就是对一个左值进行引用的类型。**右值引用**就是对一个右值进行引用的类型，事实上，由于右值通常不具有名字，我们也只能通过引用的方式找到它的存在。
-
-右值引用和左值引用都是属于引用类型。无论是声明一个左值引用还是右值引用，都必须立即进行初始化。而其原因可以理解为是引用类型本身自己并不拥有所绑定对象的内存，只是该对象的一个别名。左值引用是具名变量值的别名，而右值引用则是不具名（匿名）变量的别名。
-
-左值引用通常也不能绑定到右值，但常量左值引用是个“万能”的引用类型。它可以接受非常量左值、常量左值、右值对其进行初始化。不过常量左值所引用的右值在它的“余生”中只能是只读的。相对地，非常量左值只能接受非常量左值对其进行初始化。
+1. decltype 处理顶层const和引用的方式与auto有些许不同；
+2. 如果decltype使用的表达式不是一个变量，则decltype返回表达式结果对应的类型，当有时返回一个引用类型的时候；表达式的结果对象，能够作为一条赋值语句的左值。
+3. dectype((variable))(注意是双层括号)的结果永远是引用，而decltype(variable)结果只有当variable本身就是一个引用时才是。
 
 ```c++
-int &a = 2; // 左值引用绑定到右值，编译失败 
-int b = 2; // 非常量左值 
-const int &c = b; // 常量左值引用绑定到非常量左值，编译通过 
-const int d = 2; // 常量左值 
-const int &e = c; // 常量左值引用绑定到常量左值，编译通过 
-const int &b =2; // 常量左值引用绑定到右值，编程通过
+const int ci=0,&cj=ci;
+decltype(cj) x=0;//x 类型是const int
+decltype(cj) y=x;//y的类型是const int&,y绑定到变量x
+decltype(cj) z;//错误，z是一个引用必须初始化
+
+//decltype 的结果可以是引用类型
+int i=42，*p=&i,&r=i;
+decltype(r+0) b;//加法的结果是int，因此b是一个（未初始化的）int
+decltype(*p) c;//错误：c是int&,必须初始化
+
 ```
-右值值引用通常不能绑定到任何的左值，要想绑定一个左值到右值引用，通常需要std::move()将左值强制转换为右值，例如：
-
-```c++
-int a;
-int &&r1 = c;             # 编译失败
-int &&r2 = std::move(a);  # 编译通过
-```
-![可引用类型值](https://img-blog.csdn.net/20160727131907698)
-
-```c++
- // lvalues:
-  //
-  int i = 42;
-  i = 43; // ok, i is an lvalue
-  int* p = &i; // ok, i is an lvalue
-  int& foo();
-  foo() = 42; // ok, foo() is an lvalue
-  int* p1 = &foo(); // ok, foo() is an lvalue
-
-  // rvalues:
-  //
-  int foobar();
-  int j = 0;
-  j = foobar(); // ok, foobar() is an rvalue
-  int* p2 = &foobar(); // error, cannot take the address of an rvalue
-  j = 42; // ok, 42 is an rvalue
-```
-
-### 运算符优先级顺序
-
-运算符优先级顺序如下表所示：
-
-|运算符|功能|用法|
-|:---:|:---:|:---:|
-|`+`|一元正号|`+ expr`|
-|`-`|一元负号|`- expr`|
-|`*`|乘法|`expr * expr`|
-|`/`|除法|`expr / expr`|
-|`%`|求余|`expr % expr`|
-|`+`|加法|`expr + expr`|
-|`-`|减法|`expr - expr`|
-
-注意
-
-1. 使用数据类型赋值的时候不要超出类型的上界；例如：
-```c++
-short short_value=32767；//short类型占16位，则能表示的最大值是32767
-short_value+=1;//该计算导致溢出，实际值：-32768
-```
-2. 如果`m%n`不等于0，则它的负号和`m`相同
-3. 赋值运算符`=`的左侧运算对象必须是一个可以修改的左值。
-
-### 位运算符
-位运算符主要使用方法如下表：
-
-|运算符|功能|用法|
-|:---:|:---:|:---:|
-|`~`|位求反|`~ expr`|
-|`<<`|左移，相当于乘`2^n`|`expr1 >> expr2`|
-|`>>`|右移，相当于除`2^n`|`expr1 >> expr2`|
-|`&`|位与|`expr & expr`|
-|`^`|位异或|`expr ^ expr`|
-|`"|"`|位或|`"expr|expr"` |
-
-
-### `sizeof`运算符
-
-`sizeof`来进行对象或者类型名称所占用的字节数目
-
-### 类型转换
-_参考链接：_ [C++强制类型转换：static_cast、dynamic_cast、const_cast、reinterpret_cast](https://www.cnblogs.com/chenyangchun/p/6795923.html);[C++ 类型转换（C风格的强制转换）](https://www.cnblogs.com/Allen-rg/p/6999360.html);
-
-c++中的隐式类型转换，已经在之前介绍过了，同时c++中还存在显示的强制类型转换`cast-name<type>(expression)`；其中`cast-name`是指：`static_cast`、`dynamic_cast`、`const_cast`和`reinterpret_cast`
-
-|名称|区别|
-|:---:|:---:|
-|`static_cast`|静态强制转换，编译时就转换|
-|`dynamic_cast`|动态强制转换，运行时转换|
-|`const_cast`|编译时进行检查，强制消除对象的常量性|
-|`reinterpret_cast`|编译时进行检查，是特意用于底层的强制转型，主要用于二进制的强制类型转换|
-
-* `static_cast` 
-
-`static_cast`相当于传统的C语言里的强制转换，该运算符把expression转换为new_type类型，用来强迫隐式转换，例如non-const对象转为const对象，编译时检查，用于非多态的转换，可以转换指针及其他，但没有运行时类型检查来保证转换的安全性。它主要有如下几种用法：
-  1. 用于类层次结构中基类（父类）和派生类（子类）之间指针或引用的转换。
-      - 进行上行转换（把派生类的指针或引用转换成基类表示）是安全的；
-      - 进行下行转换（把基类指针或引用转换成派生类表示）时，由于没有动态类型检查，所以是不安全的。
-  2. 用于基本数据类型之间的转换，如把int转换成char，把int转换成enum。这种转换的安全性也要开发人员来保证。
-  3. 把空指针转换成目标类型的空指针。
-  4. 把任何类型的表达式转换成void类型。
-
-注意：static_cast不能转换掉expression的const、volatile、或者__unaligned属性。
-
-* `dynamic_cast`
-
-主要用于执行“安全的向下转型(safe downcasting)”，也就是说，要确定一个对象是否是一个继承体系中的一个特定类型。支持父类指针到子类指针的转换，这种转换时最安全的转换。它 是唯一不能用旧风格语法执行的强制类型转换，也是唯一可能有重大运行时代价的强制转换。
-  1. 其他三种都是编译时完成的，`dynamic_cast`是运行时处理的，运行时要进行类型检查。
-  2. 不能用于内置的基本数据类型的强制转换。
-  3. `dynamic_cast`转换如果成功的话返回的是指向类的指针或引用，转换失败的话则会返回NULL。
-  4. 使用`dynamic_cast`进行转换的，基类中一定要有虚函数，否则编译不通过。B中需要检测有虚函数的原因：类中存在虚函数，就说明它有想要让基类指针或引用指向派生类对象的情况，此时转换才有意义。这是由于运行时类型检查需要运行时类型信息，而这个信息存储在类的虚函数表（关于虚函数表的概念，详细可见<Inside c++ object model>）中。只有定义了虚函数的类才有虚函数表。
-  5. 要求<>内部所描述的目标类型必须为指针或引用。
-  6. 在类的转换时，在类层次间进行上行转换时，`dynamic_cast`和`static_cast`的效果是一样的。在进行下行转换时，`dynamic_cast`具有类型检查的功能，比`static_cast`更安全。
-    - 向上转换，即为子类指针指向父类指针（一般不会出问题）；向下转换，即将父类指针转化子类指针。
-    - 向下转换的成功与否还与将要转换的类型有关，即要转换的指针指向的对象的实际类型与转换以后的对象类型一定要相同，否则转换失败。
-    - 在C++中，编译期的类型转换有可能会在运行时出现错误，特别是涉及到类对象的指针或引用操作时，更容易产生错误。Dynamic_cast操作符则可以在运行期对可能产生问题的类型转换进行测试。
-
-* const_cast
-  
- 而`const_cast`则正是用于强制去掉这种不能被修改的常数`const`特性，但需要特别注意的是`const_cast`不是用于去除变量的常量性，而是去除指向常数对象的指针或引用的常量性，其去除常量性的对象必须为指针或引用。
- 1. 该运算符用来修改类型的const或volatile属性。除了const 或volatile修饰之外， type_id和expression的类型是一样的。
- 2. 常量指针被转化成非常量指针，并且仍然指向原来的对象；
- 3. 常量引用被转换成非常量引用，并且仍然指向原来的对象；常量对象被转换成非常量对象。
- 4. const_cast强制转换对象必须为指针或引用
- 5. const_cast一般用于修改底指针。如const char *p形式
-
-* reinterpret_cast
-
-是特意用于底层的强制转型，导致实现依赖（就是说，不可移植）的结果，例如，将一个指针转型为一个整数。这样的强制类型在底层代码以外应该极为罕见。操作 结果只是简单的从一个指针到别的指针的值得二进制拷贝。在类型之间指向的内容不做任何类型的检查和转换。
-new_type必须是一个指针、引用、算术类型、函数指针或者成员指针。它可以把一个指针转换成一个整数，也可以把一个整数转换成一个指针（先把一个指针转换成一个整数，再把该整数转换成原类型的指针，还可以得到原先的指针值）。
-
-##### 运算符优先级表格如下
-
-
-<table>
-    <thead>
-        <tr>
-            <th>优先级 </th>
-            <th>运算符 </th>
-            <th>说明  </th>
-            <th>结合性 </th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>1</td>
-            <td>::</td>
-            <td>范围解析</td>
-            <td rowspan="6">自左向右</td>
-        </tr>
-        <tr>
-            <td rowspan="5">2</td>
-            <td>++ - - </td>
-            <td>后缀自增/后缀自减</td>
-        </tr>
-        <tr>
-            <td>()</td>
-            <td>括号</td>
-        </tr>
-        <tr>
-            <td>[]</td>
-            <td>数组下标</td>
-        </tr>
-        <tr>
-            <td>.</td>
-            <td>成员选择(对象)</td>
-        </tr>
-        <tr>
-            <td>-&gt;</td>
-            <td>成员选择(指针)</td>
-        </tr>
-        <tr>
-            <td rowspan="9">3</td>
-            <td>++ - -</td>
-            <td>前缀自增/前缀自减</td>
-            <td rowspan="9">自右向左</td>
-        </tr>
-        <tr>
-            <td>+ -</td>
-            <td>加减</td>
-        </tr>
-        <tr>
-            <td>! ~</td>
-            <td>逻辑非/按位取反</td>
-        </tr>
-        <tr>
-            <td>(type)</td>
-            <td>强制类型转换</td>
-        </tr>
-        <tr>
-            <td>*</td>
-            <td>取指针指向的值</td>
-        </tr>
-        <tr>
-            <td>&amp;</td>
-            <td>某某的地址</td>
-        </tr>
-        <tr>
-            <td>sizeof</td>
-            <td>某某的大小</td>
-        </tr>
-        <tr>
-            <td>new,new[]</td>
-            <td>动态内存分配/动态数组内存分配</td>
-        </tr>
-        <tr>
-            <td>delete,delete[]</td>
-            <td>动态内存分配/动态数组内存释放</td>
-        </tr>
-        <tr>
-            <td>4</td>
-            <td>.* -&gt;* - -</td>
-            <td>成员对象选择/成员指针选择</td>
-            <td rowspan="12">自左向右</td>
-        </tr>
-        <tr>
-            <td>5</td>
-            <td>* / %</td>
-            <td>乘法/除法/取余</td>
-        </tr>
-        <tr>
-            <td>6</td>
-            <td>+ -</td>
-            <td>加号/减号</td>
-        </tr>
-        <tr>
-            <td>7</td>
-            <td>&lt;&lt; &gt;&gt;</td>
-            <td>位左移/位右移</td>
-        </tr>
-        <tr>
-            <td rowspan="2">8</td>
-            <td> &lt; &lt;=</td> 
-            <td>小于/小于等于</td>
-        </tr>
-        <tr>
-            <td> &gt; &gt;=</td> 
-            <td>大于/大于等于</td>
-        </tr>
-        <tr>
-            <td>9</td>
-            <td>== !=</td>
-            <td>等于/不等于</td>
-        </tr>
-        <tr>
-            <td>10</td>
-            <td>&amp;</td>
-            <td>按位与</td>
-        </tr>
-        <tr>
-            <td>11</td>
-            <td>^</td>
-            <td>按位异或</td>
-        </tr>
-        <tr>
-            <td>12</td>
-            <td>|</td>
-            <td>按位或</td>
-        </tr>
-        <tr>
-            <td>13</td>
-            <td>&amp;&amp;</td>
-            <td>与运算</td>
-        </tr>
-        <tr>
-            <td>14</td>
-            <td>||</td>
-            <td>或运算</td>
-        </tr>
-        <tr>
-            <td>15</td>
-            <td>?:</td>
-            <td>三目运算符</td>
-            <td rowspan="7">自右向左</td>
-        </tr>
-        <tr>
-            <td rowspan="5">16</td>
-            <td>=</td>
-            <td>赋值</td>
-        </tr>
-        <tr>
-            <td>+= -=</td>
-            <td>相加后赋值/相减后赋值</td>
-        </tr>
-        <tr>
-            <td>*= /= %=</td>
-            <td>相乘后赋值相值/取余后赋值</td>
-        </tr>
-        <tr>
-            <td>&lt;&lt;= &gt;&gt;=</td>
-            <td>位左移赋值/位右移赋值</td>
-        </tr>
-        <tr>
-            <td>&amp;= ^= |=</td>
-            <td>位与运算后赋值/位异或运算后赋值/位或运算后赋值</td>
-        </tr>        
-        <tr>
-            <td>17</td>
-            <td>throw</td>
-            <td>抛出异常</td>
-        </tr>        
-        <tr>
-            <td>18</td>
-            <td>,</td>
-            <td>逗号</td>
-            <td>自左向右</td>
-        </tr>
-    </tbody>
-</table>
-
-
-
-
-
-
-
-
-
-
-
-
