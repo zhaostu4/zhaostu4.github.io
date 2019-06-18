@@ -202,3 +202,300 @@ delete过程
 type_info类在不同的编译器上有所区别。有的编译器提供了额外的成员函数以提供程序中所用类型的额外信息。读者应该仔细阅读你所用编译器的使用手册，从而获取关于type-info的更多细节。
 
 ### 19.3 枚举类型
+
+C++包含两种枚举类型：限定作用域的和不限定作用域的。
+限定作用域的枚举类型： enum class(struct) {...}。不限定枚举可以省略掉关键字class，枚举类型名字可选。
+
+```c++
+enum color {red,yellow,green};   //不限定作用域的枚举类型
+
+enum stoplight {red,yellow,green};  //错误：重复定义了枚举成员
+
+enum class peppers {red,yellow,green}; //正确：枚举成员被隐藏了
+
+color eyes=green;  //正确： 不限定作用域的枚举类型位于有效的作用域中
+
+pepper p=green;   // 错误：pepper的枚举成员不在有效的作用域中
+
+color hair=color::red;  //正确：允许显式地访问枚举成员
+
+peppers p2=pepper::red;  //正确：使用pappers的red
+
+//指定序号
+
+enum class intType{
+    charTyp=8,shortTyp=16,intTyp=16,
+    longTyp=32,long_longTyp=64
+}
+
+//利用冒号指定类型
+
+enum intValues:unsigned long long {
+    charType=255,shortTyp=65535,
+    ......
+}
+```
+
+注意： 
+
+- 即使某个整型值恰好与枚举成员的值相等，它也不能作为函数的enum实参使用。
+- 但是可以使用强制类型转换，将enum提升成int或更大的整型。
+
+### 19.4 指针类成员
+
+**成员指针** 是指可以指向类的排静态成员的指针。类的静态成员不属于任何对象。
+
+我们令其指向类的某个成员，但是不指定该成员所属的对象；直到使用成员指针时，才提供成员所属的对象。
+
+#### 19.4.1 数据成员指针
+
+与普通指针不同的是成员指针必须包含成员所属的类
+
+```c++
+//pdata可以指向一个常量(非常量)Screen对象的string成员
+
+const string Screen::*pdata;
+
+pdata=&Screen::contents;//获取成员对象
+
+auto pdata=&Screen::contents;
+//使用成员指针
+
+Screen myScreen,*pScreen=&myScreen;
+//.*解引用pdata以获得myScreen对象的contents成员
+
+auto s=primaryScreen.*pdata;
+//->*解引用pdata以获得pScreen所指对象的contents成员
+
+s=pScreen->*pdata;
+
+```
+
+#### 19.4.2 成员函数指针
+
+```c++
+//利用auto关键字指向一个常量成员函数
+//前提是该函数不接受任何实参，并且返回一个char
+
+auto pmf=&Screen::get_cursor;
+//指向含有两个形参的get
+
+char (Screen::*pmf2)(Screen::pos,Screen::pos) const;
+pmf2=&Screen::get;
+//成员函数的使用
+
+Screen myScreen，*pScreen=&myScreen;
+//通过pScreen 所指的对象pmf所指的函数
+
+char c1=(pScreen->*pmf)();
+//通过myScreen对象将实参0,0传给含有两个形参的get函数
+
+char c2=(myScreen.*pmf2)(0,0);
+//使用成员指针的类型别名
+
+//Action 是一种可以指向Screen成员函数的指针，它接受两个pos实参，返回一个char
+
+using Action=char (Screen::*)(Screen::pos,Screen::pos) const;
+
+Action get=&Screen::get;  //指向Screen的get成员。
+
+//使用函数指针成员表
+class Screen{
+public:
+    Screen& home();  //光标移动函数
+
+    Screen& forward();
+    Screen& back();
+    Screen& up();
+    Screen& down();
+
+    //Action 是一个指针，可以用任意一个光标移动函数对其赋值
+
+    using Action=Screen& (Screen::*)();
+    //具体移动方向指定
+    
+    enum Directions {HOME,FORWARD,BACK,UP,DOWN};
+    Screen& move(Directions){
+        //运行this对象中索引值为cm的元素
+        
+        return (this->*Menu[cm])();  //Menu[cm]指向一个函数成员
+
+    };
+private:
+    static Action Menu[];  //函数表
+
+}
+
+Screen myScreen;
+
+myScreen.move(Screen::HOME);  //调用myScreen.home
+
+myScreen.move(Screen::DOWN);  //调用myScreen.down
+
+//初始化函数表
+
+Screen::Action Screen::Menu[]={
+    &Screen::home,
+    &Screen::forword,
+    ...
+};
+```
+
+#### 19.4.3 将成员函数用作可调用对象
+
+**使用function生成一个可调用对象**
+
+使用标准模板库function 可以凶函数指针获取可调用对象。
+
+```c++
+function<bool (const string&)> fcn=&string::empty;
+find_if(svec.begin(),svec.end(),fcn);
+```
+
+**使用mem_fn生成一个可调用对象**
+
+```c++
+auto f=mem_fn(&string::empty);
+```
+
+**使用bind生成一个可调用对象**
+
+```c++
+auto it=find_if(svec.begin(),svec.end(),bind(&string::empty,_1));
+
+```
+
+
+### 19.5 嵌套类
+
+一个类可以定义在另外一个类的内部。可以在类之外声明一个类内的嵌套类：
+`class class1_name::class2_name{}`
+
+- 在嵌套类在其外层类之外完成真正的定义之前，它都是一个不完全类型。
+- 嵌套类的作用域查找，比一般类多了一个外层类作用域的查找。
+- 外层类可以直接使用嵌套类的名字。
+- 外层类和嵌套类相互独立，都各自只包含自己的成员名字。
+
+### 19.6 union: 一种节省空间的类
+
+ 联合(( union )是一种特殊的类一个union 可以有多个数据成员，但是在仟愈时刻只有一个数据成员可以有直。当我们给union的某个成员赋值之后, 该union的其它成员就变成末定义的状态了。分配给一个union对象的存储空间至少要能容纳它的最大的数据成员。和其他类一样，一个union定义了一种新类型。
+
+**匿名union**
+
+是一个未命名的union,并且在符号之间没有任何声明。一旦我们定义了一个匿名union，编译器自动地位该union创建一个未命名的对象。在union的定义所在的作用域内该union的成员都是可以直接访问的。
+
+注意：
+
+- 匿名union不能包含受保护的成员或者私有成员，也不能定义成员函数。
+- union中成员类中成员没有定义默认构造函数，则编译器删除类中的该成员。
+
+### 19.7 局部类
+
+定义在某个函数内部的类称为，局部类。局部类定义的类型只在定义它的作用域内可见。
+
+注意：
+
+- 局部类的所有成员(包括函数在内)都必须完整定义在类的内部。因此，局部类的作用与嵌套类相比相差很远。
+- 局部类只能访问外层作用域定义的类型名、静态变量以及枚举成员。
+- 局部类不能使用函数作用域中的变量。
+- 常规的访问保护规则对局部类同样适用。
+
+### 19.8 固有的不可移植的特性
+
+是指因机器而异常的特性，当机器转移时，需要重新编写该程序。
+
+#### 19.8.1 位域
+
+**位域在内存中的布局是与机器相关的**
+
+位域的类型必须是整型或枚举类型。因为带符号位域的行为是由具体实现确定的。
+位域的声明形式是成员名字后紧跟一个冒号以及一个常量表达式，该表达式用于指定成员所占的二进制位数。
+
+```c++
+typedef unsigned int Bit;
+
+class File{
+    Bit mode: 2;  //mode占2位
+    
+    Bit modified:1;  //占1位
+    
+    ...
+
+public:
+    //文件类型以八进制表示
+    
+    enum modes{READ=01,WRITE=02,EXECUTE=03};
+}
+```
+注意： 通常情况下最好将位域设为无符号类型，存储在带符号类型中的位域的行为将因具体实现而定。
+
+#### 19.8.2 volatile 限定符
+
+volatile的确切含义与机器有关，只能通过阅读编译器文档来理解、要想让使用了volatile的程序在移植到新机器或新编译器后仍然有效，通常需要对该程序进行某些改变。关键字volatile告诉编译器不应对这样的对象进行优化。
+
+注意：
+
+- 关键字volatile告诉编译器不应对这样的对象进行优化。
+- 合成的拷贝对volatile对象无效。
+- volatile 不能使用合成的拷贝/移动构造函数和赋值运算符初始化。
+
+#### 19.8.3 链接指示: extern "C"
+
+要想把c++代码和其他语言(包括c语言)编写的代码放在一起使用.要求我们必须有权访问该语言的编译器，并且这个编译器与当前的c++编译器是兼容的。
+
+当一个#include指示被放置在复合链接指示的花括号中时，文件中的所有普通函数声明都被认为是由链接指示的语言编写的。链接指示可以嵌套，因此如果头文件包含自带链接指示的函数，则该函数的链接不受影响。
+
+```c++
+ectern "C"{
+    #include <string.h>
+}
+```
+
+**指向extern "C"函数的指针**
+
+```c++
+//pf指向一个c函数，该函数接受一个int返回void
+
+extern "C" void (*pf)(int);
+
+void (*pf1)(int);  //指向一个c++函数
+```
+
+注意：
+
+- 有的C++编译器会接受之前的这种赋值操作并将其作为对语言的扩展，尽管从严格意义上来看它是非法的。
+- 链接指示对整个声明都有效。当我们使用链接指示时，它不仅仅对函数有效，而且对作为返回内省或形参类型的函数指针也有效。
+
+**导出C++函数到其他语言**
+通过使用链接器指示对函数进行定义，我们可以令一个C++函数在其它语言编写的程序中使用
+
+```c++
+//calc 函数可以被C程序调用
+
+extern "C" double calc(double dparm){
+    /**/
+}
+```
+**有时可以使用预处理器定义`__cplusplus`来有条件的包含代码**
+```c++
+
+#if defined(__cplusplus) || defined (c_plusplus)
+extern "C"
+{
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include "libavcodec/avcodec.h"
+#include "libavformat/avformat.h"
+#include "libavutil/pixfmt.h"
+#include "libavutil/mathematics.h"
+#include "libavutil/time.h"
+#include "libswscale/swscale.h"
+
+#if defined(__cplusplus) || defined (c_plusplus)
+}
+#endif
+```
+
+注意：extern "..."的重载和链接与语言本身有关。
+
