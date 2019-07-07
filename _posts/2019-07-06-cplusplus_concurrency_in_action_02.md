@@ -109,8 +109,11 @@ void data_processing_thread()
 ```c++
 
 #include <queue>
+
 #include <memory>
+
 #include <mutex>
+
 #include <condition_variable>
 
 template <typename T>
@@ -212,4 +215,330 @@ public:
 
 ### 4.2 使用期望等待一次性时间
 
-C++ 中的`future`用来表示等待中的一次性事件。
+_参考链接：_ [C++11多线程future的使用](https://blog.csdn.net/u011726005/article/details/78266706);[std::future , std::promise和线程的返回值](https://blog.csdn.net/lijinqi1987/article/details/78507623);[std::future](https://zh.cppreference.com/w/cpp/thread/future);[std::thread](https://zh.cppreference.com/w/cpp/thread/thread);
+
+C++ 中的`future`用来表示等待中的一次性事件。它的主要功能是将多线程同步或者异步的数据作为结果保存，在执行操作之后进行提取
+
+```c++
+//cppreferencr 示例
+//
+
+#include <iostream>
+
+#include <future>
+
+#include <thread>
+ 
+int main()
+{
+    // 来自 packaged_task 的 future
+
+    // 包装函数
+
+    std::packaged_task<int()> task([](){ return 7; }); 
+    // 获取 future
+
+    std::future<int> f1 = task.get_future(); 
+    // 在线程上运行
+
+    std::thread(std::move(task)).detach(); 
+    // 来自 async() 的 future
+
+    std::future<int> f2 = std::async(std::launch::async, [](){ return 8; });
+    // 来自 promise 的 future
+
+    std::promise<int> p;
+    std::future<int> f3 = p.get_future();
+    std::thread( [&p]{ p.set_value_at_thread_exit(9); }).detach();
+ 
+    std::cout << "Waiting..." << std::flush;
+    f1.wait();
+    f2.wait();
+    f3.wait();
+    std::cout << "Done!\nResults are: "
+              << f1.get() << ' ' << f2.get() << ' ' << f3.get() << '\n';
+}
+//result
+
+//Waiting...Done!
+
+//Results are: 7 8 9
+
+
+
+```
+
+使用`std::async`异步向函数传递参数,`std::launch::defered`调用方线程上首次请求其结果时执行任务（惰性求值)；`std::launch::async`运行新线程，以异步执行任务
+
+```c++
+#include <string>
+
+#include <future>
+//创建函数结构体
+
+struct X
+{
+    void foo(int,std::string const&);
+    std:string bar(std::string const&);
+};
+X x;
+//调用x中的函数x->foo(42,"hello");
+
+auto f1=std::async(&X::foo,&x,42,"hello");
+//调用 bar函数
+
+auto f2=std::async(&X::bar,x,"goodbye");
+
+struct Y
+{
+    double operator()(double);
+};
+
+Y y;
+//先构造Y，再进行一次拷贝构造，条用 拷贝的operator()操作
+
+auto f3=std::async(Y(),3.141);
+
+auto f4=std::async(std::ref(y),2.718);
+
+X baz(X&);
+// 调用 baz(x)
+
+std::async(baz,std::ref(x));
+class   move_only
+{
+public:
+    move_only();
+    move_only(move_only&&);
+    move_only(move_only const&)=delete;
+    move_only& operator=(move_only&&);
+    move_only& operator=(move_only const&)=delete;
+    void operator()();
+}
+//调用tmp(),tmp是通过std::move(move_only())构造得到
+
+auto f5=std::async(move_only());     
+//在新线程上执行
+
+auto f6=std::async(std::launch::async,Y(),1.2);
+//调用wait()或者get()进行同步
+
+auto f7=std::async(std::launch::deferred,baz,std::ref(x));
+//实现选择执行方式
+
+auto f8=std::async(std::launch::deferred|std::launch::async,baz,std::ref(x));
+
+auto f9=std::async(baz,std::ref(x));
+//调用延迟函数
+
+f7.wait();
+```
+
+#### 4.2.2 任务与期望
+
+_参考链接：_ [std::packaged_task](https://zh.cppreference.com/w/cpp/thread/packaged_task);
+
+```c++
+
+#include <iostream>
+
+#include <cmath>
+
+#include <thread>
+
+#include <future>
+
+#include <functional>
+ 
+// 避免对 std::pow 重载集消歧义的独有函数
+
+int f(int x, int y) { return std::pow(x,y); }
+ 
+void task_lambda()
+{
+    std::packaged_task<int(int,int)> task([](int a, int b) {
+        return std::pow(a, b); 
+    });
+    std::future<int> result = task.get_future();
+ 
+    task(2, 9);
+ 
+    std::cout << "task_lambda:\t" << result.get() << '\n';
+}
+ 
+void task_bind()
+{
+    std::packaged_task<int()> task(std::bind(f, 2, 11));
+    std::future<int> result = task.get_future();
+ 
+    task();
+ 
+    std::cout << "task_bind:\t" << result.get() << '\n';
+}
+ 
+void task_thread()
+{
+    std::packaged_task<int(int,int)> task(f);
+    std::future<int> result = task.get_future();
+ 
+    std::thread task_td(std::move(task), 2, 10);
+    task_td.join();
+ 
+    std::cout << "task_thread:\t" << result.get() << '\n';
+}
+ 
+int main()
+{
+    task_lambda();
+    task_bind();
+    task_thread();
+}
+//结果
+
+// task_lambda: 512 
+
+// task_bind:   2048
+
+// task_thread: 1024
+```
+
+使用 `std::packaged_task`执行一个图形界面的线程
+
+```c++
+#include    <deque>
+
+#include    <mutex>
+
+#include    <future>
+
+#include    <thread>
+
+#include    <utility>
+
+std::mutex  m;
+std::deque<std::packaged_task<void()>   >   tasks;
+bool    gui_shutdown_message_received();
+void    get_and_process_gui_message();
+//GUI线程
+
+void    gui_thread()
+{
+    //是否收到对应信息
+
+        while(!gui_shutdown_message_received())
+        {
+                get_and_process_gui_message();
+                //创建任务线程
+
+                std::packaged_task<void()>  task;
+                {
+                        //数据信号量加锁
+
+                        std::lock_guard<std::mutex> lk(m);
+                        if(tasks.empty())
+                                continue;
+                        //移动权柄
+
+                        task=std::move(tasks.front());
+                        //取出首元素
+
+                        tasks.pop_front();
+                }
+                //执行任务
+
+                task();
+        }
+}
+
+std::thread gui_bg_thread(gui_thread);
+
+template<typename   Func>
+
+std::future<void> post_task_for_gui_thread(Func   f)
+{
+    //创建任务
+    
+    std::packaged_task<void()>  task(f);
+    //获取任务返回结果
+
+    std::future<void>   res=task.get_future();
+    //当前线程上锁
+
+    std::lock_guard<std::mutex> lk(m); 
+    //转移任务权柄，将当前任务，添加到列表
+
+    tasks.push_back(std::move(task));
+    //返回执行结果
+
+    return  res;
+}
+
+```
+
+#### 4.2.3 使用 std::promises
+
+_参考链接：_ [std::promise](https://zh.cppreference.com/w/cpp/thread/promise);
+
+`std::promises`有且只使用一次
+
+使用示例:
+
+```c++
+#include <vector>
+
+#include <thread>
+
+#include <future>
+
+#include <numeric>
+
+#include <iostream>
+
+#include <chrono>
+ 
+void accumulate(std::vector<int>::iterator first,
+                std::vector<int>::iterator last,
+                std::promise<int> accumulate_promise)
+{
+    int sum = std::accumulate(first, last, 0);
+    // 提醒 future
+
+    accumulate_promise.set_value(sum);
+}
+ 
+void do_work(std::promise<void> barrier)
+{
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    barrier.set_value();
+}
+ 
+int main()
+{
+    // 演示用 promise<int> 在线程间传递结果。
+    
+    std::vector<int> numbers = { 1, 2, 3, 4, 5, 6 };
+    std::promise<int> accumulate_promise;
+    std::future<int> accumulate_future = accumulate_promise.get_future();
+    //创建工作线程
+
+    std::thread work_thread(accumulate, numbers.begin(), numbers.end(),
+                            std::move(accumulate_promise));
+    // 等待结果
+
+    accumulate_future.wait();
+    std::cout << "result=" << accumulate_future.get() << '\n';
+    // wait for thread completion
+
+    work_thread.join();
+    // 演示用 promise<void> 在线程间对状态发信号
+
+    std::promise<void> barrier;
+    std::future<void> barrier_future = barrier.get_future();
+    std::thread new_work_thread(do_work, std::move(barrier));
+    barrier_future.wait();
+    new_work_thread.join();
+}
+
+```
+
+#### 4.2.4 为“期望”存储“异常”
