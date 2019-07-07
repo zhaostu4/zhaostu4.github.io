@@ -542,3 +542,126 @@ int main()
 ```
 
 #### 4.2.4 为“期望”存储“异常”
+
+可以使用`std::future`实现对与异常的捕获，在使用`std::promise`的时候可以，使用`set_exception()`成员函数进行异常的捕获。
+
+```c++
+extern  std::promise<double>    some_promise;
+try
+{
+    some_promise.set_value(calculate_value());
+}
+catch(...)
+{
+    some_promise.set_exception(std::current_exception());
+    //std::copy_exception()   会直接存储一个新的异常而不抛出
+
+    some_promise.set_exception(std::copy_exception(std::logic_error("foo")));
+
+}
+```
+
+#### 4.2.5 多个线程的等待
+
+_参考链接：_ [std::shared_future](https://zh.cppreference.com/w/cpp/thread/shared_future);
+
+因为`std::future`的`get()`方法，可以获取最终结果，但这些都是一次性的，也就说明，不能被多个线程同时使用--一个线程获取之后就结束了。这是因为:`std::future`模型独享同步结果的所有权。
+
+使用`std::shared_future`可以让多个线程等待同一个事件。`std::future`是只移动的，在不同实例中相互传递的只是其所有权限。而`std::shared_future`实例是可拷贝的,所以多个对象可以引用同一关联“期望”的结果。但是因为，每个独立对象上，成员函数调用返回的结果是不同步的，需要加锁进行数据保护。
+
+![线程共享](../img/2019-07-07 20-44-02.png);
+
+使用示例：
+
+```c++
+#include <iostream>
+
+#include <future>
+
+#include <chrono>
+ 
+int main()
+{   
+    std::promise<void> ready_promise, t1_ready_promise, t2_ready_promise;
+    std::shared_future<void> ready_future(ready_promise.get_future());
+ 
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+ 
+    auto fun1 = [&, ready_future]() -> std::chrono::duration<double, std::milli> 
+    {
+        t1_ready_promise.set_value();
+        // 等待来自 main() 的信号
+
+        ready_future.wait();
+        return std::chrono::high_resolution_clock::now() - start;
+    };
+ 
+ 
+    auto fun2 = [&, ready_future]() -> std::chrono::duration<double, std::milli> 
+    {
+        t2_ready_promise.set_value();
+        // 等待来自 main() 的信号
+
+        ready_future.wait();
+        return std::chrono::high_resolution_clock::now() - start;
+    };
+ 
+    auto result1 = std::async(std::launch::async, fun1);
+    auto result2 = std::async(std::launch::async, fun2);
+    // 等待线程变为就绪
+
+    t1_ready_promise.get_future().wait();
+    t2_ready_promise.get_future().wait();
+    // 线程已就绪，开始时钟
+
+    start = std::chrono::high_resolution_clock::now();
+    // 向线程发信使之运行
+    
+    ready_promise.set_value();
+ 
+    std::cout << "Thread 1 received the signal "
+              << result1.get().count() << " ms after start\n"
+              << "Thread 2 received the signal "
+              << result2.get().count() << " ms after start\n";
+}
+```
+### 4.3 限定等待时间
+
+之前的所有苏塞调用，将会阻塞一段不确定的时间，将线程挂起直到等待的事件发
+生。可以使用`std::condition_variable`成员函数的`wait_for()`和`wait_until`进行相对时间和绝对时间的等待。
+
+#### 4.3.1 时钟
+_参考链接：_ [标准库头文件 <chrono>](https://zh.cppreference.com/w/cpp/header/chrono);
+
+注意：`std::chrono::system_clock`是不稳定的，`std::chrono::steady_clock`是稳定的。
+
+#### 4.3.2 时延
+`std::chrono::duration<>` 函数模板能够对时延进行处理(线程库使
+用到的所有C++时间处理工具,都在   std::chrono  命名空间内)([std::chrono::duration](https://zh.cppreference.com/w/cpp/chrono/duration))。
+
+简单的等待示例：
+
+```c++
+
+std::future<int> f=std::async(some_task);
+//如果等待结果是期望状态改变，而不是超时，则执行下面的操作。
+
+if(f.wait_for(std::chrono::milliseconds(35))==std::future_status::ready)
+    do_something_with(f.get());
+
+```
+#### 4.3.3 时间点
+使用`std::chrono::time_point<>`来获取时间点。
+
+```c++
+auto  start=std::chrono::high_resolution_clock::now();
+do_something();
+auto    stop=std::chrono::high_resolution_clock::now();
+std::cout<<”do_something()  took    “
+        <<std::chrono::duration<double,std::chrono::seconds>(stop-
+start).count()
+        <<” seconds”<<std::endl;
+
+```
+
+
