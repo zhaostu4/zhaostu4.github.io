@@ -664,4 +664,104 @@ start).count()
 
 ```
 
+#### 4.3.4 具有超时功能的函数
+
+可接受超时的函数
+
+
+|类型/命名空间|函数|返回值|
+|:---|:---|:---|
+|`std::this_thread[namespace]`|`sleep_for(duration)`|N/A|
+||`sleep_for(duration)`||
+|`std::condition_variable`或`std::condition_variable_any`|`wait_for(lock,duration)`|`std::cv_status::time_out`|
+||`wait_until(lock,time_point)`|`std::cv_status::no_timeout`|
+||`wait_for(lock,duration,predicate)`||
+||`wait_until(lock,duration,predicate)`|bool--当唤醒时，返回谓词的结果|
+|`std::timed_mutex`或`std::recuresive_timed_mutex`|`try_lock_for(duration)`|bool--获取锁时返回true,否则返回false|
+||`try_lock_until(time_point)`||
+|`std::unique_lock<TimedLockable>`|`unique_lock(lockable,duration)`|N/A——对新构建的对象调用owns_lock();|
+||`unique_lock(lockable,time_point)`|当获取锁时返回true,否则返回false|
+||`try_lock_for(duration)`|bool--当获取锁时返回true，否则返回false|
+||`try_lock_until(time_point)`||
+|`std::future<ValueType>或std::shared_future<ValueType>`|`wait_for(duration)`|当等待超时,返回`std::future_status::timeout`|
+||`wait_until(time_point)`|当“期望”准备就绪时,返回`std::future_status::ready`|
+|||当“期望”持有一个为启动的延迟函数,返回`std::future_status::defer`|
+
+### 4.4 使用同步操作简化代码
+
+#### 4.4.1 使用“期望”的函数话编程
+
+函数式编程(functional programming)：编程结果只依赖于传入的参数，并不依赖外部状态。当输入相同时，输出结果仅仅和输入有关与次数无关。
+
+快速排序：
+
+```c++
+template<typename T>
+std::list<T> sequential_quick_sort(std::list<T> input)
+{
+    if(input.empty())
+    {
+        return input;
+    }
+    std::list<T> result;
+    //将input的首个元素，赋值给result
+
+    result.splice(result.begin(),input,input.begin());
+
+    T const& pivot=*result.begin();
+    //重置矩阵并返回首部元素,指向大于中间值的最接近的元素
+
+    auto divide_point=std::partition(input.begin(),input.end(),[&](T const& t){
+        return t<pivot;
+    });
+    std::list<T> lower_part;
+    //将小于divide_point的数，传递给lower_part;
+
+    lower_part.splice(lower_part.end(),input,input.begin(),divide_point);
+    //递归调用排序，使用move避免大量的拷贝操作
+
+    auto new_lower(sequential_quick_sort(std::move(lower_part)));
+    auto new_higher(sequential_quick_sort(std::move(input)));
+    //将数据进行拼接
+
+    result.splice(result.end(),new_higher);
+
+    result.splice(result.begin(),new_lower);
+
+    return result;
+}
+```
+快速排序“期望” 并行版
+
+```c++
+
+template <T>
+std::list<T> parallel_quick_sort(std::list<T> input)
+{
+    if(input.empty())
+    {
+        return input;
+    }
+    std::list<T> result;
+    result.splice(result.begin(),input,input.begin());
+    T const& pivot=*result.begin();
+
+    auto divide_point=std::partition(input.begin(),input.end(),
+                    [&](T const& t){return t<pivot;});
+
+    std::list<T> lower_part;
+    lower_part.splice(lower_part.end(),input,input.begin(),divide_point);
+    //开启异步线程执行程序
+
+    std::future<std::list<T>> new_lower(std::async(&parallel_quick_sort<T>,std::move(lower_part)));
+
+    auto new_higher(parallel_qucik_sort(std::move(input)));
+
+    result.splice(result.end(),new_higher);
+    result.splice(result.begin(),new_lower.get());
+    return result
+}
+
+```
+注意:这里多线程的时间统计一定不要用`clock()`它是根据cpu时钟执行次数来的，对于多线程不准确
 
