@@ -25,7 +25,7 @@ _参考链接：_ [C++ 并发编程中文版](https://chenxiaowei.gitbooks.io/cp
 
 **并行**：线程的真正并行执行
 
-![多线程并行比较](../img/2019-07-03 21-04-58.png)
+![多线程并行比较](https://wangpengcheng.github.io/img/2019-07-03 21-04-58.png)
 
 #### 1.1.2  并发的途径
 

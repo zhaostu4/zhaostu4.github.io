@@ -755,7 +755,7 @@ std::list<T> parallel_quick_sort(std::list<T> input)
 
     std::future<std::list<T>> new_lower(std::async(&parallel_quick_sort<T>,std::move(lower_part)));
 
-    auto new_higher(parallel_qucik_sort(std::move(input)));
+    auto new_higher(parallel_quick_sort(std::move(input)));
 
     result.splice(result.end(),new_higher);
     result.splice(result.begin(),new_lower.get());
@@ -763,5 +763,170 @@ std::list<T> parallel_quick_sort(std::list<T> input)
 }
 
 ```
-注意:这里多线程的时间统计一定不要用`clock()`它是根据cpu时钟执行次数来的，对于多线程不准确
+注意:这里多线程的时间统计一定不要用`clock()`它是根据cpu时钟执行次数来的，对于多线程不准确。更改之后时间仍旧感人；多线程没有单线程块。初步估计是编译器优化原因。这里更改之后发现线程开始的开销要大的多，建议使用openmp来进行更改。
+
+
+## 第5章  C++内存模型和原子类型操作
+
+### 5.1.1 对象和内存位置
+
+这个之前在c++primer学习笔记中有详细介绍，不过多叙述。
+
+![内存模型示例](../img/2019-07-09-15-04-28.png)
+
+四个原则：
+
+- 每个变量都是一个对象，包括作为其成员变量的对象
+- 每个对象至少占有一个内存位置
+- 基本类型都有确定的内存位置(无论大小类型如何，即使他们是相邻的，或是数组的一部分)
+- 相邻位域是相同内存中的一部分
+
+### 5.2 c++中的原子操作和原子类型
+_参考链接：_ [C++ 原子操作（6种原子顺序）](https://blog.csdn.net/what951006/article/details/78273903);[如何理解 C++11 的六种 memory order](https://www.zhihu.com/question/24301047);[C++11之atomic原子操作](https://blog.csdn.net/qq_34199383/article/details/79990986); [理解 C++ 的 Memory Order ](http://senlinzhan.github.io/2017/12/04/cpp-memory-order/);
+#### 5.2.1 标准原子类型
+
+标准原子类型定义在头文件`<atomic>`中。这些类型上的所有操作都是原子的,在语言定义中只有这些类型的操作是原子的,不过你可以用互斥锁来模拟原子操作。
+
+标准原子类型的备选名和与其相关的`std::atomic<>`特化类
+
+|原子类型 |相关特化类|
+|:---|:---|
+|`atomic_bool` |`std::atomic<bool>`|
+|`atomic_char` | `std::atomic<char>`|
+|`atomic_schar` | `std::atomic<signed char>`|
+|`atomic_uchar` | `std::atomic<unsigned char>`|
+|`atomic_int `| `std::atomic<int>`|
+|`atomic_uint` | `std::atomic<unsigned>`|
+|`atomic_short`  |  `std::atomic<short>` |
+|`atomic_ushort` |  `std::atomic<unsigned short>` |
+|`atomic_long` | `std::atomic<long>` |
+|`atomic_ulong`  |  `std::atomic<unsigned long>` |
+|`atomic_llong`  |  `std::atomic<long long>`|
+|`atomic_ullong` |  `std::atomic<unsigned long long>`|
+|`atomic_char16_t`| `std::atomic<char16_t>`|
+|`atomic_char32_t` |`std::atomic<char32_t>`|
+|`atomic_wchar_t` | `std::atomic<wchar_t>`|
+
+
+标准原子类型定义(typedefs)和对应的内置类型定义(typedefs)
+
+|原子类型定义 | 标准库中相关类型定义|
+|:----|:----|
+|atomic_int_least8_t |int_least8_t|
+|atomic_uint_least8_t |   uint_least8_t|
+|atomic_int_least16_t  |  int_least16_t|
+|atomic_uint_least16_t |  uint_least16_t|
+|atomic_int_least32_t   | int_least32_t|
+|atomic_uint_least32_t  | uint_least32_t|
+|atomic_int_least64_t   | int_least64_t|
+|atomic_uint_least64_t  | uint_least64_t|
+|atomic_int_fast8_t | int_fast8_t|
+|atomic_uint_fast8_t| uint_fast8_t|
+|atomic_int_fast16_t| int_fast16_t|
+|atomic_uint_fast16_t |   uint_fast16_t|
+|atomic_int_fast32_t |int_fast32_t|
+|atomic_uint_fast32_t  |  uint_fast32_t|
+|atomic_int_fast64_t |int_fast64_t|
+|atomic_uint_fast64_t |   uint_fast64_t|
+|atomic_intptr_t |intptr_t|
+|atomic_uintptr_t |   uintptr_t|
+|atomic_size_t |  size_t|
+|atomic_ptrdiff_t  |  ptrdiff_t|
+|atomic_intmax_t |intmax_t|
+|atomic_uintmax_t |   uintmax_t|
+
+它们有一个相当简单的模式；对于标准类型进行typedef T，相关的原子类型就在原来的类型名前加上atomic_的前缀：atomic_T。除了singed类型的缩写是s，unsigned的缩写是u，和long long的缩写是llong之外，这种方式也同样适用于内置类型。对于std::atomic<T>模板，使用对应的T类型去特化模板的方式，要好于使用别名的方式。
+
+一般情况下，标准原子类型不能拷贝和赋值，他们没有拷贝构造函数和拷贝赋值函数。但是可以隐式转化为对应的内置类型。
+
+std::atomic<>类模板不仅仅一套特化的类型，其作为一个原发模板也可以使用用户定义类型创建对应的原子变量。因为，它是一个通用类模板，操作被限制为load(),store()(赋值和转换为用户类型), exchange(), compare_exchange_weak()和compare_exchange_strong()。
+每种函数类型的操作都有一个可选内存排序参数，这个参数可以用来指定所需存储的顺序。在5.3节中，会对存储顺序选项进行详述。现在，只需要知道操作分为三类：
+
+1. Store操作，可选如下顺序：memory_order_relaxed, memory_order_release, memory_order_seq_cst。
+2. Load操作，可选如下顺序：memory_order_relaxed, memory_order_consume, memory_order_acquire, memory_order_seq_cst。
+3. Read-modify-write(读-改-写)操作，可选如下顺序：memory_order_relaxed, memory_order_consume, memory_order_acquire, memory_order_release, memory_order_acq_rel, memory_order_seq_cst。
+所有操作的默认顺序都是memory_order_seq_cst。
+
+#### 5.2.2 `std::atomic_flag`的相关操作
+
+_参考链接：_ [C++11实现自旋锁](https://blog.csdn.net/sharemyfree/article/details/47338001);[C++互斥量、原子锁、自旋锁等比较](https://blog.csdn.net/qccz123456/article/details/81329261);[C++11线程中的几种锁](https://blog.csdn.net/xy_cpp/article/details/81910513);
+
+`std::atomic_flag`是最简单的标准原子类型,它表示了一个布尔标志。这个类型的对象可以
+在两个状态间切换:设置和清除。`std::atomic_flag` 类型的对象必须被ATOMIC_FLAG_INIT初始化。当初始化完成之后，能够进行的操作就是销毁/清除`clear()`、设置（查询之前的值）`test_and_set()`。例如
+
+```c++
+//使用释放语义清除标志
+
+f.clear(std::memory_order_release);
+//使用默认内存顺序设置表示，检索旧值
+
+bool x=f.test_and_set();
+
+```
+
+注意：`std::atomic_flag`操作不允许拷贝，因为当拷贝两个对象时操作不在作为原子性操作。
+
+使用`std::atomic_flag`实现自旋锁
+
+```c++
+class spinlock_mutex
+{
+    //标准原子信号
+
+    std::atomic_flag flag;
+public:
+    spinlock_mutex():flag(ATOMIC_FLAG_INIT){}
+    void lock()
+    {
+        // 等待释放
+
+        while(flag.test_and_set(std::memory_order_acquire)) {
+            /* code */
+        }
+    }
+    void unlock()
+    {
+        //清除释放数据
+
+        flag.clear(std::memory_order_release);
+    }
+}
+```
+
+#### 5.2.3 `std::atomic`的相关操作
+
+使用`store()`写入(true或者false)还是浩宇`std::atomic_flag`中限制性很强的`clear()`；使用`exchange()`成员函数允许你使用新选的值替换已经存储的值，并且自动的检索原始值。
+
+```c++
+std::atomic<bool> b;
+//加载值
+bool x=b.load(std::memory_order_acquire);
+b.store(true);
+//交换值
+
+x=b.exchange(false,std::memory_order_acq_rel);
+
+```
+
+
+#### 5.2.4 std::atomic 指针运算
+
+
+`std::atomic`提供`fetch_add`和`fetch_sub`操作，在存储地址上做原子加减法。`+=`等操作也是直接在地址上进行加减操作。因为fetch_add()和fetch_sub()都是“读-改-写”操作,它们可以拥有任意的内存顺序标签,以及加入到一个释放序列中。指定的语序不可能是操作符的形式,因为没办法提供必要的信息:
+这些形式都具有memory_order_seq_cst语义。
+
+#### 5.2.5 标准的原子整型的相关操作
+
+
+在`std::atomic<int>`和 `std::atomic<unsigned long long>` 也
+是有一套完整的操作可以供使用:`fetch_add()`, `fetch_sub()`,`fetch_and()`,`fetch_or()`,
+`fetch_xor()`,还有复合赋值方式((+=,-=, &=,|=和^=),以及++和--(++x, x++,--x和x--)。
+
+#### 5.2.6 std::atomic<>主要类的模板
+
+为了使用`std::atomic<UDT>`(UDT是用户定义类型),这个类型必须有拷贝赋值运算符。这就意味着这
+个类型不能有任何虚函数或虚基类,以及必须使用编译器创建的拷贝赋值操作。
+
+
+
 
