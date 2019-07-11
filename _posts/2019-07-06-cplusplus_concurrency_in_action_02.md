@@ -772,7 +772,7 @@ std::list<T> parallel_quick_sort(std::list<T> input)
 
 这个之前在c++primer学习笔记中有详细介绍，不过多叙述。
 
-![内存模型示例](../img/2019-07-09-15-04-28.png)
+![内存模型示例](https://wangpengcheng.github.io/img/2019-07-09-15-04-28.png)
 
 四个原则：
 
@@ -927,6 +927,596 @@ x=b.exchange(false,std::memory_order_acq_rel);
 为了使用`std::atomic<UDT>`(UDT是用户定义类型),这个类型必须有拷贝赋值运算符。这就意味着这
 个类型不能有任何虚函数或虚基类,以及必须使用编译器创建的拷贝赋值操作。
 
+每一个原子类型所能用的操作
+
+![原子类型可用操作](https://wangpengcheng.github.io/img/2019-07-11 10-49-24.png)
+
+#### 5.2.7  原子操作的释放函数
+
+
+大多数非成员函数的命名与对应成员函数有关,但是需要“atomic_”作为前缀(比如,  std::atomic_load()   )。这些函数都会被不同的原子类型所重载。
+在指定一个内存序列标签时,他们会分成两种:一种没有标签,另一种将“_explicit”作为后
+缀,并且需要一个额外的参数,或将内存顺序作为标签,亦或只有标签（ std::atomic_store(&atomic_var,new_value)与std::atomic_store_explicit(&atomic_var,ne
+w_value,std::memory_order_release    )。原子对象被成员函数隐式引用,所有释放函数都
+持有一个指向原子对象的指针(作为第一个参数)。
+
+C++标准库也对在一个原子类型中的`std::shared_ptr<>`智能指针类型提供释放函数。
+
+```c++
+std::shared_ptr<my_data> p;
+void process_global_data()
+{
+    std::shared_ptr<my_data> local=std::atomic_load(&p);
+    process_data(local);
+}
+void update_global_data()
+{
+    std::shared_ptr<my_data> local(new my_data);
+    std::atomic_store(&p,local);
+}
+```
+
+### 5.3 同步操作和强制排序
+
+简单的读写者同步问题
+
+```c++
+std::vector<int> data;
+//数据访问互斥量
+
+std::atomic<bool> data_ready(fasle);
+void reader_thread()
+{
+    while(!data_ready.load()) {
+        std::this_thread::sleep(std::milliseconds(1));
+    }
+    std::cout<<"The answer="<<data[0]<<"\m";
+}
+void writer_thread()
+{
+    data.push_back(42);
+    data_ready=true;
+}
+```
+
+#### 5.3.3 原子操作的内存顺序
+
+使用C++的原子操作时，如果这些系统有多个处理器,这些额外添加的同步指令可能会消耗大量的时间,从而降低系统整体的性能。多核之间的通信会降低其性能。
+
+序列一致
+
+```c++
+#include <atomic>
+
+#include <thread>
+
+#include <assert.h>
+
+std::atomic<bool> x,y;
+std::atomic<int> z;
+
+void write_x()
+{
+    x.store(true,std::memory_order_seq_cst);
+}
+
+void write_y()
+{
+    y.store(true,std::memory_order_seq_cst);
+}
+
+void read_x_then_y()
+{
+    //等待x为false
+
+    while(!x.load(std::memory_order_seq_cst));
+        if(y.load(std::memory_order_seq_cst))
+        {
+            ++z;
+        }
+}
+
+void read_y_then_x()
+{
+    //等待y为false
+
+    while(!y.load(std::memory_order_seq_cst));
+        if(x.load(std::memory_order_seq_cst))
+        {
+            ++z;
+        }
+}
+
+int int main(int argc, char const *argv[]) {
+    x=false;
+    y=false;
+    std::thread a(write_x);
+    std::thread b(write_y);
+    std::thread c(read_x_then_y);
+    std::thread d(read_y_then_x);
+
+    a.join();
+    b.join();
+    c.join();
+    d.join();
+    assert(z.load!=0);
+    return 0;
+}
+```
+非限制操作只有非常少的顺序要求
+
+```c++
+#include <atomic>
+
+#include <thread>
+
+#include <assert.h>
+
+std::atomic<bool > x,y;
+std::atomic<int> z;
+
+void write_x_then_y()
+{
+    x.store(true,std::memory_order_relaxed);
+    y.store(true,std::memory_order_relaxed);
+}
+
+void read_y_then_x()
+{
+    //等待y改变
+    while(!y.load(std::memory_order_relaxed));
+        if(s.load(std::memory_order_relaxed))
+        {
+            ++z;
+        }
+}
+int int main(int argc, char const *argv[]) {
+    x=false;
+    y=false;
+    std::thread a(write_x_then_y);
+    std::Thread b(read_y_then_x);
+    a.join();
+    b.join();
+    assert(z.load()!=0);
+    return 0;
+}
+```
+非限制操作多线程版
+
+```c++
+#include <thread>
+
+#include <atomic>
+
+#include <iostream>
+
+std::atomic<int> x(0),y(0),z(0);
+std::atomic<bool> go(false);
+
+unsigned const loop_count=10;
+
+struct read_values
+{
+    int x,y,z;
+};
+
+read_values values1[loop_count];
+read_values values2[loop_count];
+read_values values3[loop_count];
+read_values values4[loop_count];
+read_values values5[loop_count];
+
+void increment(std::atomic<int>* var_to_inc,read_values* values)
+{
+    while(!go) {
+        //自旋，等待信号
+
+        std::this_thread::yield();
+    }
+    for(unsigned i=0;i<loop_count;++i)
+    {
+        values[i].x=x.load(std::memory_order_relaxed);
+        values[i].y=y.load(std::memory_order_relaxed);
+        values[i].z=z.load(std::memory_order_relaxed);
+        //更改值
+
+        var_to_inc->store(i+1,std::memory_order_relaxed);
+        //发送信号id
+
+        std::this_thread::yield();
+    }
+}
+
+void read_vals(read_values* values)
+{
+    while(!go) {
+        //自旋，等待信号
+
+        std::this_thread::yield();
+    }
+    for(unsigned i=0;i<loop_count;++i)
+    {
+        values[i].x=x.load(std::memory_order_relaxed);
+        values[i].y=y.load(std::memory_order_relaxed);
+        values[i].z=z.load(std::memory_order_relaxed);
+        //发送信号id
+
+        std::this_thread::yield();
+    }
+}
+
+void print(read_values* v)
+{
+    for(unsigned i=0;i<loop_count;++i)
+    {
+        if(i){
+            std::cout<<",";
+        }
+        std::cout<<"("<<v[i].x<<","<<v[i].y<<","<<v[i].z<<")";
+    }
+    std::cout<<std::endl;
+}
+
+
+int main()
+{
+        std::thread t1(increment,&x,values1);
+        std::thread t2(increment,&y,values2);
+        std::thread t3(increment,&z,values3);
+        std::thread t4(read_vals,values4);
+        std::thread t5(read_vals,values5);
+        //开始执行主循环
+
+        go=true;
+        t5.join();
+        t4.join();
+        t3.join();
+        t2.join();
+        t1.join();
+        print(values1);     //  7   打印最终结果
+        print(values2);
+        print(values3);
+        print(values4);
+        print(values5);
+}
+
+```
+
+获取-释放序列(acquire-release ordering)
+获取-释放序列中只将获取或者释放操作进行了原子化，相当于P/V操作。同一个线程相当于同步操作。
+```c++
+
+#include <atomic>
+
+#include <thread>
+
+#include <assert.h>
+
+std::atomic<bool>   x,y;
+std::atomic<int>    z;
+
+void write_x()
+{
+    x.store(true,std::memory_order_release);
+}
+void    write_y()
+{
+        y.store(true,std::memory_order_release);
+}
+void    read_x_then_y()
+{
+        while(!x.load(std::memory_order_acquire));
+        if(y.load(std::memory_order_acquire))    
+                ++z;
+}
+void    read_y_then_x()
+{
+        while(!y.load(std::memory_order_acquire));
+        if(x.load(std::memory_order_acquire))
+                ++z;
+}
+int main()
+{
+        x=false;
+        y=false;
+        z=0;
+        std::thread a(write_x);
+        std::thread b(write_y);
+        std::thread c(read_x_then_y);
+        std::thread d(read_y_then_x);
+        a.join();
+        b.join();
+        c.join();
+        d.join();
+        assert(z.load()!=0);
+}
+
+//因为只能确定单个变量释放和获取的顺序，不确定X,y相对执行的顺序，当X,Y的读/写操作相对有序，即在同一个线程中时，不会产生断言。
+
+#include    <atomic>
+
+#include    <thread>
+
+#include    <assert.h>
+std::atomic<bool>   x,y;
+std::atomic<int>    z;
+void    write_x_then_y()
+{
+        x.store(true,std::memory_order_relaxed);
+        y.store(true,std::memory_order_release);
+}
+void    read_y_then_x()
+{
+        while(!y.load(std::memory_order_acquire));
+置为true
+        if(x.load(std::memory_order_relaxed))
+                ++z;
+}
+int main()
+{
+        x=false;
+        y=false;
+        z=0;
+        std::thread a(write_x_then_y);
+        std::thread b(read_y_then_x);
+        a.join();
+        b.join();
+        assert(z.load()!=0);
+}
 
 
 
+```
+
+同步传递相关的获取-释放序列：一个线程：存储-释放变量1；第二线程：加载-获取变量1-存储-释放-变量2；第三个线程：加载-获取变量2；
+
+```c++
+std::atomic<int>    data[5];
+
+std::atomic<bool>   sync1(false),sync2(false);
+
+
+void    thread_1()
+{
+        data[0].store(42,std::memory_order_relaxed);
+        data[1].store(97,std::memory_order_relaxed);
+        data[2].store(17,std::memory_order_relaxed);
+        data[3].store(-141,std::memory_order_relaxed);
+        data[4].store(2003,std::memory_order_relaxed);
+        //  1.设置sync1
+
+        sync1.store(true,std::memory_order_release);
+}
+
+void    thread_2()
+{
+        //  2.直到sync1设置后,循环结束
+
+        while(!sync1.load(std::memory_order_acquire));      
+        //  3.设置sync2
+
+        sync2.store(true,std::memory_order_release);        
+}
+
+void    thread_3()
+{
+        //  4.直到sync1设置后,循环结束
+
+        while(!sync2.load(std::memory_order_acquire));
+
+        assert(data[0].load(std::memory_order_relaxed)==42);
+        assert(data[1].load(std::memory_order_relaxed)==97);
+        assert(data[2].load(std::memory_order_relaxed)==17);
+        assert(data[3].load(std::memory_order_relaxed)==-141);
+        assert(data[4].load(std::memory_order_relaxed)==2003);
+}
+
+```
+
+获取-释放序列和`memory_order_consume`的数据相关性
+
+memory_order_consume很特别:它完全依赖于数据,这里有两种新关系用来处理数据依赖:
+
+- 前序依赖(dependency-ordered-before):
+
+    当A前序依赖B,那么A线程间也前序依赖B。
+
+
+- 携带依赖(carries-a-dependency-to):
+    
+    如果A操作结果要使用操作B的操作数,而后A将携带依赖于B。如果A操作的结果是一个标量,比如int,而后的携带依赖关系仍然适用于,当A的结果存储在一个变量中,并且这个变量需要被其他操作使用。这个操作是也是可以传递的,所以当A携带依赖B,并且B携带依赖C,就额可以得出A携带依赖C的关系。
+
+
+
+有时,你不想为携带依赖增加其他的开销。你想让编译器在寄存器中缓存这些值,以及优化重排序操作代码,而不是对这些依赖大惊小怪。这种情况下,你可以使用std::kill_dependecy()来显式打破依赖链。std::kill_dependency()是一个简单的函数模板,其会复制提供的参数给返回值,但是依旧会打破依赖链。例如,当你拥有一个全局的只读数组,当其他线程对数组索引进行检索时,你使用的是std::memory_order_consume,那么你可以使用std::kill_dependency()让编译器知道这里不需要重新读取该数组的内容,就像下
+面的例子一样:
+
+```c++
+int global_data[]={...};
+std::atomic<int> index;
+
+void f()
+{
+    //需要释放index之后才能加载
+
+    int i=index.load(std::memory_order_consume);
+    //打断依赖，直接执行操作，不需要等待index.load之后执行。
+
+    do_something_with(global_data[std::kill_dependency(i)]);
+}
+```
+
+#### 5.3.4 释放队列与同步
+
+```c++
+
+#include    <atomic>
+
+#include    <thread>
+
+std::vector<int>    queue_data;
+std::atomic<int>    count;
+void    populate_queue()
+{
+        unsigned    const   number_of_items=20;
+        queue_data.clear();
+        for(unsigned    i=0;i<number_of_items;++i)
+        {
+                queue_data.push_back(i);
+        }
+        //1 初始化存储
+
+        count.store(number_of_items,std::memory_order_release); 
+}
+void    consume_queue_items()
+{
+        while(true)
+        {
+            int item_index;
+            //2 一个“读-改-写”操作
+
+            if((item_index=count.fetch_sub(1,std::memory_order_acquire))<=0)
+                {
+                    //3 等待更多元素
+
+                    wait_for_more_items();      
+                        continue;
+                }
+                //4 安全读取queue_data
+
+                process(queue_data[item_index-1]);
+        }
+}
+int main()
+{
+    std::thread a(populate_queue);
+    std::thread b(consume_queue_items);
+    std::thread c(consume_queue_items);
+    a.join();
+    b.join();
+    c.join();
+}
+
+
+```
+
+![对队列操作的释放顺序](https://wangpengcheng.github.io/img/2019-07-11-17-07-03.png)
+
+#### 5.3.5 栅栏
+_参考链接：_ [atomic_thread_fence](https://zh.cppreference.com/w/cpp/atomic/atomic_thread_fence)
+
+栅栏操作会对内存序列进行约束,使其无法对任何数据进行修改,典型的做法是与使用memory_order_relaxed约束序的原子操作一起使用。它属于全局操作，可以影响到在线程中的其它原子操作。
+
+栅栏让自由操作变的有序
+
+```c++
+
+#include    <atomic>
+
+#include    <thread>
+
+#include    <assert.h>
+
+std::atomic<bool>   x,y;
+std::atomic<int>    z;
+void    write_x_then_y()
+{
+        x.store(true,std::memory_order_relaxed); 
+        //释放栅栏
+
+        std::atomic_thread_fence(std::memory_order_release);
+        y.store(true,std::memory_order_relaxed); 
+}
+void    read_y_then_x()
+{
+        //
+
+        while(!y.load(std::memory_order_relaxed));
+        //获取栅栏,与释放栅栏相结合，使得x的存储发生在获取之前。
+
+        std::atomic_thread_fence(std::memory_order_acquire);
+        //因为栅栏，x顺序化
+
+        if(x.load(std::memory_order_relaxed))
+                ++z;
+}
+int main()
+{
+        x=false;
+        y=false;
+        z=0;
+        std::thread a(write_x_then_y);
+        std::thread b(read_y_then_x);
+        a.join();
+        b.join();
+        //因为栅栏原因，不会触发断言，但是当存储放在栅栏释放之后，就可能发生断言
+
+        assert(z.load()!=0);
+}
+
+```
+注意： 但是这里有一点很重要:同步点,就是栅栏本身。下面的代码就不一定能保证不发生断言了
+
+```c++
+void write_x_then_y()
+{
+    std::atomic_thread_fence(std::memory_order_release);
+    x.store(true,std::memory_order_relaxed);
+    y.store(true,std::memory_order_relaxed);
+}
+
+//这里栅栏的同步点就是它本身，相当于释放过后，thread b 紧跟对齐的代码是 if(x.load(...));a的代码是x.store...;y.store... 回到了最初的状况，x之间的顺序性被打乱。 
+```
+
+#### 5.3.6 原子操作对非原子的操作排序
+
+```c++
+#include <atomic>
+
+#include <thread>
+
+#include <assert.h>
+
+//定义非原子变量x
+
+bool x=false;
+//互斥信号变量
+
+std::atomic<bool> y;
+//资源信号量
+
+void write_x_then_y()
+{
+    //在栅栏前存储x
+
+    x=true;
+    //释放栅栏
+
+    std::atomic_thread_fence(std::memory_order_release);
+
+    y.store(true,std::memory_order_relaxed);
+}
+void read_y_then_x()
+{
+    //在y被写入前持续等待
+
+    while(!y.load(std::memory_order_relaxed));
+    std::atomic_thread_fence(std::memory_order_acquire);
+    if(x){
+        ++z;
+    }
+}
+
+int main(int argc, char const *argv[]) {
+    x=false;
+    y=false;
+    z=0;
+    std::thread a(write_x_then_y);
+    std::thread b(read_y_then_x);
+    a.join();
+    b.join();
+    assert(z.load()!=0);
+    return 0;
+}
+
+```
