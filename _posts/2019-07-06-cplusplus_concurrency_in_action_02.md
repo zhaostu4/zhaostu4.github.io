@@ -569,7 +569,7 @@ _参考链接：_ [std::shared_future](https://zh.cppreference.com/w/cpp/thread/
 
 使用`std::shared_future`可以让多个线程等待同一个事件。`std::future`是只移动的，在不同实例中相互传递的只是其所有权限。而`std::shared_future`实例是可拷贝的,所以多个对象可以引用同一关联“期望”的结果。但是因为，每个独立对象上，成员函数调用返回的结果是不同步的，需要加锁进行数据保护。
 
-![线程共享](../img/2019-07-07 20-44-02.png);
+![线程共享](http://wangpengcheng.github.io/img/2019-07-11-10-49-24.png);
 
 使用示例：
 
