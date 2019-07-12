@@ -208,6 +208,73 @@ public:
     threadsafe_queue():head(new node),tail(head.get()){}
     threadsafe_queue(const threadsafe_queue& other)=delete;
     threadsafe_queue& operator=(const threadsafe_queue& other)=delete;
+    node* get_tail()
+    {
+        std::lock_guard<std::mutex> tail_lock(tail_mutex);
+        return tail;
+    }
+    std::unique_ptr<node> pop_head()
+    {
+        std::unique_ptr<node> old_head=std::move(head);
+        head=std::move(old_head->next);
+        return old_head;
+    }
+    //数据等待线程锁
+
+    std::unique_ptr<std::mutex> wait_for_data()
+    {
+        std::unique_lock<std::mutex> head_lock(head_mutex);
+        //等待环境唤醒
+
+        data_cond.wait(head_lock,[&]{return head.get()!=get_tail();});
+        //将锁的实例，返回给调用者
+
+        return std::move(head_lock);
+    }
+    std::unique_ptr<node> wait_pop_head()
+    {
+        //添加数据等待线程锁
+
+        std::unique_lock<std::mutex> head_lock(wait_for_data());
+
+        return pop_head();
+    }
+    std::unique_ptr<node> wait_pop_head(T& value)
+    {
+        std::unique_lock<std::mutex> head_lock(wait_for_data());
+        //获取头部数据
+
+        value=std::move(*head->data);
+
+        return pop_head();
+    }
+
+    void wait_and_pop(T& value)
+    {
+        std::unique_ptr<node> const old_head=wait_pop_head(value);
+    }
+    //试着拿出头部
+
+    std::unique_ptr<node> try_pop_head()
+    {
+        std::lock_guard<std::mutex> head_lock(head_mutex);
+        if(head.get()==get_tail())
+        {
+            return std::unique_ptr<node>();
+        }
+        return pop_head();
+    }
+    std::unique_ptr<node> try_pop_head(T& value)
+    {
+        std::lock_guard<std::mutex> head_lock(head_mutex);
+        if(head.get()==get_tail())
+        {
+            return std::unique_ptr<node>();
+        }
+        value=std::move(*head->data);
+        return pop_head();
+    }
+
     std::shared_ptr<T>  try_pop();
     bool try_pop(T& value);
     std::shared_ptr<T> wait_and_pop();
@@ -236,5 +303,337 @@ void threadsafe_queue<T>::push(T new_data)
 
     data_cond.notify_one();
 }
+
+//线程安全队列
+
+template<T>
+std::shared_ptr<T> threadsafe_queue<T>::wait_and_pop()
+{
+    std::unique_ptr<node> const old_head=wait_pop_head();
+    return old_head->data;
+}
+template<T>
+void threadsafe_queue<T>::wait_and_pop(T& value)
+{
+    //传递值，然后返回取出的头部
+
+    std::unique_ptr<node> const old_head=wait_pop_head(value);
+}
+template<T>
+std::shared_ptr threadsafe_queue<T>::try_pop()
+{
+    std::unique_ptr<node> old_head=try_pop_head();
+    return old_head?old_head->data:std::shared_ptr<T>();
+}
+
+template<T>
+bool threadsafe_queue<T>::try_pop(T& value)
+{
+    std::unique_ptr<node> old_head=try_pop_head(value);
+    return old_head;
+}
+
+template<T>
+bool empty()
+{
+    std::lock_guard<std::mutex> head_lock(head_mutex);
+    return (head.get()==get_tail());
+}
+```
+
+### 6.3 基于锁设计更加复杂的数据结构
+
+这里主要以定义一个简单的线程安全查询表和链表为例，进行工作
+
+#### 6.3.1 一个线程安全的查询表
+
+首先明确查询表的基本操作有：
+
+- 添加一队“键值-数据”
+- 修改指定键值所对应的数据
+- 删除一组值
+- 通过给定键值，获取对应数据
+
+`std::map`椎间盘美好常见的关联容器和比较
+
+- 二叉树；比如：红黑树：并不会提高对高并发的访问，每一个都要访问根节点，根节点需要时常上锁
+- 有序数组：是最坏的选择，无法提前感知那个有序
+- 哈希表：结合桶，对每个桶进行互斥加锁，提高并发性能。
+
+```c++
+//定义模板：关键字、值、hash映射
+
+template<typename Key,typename Value,typename Hash=std::hash<Key> >
+
+
+
+class threadsafe_lookup_table
+{
+private:
+    //定义桶的基本类型
+
+    class bucket_type
+    {
+    private:
+        //设置键值对基本类型
+
+        typedef std::pair<Key,Value>    bucket_value;
+        //设置键值队列表
+
+        typedef std::list<bucket_value> bucket_data;
+        //定义列表迭代器
+
+        typedef typename bucket_data::iterator bucket_iterator;
+        //定义桶中的数据列表
+
+        bucket_data data;
+        //桶的互斥信号变量
+
+        mutable boost::shared_mutex mutex;
+        //通过关键字查找迭代器
+
+        bucket_iterator find_entry_for(Key const& key) const
+        {
+            return  std::find_if(data.begin(),
+                data.end(),
+                [&](bucket_value const& item){return item.first==key;}
+                );
+        }
+    public:
+        //通过引入的方式，查找数据
+
+        Value value_for(Key const& key,Value const& default_value) const
+        {
+            boost::shared_lock<boost::shared_mutex> lock(mutex);
+            bucket_iterator const found_entry=find_entry_for(key);
+            //返回查找的关键值
+
+            return (found_entry==data.end())?default_value:found_entry->second;
+        }
+        //更新键值对
+
+        void add_or_update_mapping(Key const& key,Value const& value)
+        {
+            std::unique_lock<boost::shared_mutex> lock(mutex);
+            bucket_iterator const found_entry=find_entry_for(key);
+            if(found_entry==data.end())
+            {
+                data.push_back(bucket_value(key,value));
+            }else{
+                found_entry->second=value;
+            }
+        }
+        //移除关键字
+
+        void remove_mapping(Key const& key)
+        {
+            std::unique_lock<boost::shared_mutex> lock(mutex);
+            bucket_iterator const found_entry=find_entry_for(key);
+            if(found_entry!=data.end())
+            {
+               data.erase(found_entry);
+            }
+        }
+    };
+    //end define bucket_type
+
+    //定义查询的基本桶向量容器
+
+    std::vector<std::unique_ptr<bucket_type> > buckets;
+    //hash映射表
+
+    Hash hasher;
+    //根据关键字查找桶
+
+    bucket_type& get_bucket(Key const& key) const
+    {
+        std::size_t const bucket_index=hasher(key)%buckets.size();
+        return *buckets[bucket_index];
+    }
+//公共的类接口
+
+public:
+    //定义关键字类型
+
+    typedef Key key_type;
+    //定义映射的值
+
+    typedef Value mapped_type;
+    //定义hash函数
+
+    typedef Hash hash_type;
+    //基本的构造函数
+
+    threadsafe_lookup_table(unsigned num_buckets=19,
+                            Hash const& hasher_=Hash()):
+                            buckets(num_buckets),
+                            hasher(hasher_)
+    {
+        for(unsigned i=0;i<num_buckets;++i)
+        {
+            buckets[i].reset(new bucket_type);
+        }
+    }
+    threadsafe_lookup_table(threadsafe_lookup_table const& other)=delete;
+    threadsafe_lookup_table& operator=(threadsafe_lookup_table const& other)=delete;
+    //根据关键字查找值
+
+    Value value_for(Key const& key,
+                    Value const& default_value=Value()) const
+    {
+        return get_bucket(key).value_for(key,default_value);
+    }
+    
+    void add_or_update_mapping(Key const& key,Value const& value)
+    {
+        get_bucket(key).add_or_update_mapping(key,value);
+    }
+    void remove_mapping(Key const& key)
+    {
+        get_bucket(key).remove_mapping(key);
+    }
+};
+
+```
+
+#### 6.3.2  编写一个使用锁的线程安全链表
+
+链表的基本功能：
+
+链表的基本操作
+
+- 向列表添加一个元素
+- 当某个条件满足时,就从链表中删除某个元素
+- 当某个条件满足时,从链表中查找某个元素
+- 当某个条件满足时,更新链表中的某个元素
+- 将当前容器中链表中的每个元素,复制到另一个容器中
+
+线程安全的迭代器
+
+```c++
+//定义模板类
+
+
+template<typename   T>
+class threadsafe_list
+{
+    //链表数据节点
+
+    struct node
+    {
+        std::mutex m;
+        std::shared_ptr<T> data;
+        std::unique_ptr<node> next;
+        //构造函数
+
+        node():next(){}
+        //数值构造函数
+
+        node(T const& value):data(std::make_shared<T>(value)){}
+    };
+    //定义头部节点
+
+    node head;
+public:
+        threadsafe_list(){}
+        ~threadsafe_list()
+        {
+            remove_if([](node const&){return true;});
+        }
+        threadsafe_list(threadsafe_list const&  other)=delete;
+        threadsafe_list& operator=(threadsafe_list const& other)=delete;
+        //从头部插入
+
+        void push_front(T const& value)
+        {
+            //创建新节点
+            std::unique_ptr<node> new_node(new node(value));
+            //头部节点加锁
+
+            std::lock_guard<std::mutex> lk(head.m);
+            new_node->next=std::move(head.next);
+            head.next=std::move(new_node);
+        }
+        //定义迭代函数
+
+        template<typename Function>
+        void for_each(Function f)
+        {
+            node* current=&head;
+            std::unique_lock<std::mutex> lk(head.m);
+            //便利链表
+
+            while(node* const next=current->next.get())
+            {
+                //保护下一个节点数据
+
+                std::unique_lock<std::mutex> next_lk(next->m);
+                //上一个节点解锁
+
+                lk.unlock();
+                //执行函数
+
+                f(*next->data);
+                //更改当前指针
+
+                current=next;
+                //移动对象
+
+                lk=std::move(next_lk);
+            }
+        }
+        //查找一个条件的元素
+        //定义查找关键函数模板
+
+        template<typename Predicate>
+        std::shared_ptr<T> find_first_if(Predicate p)
+        {
+            node* current=&head;
+            std::unique_lock<std::mutex> lk(head.m);
+            while(node* const   next=current->next.get())
+            {
+
+                std::unique_lock<std::mutex> next_lk(next->m);
+                lk.unlock();
+                if(p(*next->data))
+                {
+                    return next->data;
+                }
+                current=next;
+                lk=std::move(next_lk);
+            }
+            return std::shared_ptr<T>();
+        }
+        //按照条件删除元素
+
+        template<typename Predicate>
+        void remove_if(Predicate p)
+        {
+            node* current=&head;
+            std::unique_lock<std::mutex> lk(head.m);
+            while(node* const next=current->next.get())
+            {
+                std::unique_lock<std::mutex> next_lk(next->m);
+                //是否符合查找条件
+
+                if(p(*next->data))
+                {
+                    std::unique_ptr<node> old_next=std::move(current->next);
+                    current->next=std::move(next->next);
+                    next_lk.unlock();
+                }else{
+                    //解锁下一个
+
+                    lk.unlock();
+                    //移动当前指针
+
+                    current=next;
+                    //移动下一个锁
+
+                    lk=std::move(next_lk);
+                }
+            }
+        }
+};
 
 ```
