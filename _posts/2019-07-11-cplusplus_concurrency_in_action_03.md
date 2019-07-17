@@ -1610,3 +1610,163 @@ public:
 };
 
 ```
+
+##### 无锁队列中的线程间互助
+
+通过在node节点中设置next指针可以在pop()函数中通过对`next`指针的读取方便快速的使用compare_exchange_strong,进行头指针移动；对于push的实现稍微复杂一点
+
+```c++
+template<typename   T>
+class lock_free_queue
+{
+private:
+    struct node
+    {
+        std::atomic<T*> data;
+        std::atomic<node_counter> count;
+        //下一个指针
+
+        std::atomic<counted_node_ptr> next;
+    };
+
+    void set_new_tail(
+    counted_node_ptr &old_tail,
+    counted_node_ptr const &new_tail
+    )
+    {
+        //获取旧尾指针
+
+        node* const current_tail_ptr=old_tail.ptr;
+        while(!tail.compare_exchange_weak(old_tail,new_tail)&&old_tail.ptr==current_tail_ptr);
+        //当前尾部指针与旧指针相同
+
+        if(old_tail.ptr==current_tail_ptr)
+            //释放外部计数
+
+            free_external_counter(old_tail);
+        else
+            //否则释放当前指针
+
+            current_tail_ptr->release_ref();
+    }
+public:
+    void push(T new_value)
+    {
+        //新数据
+
+        std::unique_ptr<T> new_data(new T(new_value));
+        //新节点
+
+        counted_node_ptr new_next;
+        new_next.ptr=new node;
+        //外部引用设置为1
+
+        new_next.external_count=1;
+        counted_node_ptr old_tail=tail.load();
+        for(;;)
+        {
+            //增加外部引用
+
+            increase_external_count(tail,old_tail);
+            //获取旧数据
+
+            T* old_data=nullptr;
+            //旧尾指针数据与old_data相同
+
+            if(old_tail.ptr->data.compare_exchange_strong(
+                                    old_data,
+                                    new_data.get()
+                                    ))
+            {
+                //初始化next指针，准备交换数据
+                counted_node_ptr old_next={0};
+                //当尾指针指向新节点时
+
+                if(!old_tail.ptr->next.compare_exchange_strong(
+                                            old_next,
+                                            new_next)
+                    )
+                {
+
+                    //删除新节点
+
+                    delete new_next.ptr;
+                    //新next指针指向原指针指向
+
+                    new_next=old_next;
+                }
+                set_new_tail(old_tail,new_next);
+                new_data.release();
+                break;
+            }else{
+                //初始化新的尾指针
+                counted_node_ptr old_next={0};
+                //如果旧尾指针next指向为old_next,将next指针指向新next
+
+                if(old_tail.ptr->next.compare_exchange_strong(
+                                            old_next,new_next))
+                {
+                        old_next=new_next;
+                        new_next.ptr=new node;
+                }
+                    set_new_tail(old_tail,old_next);
+            }
+        }
+    }
+};
+
+```
+
+### 7.3 对于设计无锁数据结构的指导建议
+
+_参考链接：_ [c++11 内存模型解读](https://blog.csdn.net/weixin_36145588/article/details/78873917)
+
+![几种内存模型回顾](http://images2015.cnblogs.com/blog/416650/201704/416650-20170406205142128-2029792592.png)
+
+通常情况下我们把atomic成员函数可使用memory_order值分为以下3组:
+
+- 原子存储操作(store)可使用:memory_order_relaxed、memory_order_release、memory_order_seq_cst
+- 原子读取操作(load)可使用:memory_order_relaxed、memory_order_consume、memory_order_acquire、memory_order_seq_cst
+- RMW操作(read-modify-write)即同时读写的操作,如atomic_flag.test_and_set()操作,atomic.atomic_compare_exchange()等都是需要同时读写的。可使用:memory_order_relaxed、memory_order_consume、memory_order_acquire、memory_order_release、memory_order_acq_rel、memory_order_seq_cst
+
+根据memory_order使用情况,我们可以将其为 3 类:
+
+- 顺序一致性模型:std::memory_order_seq_cst;最稳定，代价最高；原子操作默认的模型,在C++11中的原子类型的变量在线程中总是保持着顺序执行的特性。
+- Acquire-Release 模型:std::memory_order_consume, std::memory_order_acquire, std::memory_order_release, std::memory_order_acq_rel；若线程A中的一个原子store带memory_order_release标签，而线程B中来自同一变量的原子load带memory_order_acquire标签，从线程A的视角发生先于原子store的所有内存写入(non-atomic and relaxed atomic)，在线程B中成为可见副作用，一旦线程B中的原子加载完成，则保证线程B能观察到线程A写入内存的所有内容。
+
+注意：同步仅建立在release和acquire同一原子对象的线程之间，其他线程可能看到与被同步线程的一者或两者相异的内存访问顺序。
+
+- Relax 模型:std::memory_order_relaxed；最不稳定，代价最低
+
+#### 7.3.1 使用`std::memory_order_seq_cst`的原型
+
+std::memory_order_seq_cst比起其他内存序要简单的多，因为所有操作都将其作为总序。本章的所有例子,都是从std::memory_order_seq_cst开始,只有当基本操作正常工作的时候,才放宽内存序的选择。
+
+#### 7.3.2 对无锁内存的回收策略
+
+当有其他线程对节点进行访问的时候,节点无法被任一线程删除;为避免过多的内存使用,还是希望这个节点在能删除的时候尽快删除。本章中介绍了三种技术来保证内存可以被安全的回收:
+
+- 等待无线程对数据结构进行访问时,删除所有等待删除的对象。
+- 使用风险指针来标识正在被线程访问的对象。
+- 对对象进行引用计数,当没有线程对对象进行引用时,将其删除。
+
+#### 7.3.3  指导建议:小心ABA问题
+
+在“基于比较/交换”的算法中要格外小心“ABA问题”。其流程是:
+
+1. 线程1读取原子变量x,并且发现其值是A。
+2. 线程1对这个值进行一些操作,比如,解引用(当其是一个指针的时候),或做查询,或其他操作。
+3. 操作系统将线程1挂起。
+4. 其他线程对x执行一些操作,并且将其值改为B。
+5. 另一个线程对A相关的数据进行修改(线程1持有),让其不再合法。可能会在释放指针指向的内存时,代码产生剧烈的反应(大问题);或者只是修改了相关值而已(小问题)。
+6. 再来一个线程将x的值改回为A。如果A是一个指针,那么其可能指向一个新的对象,只是与旧对象共享同一个地址而已。
+7. 线程1继续运行,并且对x执行“比较/交换”操作,将A进行对比。这里,“比较/交换”成功
+(因为其值还是A),不过这是一个错误的A(the wrong A value)。从第2步中读取的数据不再合法,但是线程1无法言明这个问题,并且之后的操作将会损坏数据结构。
+
+解决方案：解决这个问题的一般方法是,让变量x中包含一个ABA计数器。“比较/交换”会对加入计数器的x进行操作。每次的值都不一样,计数随之增长,所以在x还是原值的前提下,即使有线程对x进行修改,“比较/交换”还是会失败。
+
+#### 7.3.4  指导建议:识别忙等待循环和帮助其他线程
+
+在最终队列的例子中,已经见识到线程在执行push操作时,必须等待另一个push操作流程的完成。等待线程就会被孤立,将会陷入到忙等待循环中,当线程尝试失败的时候,会继续循环,这样就会浪费CPU的计算周期。当忙等待循环结束时,就像一个阻塞操作解除,和使用互斥锁的行为一样。通过对算法的修改,当之前的线程还没有完成操作前,让等待线程执行未完成的步骤,就能让忙等待的线程不再被阻塞(**减小锁的粒度**)。在队列例中,需要将一个数据成员转换为一个原子变量,而不是使用非原子变量和使用“比较/交换”操作来做这件事;要是在更加复杂的数据结构中,这将需要更加多的变化来满足需求。
+
+
