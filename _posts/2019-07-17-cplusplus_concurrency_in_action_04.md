@@ -323,9 +323,378 @@ T parallel_accumulate(Iterator first,Iterator last,T init)
 
 将程序划分为"串行"和"并行"部分。可以使用下面的公式对程序性能的增益进行估计：
 
-![](../img/2019-07-18-20-56-36.png)
+![](https://wangpengcheng.github.io/img/2019-07-18-20-56-36.png)
+
+其中：
+
+- fs表示串行时间
+- P表示性能增益
+- N处理器数量
+
+#### 8.4.3  使用多线程隐藏延迟
+
+比起添加线程数量让其对处理器进行充分利用,有时也要在增加线程的同时,确保外部事件被及时的处理,以提高系统的响应能力。
+
+#### 8.4.4  使用并发提高响应能力
+
+通常使用专用的GUI线程来处理这些事件。线程可以通过简单的机制进行通讯，而不是将时间处理代码和任务代码混在一起，GUI线程如下
+
+```c++
+std::thread task_thread;
+std::atomic<bool>   task_cancelled(false);
+void gui_thread()
+{
+    while(true)
+    {
+        event_data  event=get_event();
+        if(event.type==quit)
+            break;
+        process(event);
+    }
+}
+void task()
+{
+    while(!task_complete()&&!task_cancelled)
+    {
+        do_next_operation();
+    }
+    if(task_cancelled)
+    {
+        perform_cleanup();
+    }else{
+        post_gui_event(task_complete);
+    }
+}
+void process(event_data const& event)
+{
+    switch(event.type)
+    {
+        case start_task:
+                task_cancelled=false;
+                task_thread=std::thread(task);
+                break;
+        case stop_task:
+                task_cancelled=true;
+                task_thread.join();
+                break;
+        case task_complete:
+                task_thread.join();
+                display_results();
+                break;
+        default:
+                //...
+        }
+}
+```
+
+
+### 8.5 在实践中设计并发代码
+
+#### 8.5.1 并行实现:`std::for_each`   
+
+
+for_each主要是容器类的内部迭代，因此主要是进行操作时候的存取锁；可以通过使用`std::packaged_task`和`std::future`机制对线程中的异常进行转移。下面是两种方式实现的`for_each`
+
+```c++
+//使用 std::packaged_task和std::future
+
+template<typename Iterator,typename Func>
+void parallel_for_each(Iterator first,Iterator last,Func f)
+{
+    unsigned long const length=std::distance(first,last);
+    if(!length)
+        return;
+    unsigned long const min_pre_thread=25;
+    unsigned long const max_threads=(length+min_per_thread-1)/min_pre_thread;
+    unsigned long const hardware_threads=std::thread::hardware_concurrency();
+    unsigned long const num_threads=std::min(hardware_threads!=0?hardware_threads:2,max_threads);
+    unsigned long const block_size=length/num_threads;
+    std::vector<std::future<void> > futures(num_threads-1);
+    std::vector<std::thread> threads(num_threads-1);
+    join_threads joiner(threads);
+    Iterator block_start=first;
+    for(unsigned long i=0;i<(num_threads-1);++i)
+    {
+        Iterator block_end=block_start;
+        std::advance(block_end,block_size);
+        std::packaged_task<void(void)> task(
+            [=](){
+                //执行相关函数
+
+                std::for_each(block_start,block_end,f);
+            }
+            );
+        futures[i]=task.get_future();
+        threads[i]=std::thread(std::move(task));
+        block_start=block_end;
+    }
+    std::for_each(block_start,last,f);
+    for(unsigned long i=0;i<(num_threads-1);++i)
+    {
+        futures[i].get();
+    }
+
+}
+
+
+//使用 std::async实现
+
+template<typename   Iterator,typename   Func>
+void parallel_for_each(Iterator first,Iterator last,Func f)
+{
+    unsigned long const length=std::distance(first,last);
+    if(!length)
+        return;
+    unsigned long const min_per_thread=25;
+    if(length<(2*min_per_thread))
+    {
+        std::for_each(first,last,f);
+    }else{
+        Iterator const mid_point=first+length/2;
+        std::future<void> first_half=std::async(
+            &parallel_for_each<Iterator,Func>,
+            first,mid_point,
+            f
+            );
+            parallel_for_each(mid_point,last,f);
+            first_half.get();
+        }
+}
+
+
+```
+### 8.5.2 并行实现: std::find
+
+find需要在找到时，中断其它线程，可以使用一个原子变量作为标示，可以使用 `std::packaged_task`或者`std::promise`对异常和最终值进行设置;现在使用`std::promise`的方法如下：
+
+```c++
+
+template<typename Iterator,typename MatchType>
+//并行查找函数
+
+Iterator parallel_find(Iterator first,Iterator last,MatchType match)
+{
+    struct find_element
+    {
+        //重载操作符
+
+        void operator()(
+            Iterator begin,
+            Iterator end,
+            MatchType match,
+            std::promise<Iterator>* result,
+            std::atomic<bool>*  done_flag
+            )
+        {
+            try
+            {
+                //循环查找是否相等
+
+                for(;(begin!=end)&&!done_flag->load();++begin)
+                {
+                    if(*begin==match)
+                    {
+                        result->set_value(begin);
+                        done_flag->store(true);
+                        return;
+                    }
+                }
+            }catch(...)
+            {
+                try
+                {
+                    //输出错误信息
+
+                    result->set_exception(std::current_exception());
+                    done_flag->store(true);
+                }catch(...){}
+            }
+        }
+    };
+    unsigned long const length=std::distance(first,last);
+    if(!length)
+        return  last;
+    unsigned long const min_per_thread=25;
+    unsigned long const max_threads=(length+min_per_thread-1)/min_per_thread;
+    unsigned long const hardware_threads=std::thread::hardware_concurrency();
+    unsigned long const num_threads=std::min(hardware_threads!=0?hardware_threads:2,max_threads);
+    //每个线程数据块的大小
+
+    unsigned long const block_size=length/num_threads;
+    //result结果
+
+    std::promise<Iterator> result;
+    //是否查找到的标志位
+
+    std::atomic<bool> done_flag(false);
+    //线程vector
+
+    std::vector<std::thread> threads(num_threads-1);
+    {
+        //添加和启动线程
+
+        join_threads joiner(threads);
+        //迭代创建线程
+
+        Iterator block_start=first;
+        for(unsigned long i=0;i<(num_threads-1);++i)
+        {
+            Iterator block_end=block_start;
+            std::advance(block_end,block_size);
+            threads[i]=std::thread(
+                find_element(),
+                block_end,
+                match,
+                &result,
+                &done_flag
+                );
+            block_start=block_end;
+        }
+        if(!done_flag.load())
+        {
+            return last;
+        }
+        return result.get_future().get();
+    }
+```
+
+使用`std::async`实现的并行find算法
+
+```c++
+
+template<typename Iterator,typename MatchType>
+Iterator parallel_find_impl(Iterator first,Iterator 
+last,MatchType match,ne)
+{
+    try
+    {
+        unsigned long const length=std::distance(first,last);
+        unsigned long const min_per_thread=25;
+        //小于最小线程数量的两倍直接查找
+
+        if(length<(2*min_per_thread))
+        {
+            for(;(first!=last)&&!done.load();++first)
+            {
+                if(*first==match)
+                {
+                    done=true;
+                    return  first;
+                }
+            }
+            return last;
+        }else{
+            //中间部分的迭代器
+
+            Iterator const mid_point=first+(length/2);
+            //获取中间到最后位置的异步执行的结果
+
+            std::future<Iterator> async_result=std::async(&parallel_find_impl<Iterator,MatchType>,mid_point,last,match,std::ref(done));
+            //直接获取当前查找的结果
+
+            Iterator const direct_result=parallel_find_impl(first,mid_point,match,done);
+            //查找结果是否为中间指针
+
+            return (direct_result==mid_point)?async_result.get():direct_result;
+        }catch(...)
+        {
+            done=true;
+            throw;
+        }
+    }
+    //查找函数
+
+    template<typename Iterator,typename MatchType>
+    Iterator parallel_find(Iterator first,Iterator last,MatchType match)
+    {
+        std::atomic<bool> done(false);
+        return parallel_find_impl(first,last,match,done);
+    }
 
 
 
 
 
+```
+
+#### 8.5.3 并行实现：`std::partial_sum`
+
+使用划分的方式实现并行的计算部分和
+
+```c++
+template<typename   Iterator>
+void    parallel_partial_sum(Iterator   first,Iterator  last)
+{
+        typedef typename    Iterator::value_type    value_type;
+        struct  process_chunk       //  1
+        {
+                void    operator()(Iterator begin,Iterator  last,std::future<value_type>*    previous_end_value,std::promise<value_type>*   end_value)
+                {
+                        try
+                        {
+                                Iterator    end=last;
+                                ++end;
+                                std::partial_sum(begin,end,begin);      //  2
+                                if(previous_end_value)      //  3
+                                {
+                                        value_type& addend=previous_end_value->get();       //  4
+                                        *last+=addend;      //  5
+                                        if(end_value)
+                                        {
+                                                end_value->set_value(*last);        //  6
+                                        }
+                                        std::for_each(begin,last,[addend](value_type&   item));     
+                                }else if(end_value)
+                                {
+                                            end_value->set_value(*last);        //  8
+                                }
+                        }catch(...)
+                        {
+                            if(end_value)
+                            {
+                                            end_value->set_exception(std::current_exception()); 
+
+    }
+                                    else
+                                    {
+                                            throw;      //  11
+                                    }
+                            }
+                    }
+            };
+        unsigned    long    const   length=std::distance(first,last);
+        if(!length)
+                return  last;
+        unsigned    long    const   min_per_thread=25;      //  12
+        unsigned    long    const   max_threads=
+                (length+min_per_thread-1)/min_per_thread;
+        unsigned    long    const   hardware_threads=
+                std::thread::hardware_concurrency();
+        unsigned    long    const   num_threads=
+                std::min(hardware_threads!=0?
+hardware_threads:2,max_threads);
+        unsigned    long    const   block_size=length/num_threads;
+        typedef typename    Iterator::value_type    value_type;
+        std::vector<std::thread>    threads(num_threads-1);     //  13
+        std::vector<std::promise<value_type>    >
+                end_values(num_threads-1);      //  14
+        std::vector<std::future<value_type> >
+                previous_end_values;        //  15
+        previous_end_values.reserve(num_threads-1);     //  16
+        join_threads    joiner(threads);
+        Iterator    block_start=first;
+        for(unsigned    long    i=0;i<(num_threads-1);++i)
+{
+                Iterator    block_last=block_start;
+                std::advance(block_last,block_size-1);      //  17
+                threads[i]=std::thread(process_chunk(),     //  18
+ block_start=block_last;
+                ++block_start;      //  19
+                previous_end_values.push_back(end_values[i].get_future()));
+        }
+        Iterator    final_element=block_start;
+        std::advance(final_element,std::distance(block_start,last)-1);
+        process_chunk()(block_start,final_element,(num_threads>1)?&previous_end_values.back():0,0);
+}
+
+```
