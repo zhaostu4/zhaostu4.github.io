@@ -215,7 +215,115 @@ std::list<T> parallel_quick_sort(std::list<T> input)
 
 ### 8.3 为多线程性能设计数据结构
 
+多线程性能设计考虑因素：
 
+- 竞争
+- 伪共享
+- 数据距离
+
+#### 8.3.1 为复杂操作划分数组元素
+
+这里主要探究的是矩阵的乘法问题，比较建议的是将矩阵进行分块来，进行计算
+
+#### 8.3.2 其它数据结构中的数据访问模式
+
+当使用的互斥量和数据项在内存中很接近，对于一个需要获取互斥量的线程来说，比较理想；所需要的数据可能早就存入处理器的缓存中了；但是当其他线程尝试锁住互斥量时，线程就能对对应的数据进行访问。对于相同位置的操作都需要先获取互斥量，如果互斥量已锁，那就会调用系统内核。而原子的互斥量操作("读，写，改")，可能会让数据存储在缓存中，让线程获取的互斥量变得毫无作用。当互斥量共享同一缓存行时，其中存储的是线程已使用的数据，这时拥有互斥量的线程会遭受到性能打击，因为其他线程也在尝试锁住互斥量。
+
+### 8.4 设计并发代码的注意事项
+
+注意代码在物理硬件改变时的可扩展性，避免因为物理硬件的改变，造成代码错误。
+
+#### 8.4.1 并行算法中的异常安全
+
+在串行算法中抛出一个异常，算法只需要考虑其本身的处理，多线程中需要考虑到多个线程之间的相互影响。
+
+之前实现的线程安全的求和函数在执行线程创建时并不安全。因此在此基础之上改良线程安全函数。
+
+```c++
+
+
+class join_threads
+{
+    std::vector<std::thread>& threads;
+public:
+    explicit join_threads(std::vector<std::thread>& threads_):threads(threads_){}
+    ~join_threads()
+    {
+        for(unsigned long i=0;i<threads.size();++i)
+        {
+            if(threads[i].joinable())
+                threads[i].join();
+        }
+    }
+};
+
+
+
+template<typename iterator ,typename T>
+struct accumulate_block
+{
+    //构造操作
+
+    T operator()(Iterator first,Iterator last)
+    {
+        //返回所有数据和
+
+        return std::accumulate(first,last,T());
+    }
+};
+template<typename Iterator,typename T>
+T parallel_accumulate(Iterator first,Iterator last,T init)
+{
+    unsigned long const length=std::distance(first,last);
+    if(!length)
+        return init;
+    unsigned long const min_pre_thread=25;
+    unsigned long const max_thread=(length+min_pre_thread-1)/min_pre_thread;
+    unsigned long const hardware_threads=std::thread::hardware_concurrency();
+    unsigned long const num_threads=std::min(hardware_threads!=0?hardware_threads:2,max_threads);
+    //分块的大小
+
+    unsigned long const block_size=length/num_threads;
+    std::vector<std::future<T> > futures(num_threads-1);
+    std::vector<std::thread> threads(num_threads-1);
+    //安全线程类
+
+    join_threads joiner(threads);
+
+
+    Iterator block_start=first;
+    for(unsigned long i=0;i<(num_threads-1);++i)
+    {
+        Iterator block_end=block_start;
+        std::advance(block_end,block_size);
+        std::packaged_tack<T(Iterator,Iterator)> task(accumulate_block<Iterator,T>());
+        futures[i]=task.get_future();
+        threads[i]=std::thread(std::move(task),block_start,block_end);
+        block_start=block_end;
+    }
+    T last_result=accumulate_block()(block_start,last);
+    std::for_each(
+        thread.begin(),
+        thread.end(),
+        std::mem_fn(&std::thread::join)
+        );
+
+    T result=init;
+    for(unsigned long i=0;i<(num_threads-1);++i)
+    {
+        result+=futures[i].get();
+    }
+    result+=last_result;
+    return result;
+
+}
+```
+
+#### 8.4.2 可扩展性和Amdahl定律
+
+将程序划分为"串行"和"并行"部分。可以使用下面的公式对程序性能的增益进行估计：
+
+![](../img/2019-07-18-20-56-36.png)
 
 
 
