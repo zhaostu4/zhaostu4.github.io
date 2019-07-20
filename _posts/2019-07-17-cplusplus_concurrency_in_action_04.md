@@ -623,78 +623,658 @@ last,MatchType match,ne)
 
 ```c++
 template<typename   Iterator>
-void    parallel_partial_sum(Iterator   first,Iterator  last)
+void parallel_partial_sum(Iterator first,Iterator last)
 {
-        typedef typename    Iterator::value_type    value_type;
-        struct  process_chunk       //  1
-        {
-                void    operator()(Iterator begin,Iterator  last,std::future<value_type>*    previous_end_value,std::promise<value_type>*   end_value)
-                {
-                        try
-                        {
-                                Iterator    end=last;
-                                ++end;
-                                std::partial_sum(begin,end,begin);      //  2
-                                if(previous_end_value)      //  3
-                                {
-                                        value_type& addend=previous_end_value->get();       //  4
-                                        *last+=addend;      //  5
-                                        if(end_value)
-                                        {
-                                                end_value->set_value(*last);        //  6
-                                        }
-                                        std::for_each(begin,last,[addend](value_type&   item));     
-                                }else if(end_value)
-                                {
-                                            end_value->set_value(*last);        //  8
-                                }
-                        }catch(...)
-                        {
-                            if(end_value)
-                            {
-                                            end_value->set_exception(std::current_exception()); 
+    //迭代器类型
 
-    }
-                                    else
-                                    {
-                                            throw;      //  11
-                                    }
-                            }
+    typedef tycodepename Iterator::value_type value_type;
+    //定义处理单元类
+
+    struct  process_chunk
+        {
+            //()操作,主要用于构造函数
+            void operator()(
+                Iterator begin,
+                Iterator last,
+                std::future<value_type>* previous_end_value,
+                std::promise<value_type>*end_value
+                )
+            {
+                //尝试工作
+                try
+                {
+                    //将end迭代器指向last
+
+                    Iterator end=last;
+                    //移动迭代器指针
+
+                    ++end;
+                    //对数据进行求和，并将结果存入begin中
+
+                    std::partial_sum(begin,end,begin);
+                    //如果预期结果存在
+
+                    if(previous_end_value)
+                    {
+                        //获取结果
+                        value_type& addend=previous_end_value->get();
+                        //last值添加addend 
+
+                        *last+=addend;
+                        //检查end_value是否为空
+
+                        if(end_value)
+                        {
+                            //设置值
+
+                            end_value->set_value(*last);
+                        }
+                        //便利迭代器，将每个值添加addend,即每个值添加前一组的期望值
+
+                        std::for_each(begin,last,[addend](value_type& item){
+                            item+=addend;
+                        });
+                        //如果预期结果值不存在，检查end_value是否存在
+
+                    }else if(end_value)
+                    {
+                        //存在直接设置为期望值
+
+                        end_value->set_value(*last);
                     }
-            };
-        unsigned    long    const   length=std::distance(first,last);
+                }catch(...)
+                {
+                    if(end_value)
+                    {
+                        end_value->set_exception(std::current_exception());
+                    }else{
+                        throw;
+                    }
+                }
+            }
+        };
+
+        unsigned long const length=std::distance(first,last);
         if(!length)
-                return  last;
-        unsigned    long    const   min_per_thread=25;      //  12
-        unsigned    long    const   max_threads=
-                (length+min_per_thread-1)/min_per_thread;
-        unsigned    long    const   hardware_threads=
-                std::thread::hardware_concurrency();
-        unsigned    long    const   num_threads=
-                std::min(hardware_threads!=0?
+            return last;
+        //最小分块线程数
+
+        unsigned long const min_per_thread=25;
+        //计算最大线程数
+
+        unsigned long const max_threads=(length+min_per_thread-1)/min_per_thread;
+        //当前线程允许的最大线程数目
+
+        unsigned long const hardware_threads=std::thread::hardware_concurrency();
+        //实际线程数目
+
+        unsigned long const num_threads=std::min(hardware_threads!=0?
 hardware_threads:2,max_threads);
-        unsigned    long    const   block_size=length/num_threads;
-        typedef typename    Iterator::value_type    value_type;
-        std::vector<std::thread>    threads(num_threads-1);     //  13
-        std::vector<std::promise<value_type>    >
-                end_values(num_threads-1);      //  14
-        std::vector<std::future<value_type> >
-                previous_end_values;        //  15
-        previous_end_values.reserve(num_threads-1);     //  16
-        join_threads    joiner(threads);
-        Iterator    block_start=first;
-        for(unsigned    long    i=0;i<(num_threads-1);++i)
-{
-                Iterator    block_last=block_start;
-                std::advance(block_last,block_size-1);      //  17
-                threads[i]=std::thread(process_chunk(),     //  18
- block_start=block_last;
-                ++block_start;      //  19
-                previous_end_values.push_back(end_values[i].get_future()));
+        //每个线程块的大小
+
+        unsigned long const block_size=length/num_threads;
+        //迭代器数据类型
+
+        typedef typename Iterator::value_type value_type;
+        //创建线程vector
+
+        std::vector<std::thread> threads(num_threads-1);
+        //创建对应的promise,即最终结果
+
+        std::vector<std::promise<value_type> > end_values(num_threads-1);
+        //创建期望
+
+        std::vector<std::future<value_type> > previous_end_values;
+        //设置期望大小
+
+        previous_end_values.reserve(num_threads-1);
+        //创建添加线程
+
+        join_threads joiner(threads);
+        //将block中的开始指针指向first
+
+        Iterator block_start=first;
+        //开始构造对应线程
+
+        for(unsigned long i=0;i<(num_threads-1);++i){
+            //将尾迭代器指向block start
+
+            Iterator block_last=block_start;
+            //将block_last更新迭代器步长为block_size
+
+            std::advance(block_last,block_size-1);
+            //创建线程并，输入对应参数
+
+            threads[i]=std::thread(
+                process_chunk(),
+                block_start,
+                block_last,
+                (i!=0)?&previous_end_values[i-1]:0,
+                &end_values[i]
+                );
+            //移动block指针
+
+            block_start=block_last;
+            ++block_start;
+            //将最后的预计值放入end_values
+
+            previous_end_values.push_back(end_values[i].get_future());
         }
-        Iterator    final_element=block_start;
+        //最后将指针指向分组后的最后一组
+        
+        Iterator final_element=block_start;
+        //移动尾指针到末尾
+
         std::advance(final_element,std::distance(block_start,last)-1);
-        process_chunk()(block_start,final_element,(num_threads>1)?&previous_end_values.back():0,0);
+        //计算剩余的值的和
+
+        process_chunk()(
+            block_start,
+            final_element,
+            (num_threads>1)?&previous_end_values.back():0,
+            0);
 }
 
 ```
+
+**实现以2的幂级数为距离部分和算法**
+
+将数据进行分离，并实现SIMD，将中间的处理结果传递到下一个结果中去。
+
+简单的栅栏类实现
+
+```c++
+
+class barrier
+{
+    unsigned const count;
+    //空值
+
+    std::atomic<unsigned> spaces;
+    std::atomic<unsigned> generation;
+public:
+    explicit barrier(unsigned count_):count_(count_),spaces(count),generation(0){}
+    void wait()
+    {
+        //更新当前线程的generation
+
+        unsigned const my_generation=generation;
+        //当space为0d的时候，重置space,添加gengeration
+
+        if(!--spaces)
+        {
+            spaces=count;
+            ++generation;
+        }else{
+            //当space>0 时
+
+            //检查是否相同
+            while(generation==my_generation) {
+                //当没有改变，即不存在++generation,等待一段时间
+
+                std::this_thread::yield();
+            }
+        }
+    }
+};
+
+//总体而言实现了栅栏的核心，主要是使用所有进行等待，当栅栏满足之后，再同一开始工作，count是栅栏管控的线程总数
+```
+
+上面的栅栏还是略显简陋，因此需要进一步改进
+
+```c++
+
+struct barrier
+{
+    //线程总数统计
+
+    std::atomic<unsigned> count;
+    //空余总数统计
+
+    std::atomic<unsigned> spaces;
+    //栅栏执行相关次数统计
+
+    std::atomic<unsigned> generation;
+    barrier(unsigned count_):count(count_),spaces(count_),generation(0)
+    {}
+    //wait相关函数
+
+    void wait()
+    {
+        unsigned const gen=generation.load();
+        if(!--spaces)
+        {
+            spaces=count.load();
+            ++generation;
+        }else{
+            //没有到达条件，等待一会儿
+
+            while(generation.load()==gen)
+            {
+                std::this_thread::yield();
+            }
+        }
+    }
+    //执行等待操作
+
+    void done_waiting()
+    {
+        --count;
+        if(!--spaces)
+        {
+            spaces=count.load();
+            ++generation;
+        }
+    }
+};
+
+
+//下面是栅栏的并行计算
+
+template<typename Iterator>
+void parallel_partial_sum(Iterator first,Iterator last)
+{
+    typedef typename Iterator::value_type value_type;
+    //处理元素类，主要是来运行一组线程
+
+    struct process_element
+    {
+        void operator()(
+            Iterator first,
+            Iterator last,
+            sstd::vector<value_type>& buffer,
+            unsigned i,
+            barrier& b
+            )
+        {
+            //获取尾部元素
+
+            value_type& ith_element=*(first+i);
+            //是否更新源
+
+            bool update_source=false;
+            for(unsigned step=0,stride=1;stride<=i;++step,stride*=2)
+            {
+                //step为偶数则返回buffer[i],否则返回当前元素
+                //主要是从原始数据或者缓存中添加元素
+
+                value_type const& source=(step%2)?buffer[i]:ith_element;
+
+                value_type& dest=(step%2)?ith_element:buffer[i];
+
+                value_type const& addend=(step%2)?buffer[i-stride]:*(first+i-stride);
+                //将计算后的值，添加到缓存
+
+                dest=source+addend;
+                update_source=!(step%2);
+                //执行栅栏等待同步
+
+                b.wait();
+            }
+            if(update_source)
+            {
+                ith_element=buffer[i];
+            }
+            //开始等待同步，结束本次新城
+
+            b.done_waiting();
+        }
+    };
+    unsigned long const length=std::distance(first,last);
+    if(length<=1)
+        return;
+    //创建缓冲向量
+
+    std::vector<value_type> buffer(length);
+    //创建栅栏
+
+    barrier b(length);
+    //创建线程
+
+    std::vector<std::thread> thread(length-1);
+    join_threads joiner(threads);
+    //更新线程数
+
+    Iterator block_start=first;
+    //遍历，创建线程
+
+    for(unsigned long i=0;i<(length-1);++i)
+    {
+        threads[i]=std::thread(
+            process_element(),
+            first,
+            last,
+            std::ref(buffer),
+            i,
+            std::ref(b)
+            );
+    }
+    //最后处理剩下的元素
+    process_element()(first,last,buffer,length-1,b);
+}
+```
+
+## 第9章 高级线程池
+关于线程池在之前的文章中有过介绍，因此不再做过多说明
+
+可等待任务的线程池
+
+```c++
+
+class function_wrapper
+{
+    struct impl_base
+    {
+        virtual void call()=0;
+        virtual ~impl_base(){}
+    };
+    std::unique_ptr<impl_base>  impl;
+    template<typename   F>
+    struct impl_type:impl_base
+    {
+        F f;
+        impl_type(F&& f_):f(std::move(f_)){}
+        void call(){f();}
+    };
+public:
+    template<typename F>
+    function_wrapper(F&& f):impl(new impl_type<F>(std::move(f))){}
+    void operator()(){impl->call();}
+    function_wrapper()=default;
+    function_wrapper(function_wrapper&& other):impl(std::move(other.impl)){}
+    function_wrapper& operator=(function_wrapper&& other)
+    {
+        impl=std::move(other.impl);
+        return *this;
+    }
+    function_wrapper(const function_wrapper&)=delete;
+    function_wrapper(function_wrapper&)=delete;
+    function_wrapper& operator=(const function_wrapper&)=delete;
+};
+class thread_pool
+{
+    thread_safe_queue<function_wrapper> work_queue; //使用function_wrapper,而非使用std::function
+    void worker_thread()
+    {
+        while(!done)
+        {
+            function_wrapper task;
+            if(work_queue.try_pop(task))
+            {
+                task();
+            }else{
+                std::this_thread::yield();
+            }
+        }
+    }
+public:
+    template<typename FunctionType>
+    std::future<typename std::result_of<FunctionType()>::type> submit(FunctionType f)
+    {
+        typedef typename std::result_of<FunctionType()>::type result_type;
+        std::packaged_task<result_type()> task(std::move(f));
+        std::future<result_type> res(task.get_future());
+        work_queue.push(std::move(task));
+        return  res;
+    }
+};
+
+
+
+```
+使用线程池求和
+
+```c++
+
+template<typename Iterator,typename T>
+T parallel_accumulate(Iterator first,Iterator last,T init)
+{
+    unsigned long const length=std::distance(first,last);
+    if(!length)
+        return init;
+    unsigned long const block_size=25;
+    unsigned long const num_blocks=(length+block_size-1)/block_size;
+    std::vector<std::future<T>  > futures(num_blocks-1);
+    thread_pool pool;
+    Iterator block_start=first;
+    for(unsigned long i=0;i<(num_blocks-1);++i)
+    {
+        Iteratorblock_end=block_start;
+        std::advance(block_end,block_size);
+        futures[i]=pool.submit(accumulate_block<Iterator,T>());
+        block_start=block_end;
+    }
+    T last_result=accumulate_block<Iterator,T>()(block_start,last);
+    T result=init;
+    for(unsigned long i=0;i<(num_blocks-1);++i)
+    {
+        result+=futures[i].get();
+    }
+    result+=last_result;
+    return result;
+}
+
+
+```
+
+基于线程池的快速排序实现
+
+```c++
+
+template<typename T>
+struct sorter
+{
+    thread_pool;
+    std::list<T> do_sort(std::list<T>& chunk_data)
+    {
+        if(chunk_data.empty())
+        {
+            return chunk_data;
+        }
+        std::list<T> result;
+        //分割数据
+
+        result.splice(result.begin(),chunk_data,chunk_data.begin());
+        T const& partition_val=*result.begin();
+        //分割数组，并返回关键迭代指针
+
+        typename std::list<T>::iterator divide_point=std::partition(
+            chunk_data.begin(),
+            chunk_data.end(),
+            [&](T const& val){return val<partition_val;}
+            );
+        //创建较小部分的数据块
+
+        std::list<T> new_lower_chunk;
+        //赋值初始化
+
+        new_lower_chunk.splice(
+            new_lower_chunk.end(),
+            chunk_data,
+            chunk_data.begin(),
+            divide_point
+            );
+        std::list<T> new_higher(do_sort(chunk_data));
+        //将高部数据拷贝到result
+
+        result.splice(result.end(),new_higher);
+
+        while(!new_lower.wait_for(std::chrono::seconds(0))==std::future_status::timeout)
+        {
+            pool.run_pending_task();
+        }
+        result.splice(result.begin(),new_lower.get());
+        return result;
+    }
+};
+
+template<typename T>
+std::list<T> parallel_quick_sort(std::list<T> input)
+{
+    if(input.empty())
+    {
+        return input;
+    }
+    sorter<T> s;
+    return s.do_sort(input);
+}
+
+```
+#### 9.1.5  窃取任务
+
+为了让没有任务的线程能从其他线程的任务队列中获取任务,就需要本地任务列表可以进行访问,这样才能让run_pending_tasks()窃取任务。需要每个线程在线程池队列上进行注册,或由线程池指定一个线程。同样,还需要保证数据队列中的任务适当的被同步和保护,这样队列的不变量就不会被破坏。
+
+```c++
+class work_stealing_queue
+{
+private:
+    typedef function_wrapper data_type;
+    //数据队列
+    
+    std::deque<data_type> the_queue;
+    mutable std::mutex  the_mutex;
+public:
+    work_stealing_queue(){}
+    work_stealing_queue(const work_stealing_queue& other)=delete;
+    work_stealing_queue& operator=(const work_stealing_queue& other)=delete;
+    void push(data_type  data)
+    {
+        std::lock_guard<std::mutex> lock(the_mutex);
+        the_queue.push_front(std::move(data));
+    }
+    bool empty() const
+    {
+        std::lock_guard<std::mutex> lock(the_mutex);
+        return  the_queue.empty();
+    }
+    //安全的取出数据
+
+    bool try_pop(data_type& res)
+    {
+        std::lock_guard<std::mutex> lock(the_mutex);
+        if(the_queue.empty())
+        {
+            return false;
+        }
+        res=std::move(the_queue.front());
+        the_queue.pop_front();
+        return  true;
+    }
+    //对队列后端进行操作
+
+    bool try_steal(data_type& res)
+    {
+        std::lock_guard<std::mutex> lock(the_mutex);
+        if(the_queue.empty())
+        {
+            return false;
+        }
+        res=std::move(the_queue.back());
+        the_queue.pop_back();
+        return  true;
+    }
+};
+
+```
+使用任务窃取的线程池
+
+```c++
+
+class thread_pool
+{
+    typedef function_wrapper task_type;
+    std::atomic_bool done;
+    thread_safe_queue<task_type> pool_work_queue;
+    std::vector<std::unique_ptr<work_stealing_queue> > queues;
+    std::vector<std::thread> threads;
+    join_threads joiner;
+    static thread_local work_stealing_queue* local_work_queue;
+    static thread_local unsigned my_index;
+    void worker_thread(unsigned my_index_)
+    {
+        my_index=my_index_;
+        local_work_queue=queues[my_index].get();
+        while(!done)
+        {
+            run_pending_task();
+        }
+    }
+    bool pop_task_from_local_queue(task_type& task)
+    {
+        return local_work_queue && local_work_queue->try_pop(task);
+    }
+    bool pop_task_from_pool_queue(task_type& task)
+    {
+        return  pool_work_queue.try_pop(task);
+    }
+    bool pop_task_from_other_thread_queue(task_type& task)
+    {
+        for(unsigned  i=0;i<queues.size();++i)
+        {
+            unsigned const index=(my_index+i+1)%queues.size();
+            if(queues[index]->try_steal(task))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+public:
+    thread_pool():done(false),joiner(threads)
+    {
+        unsigned const thread_count=std::thread::hardware_concurrency();
+        try
+        {
+            for(unsigned i=0;i<thread_count;++i)
+            {
+                queues.push_back(std::unique_ptr<work_stealing_queue>(threads.push_back(std::thread(&thread_pool::worker_thread,this,i))));
+            }
+        }catch(...)
+        {
+            done=true;
+            throw;
+        }
+    }
+    ~thread_pool()
+    {
+        done=true;
+    }
+    template<typename FunctionType>
+    std::future<typename std::result_of<FunctionType()>::type> submit(FunctionType f)
+    {
+        typedef typename std::result_of<FunctionType()>::type result_type;
+        std::packaged_task<result_type()> task(f);
+        std::future<result_type> res(task.get_future());
+        if(local_work_queue)
+        {
+            local_work_queue->push(std::move(task));
+        }else{
+            pool_work_queue.push(std::move(task));
+        }
+        return res;
+    }
+    void run_pending_task()
+    {
+        task_type task;
+        if(pop_task_from_local_queue(task)||
+           pop_task_from_pool_queue(task)||
+           pop_task_from_other_thread_queue(task))
+        {
+            task();
+        }else{
+            std::this_thread::yield();
+        }
+    }
+};
+
+```
+
+### 9.2 线程中断
+
+操作系统中的线程中断和挂起机制，需要使用信号来让未结束线程停止运行。这里需要一种合适的方式让线程主动的停下来,而非让线程戛然而止。
+
+
+#### 9.2.1 启动和中断线程
+
+线程的中断多需要在线程的原有基础之上，添加线程中断的程序。
