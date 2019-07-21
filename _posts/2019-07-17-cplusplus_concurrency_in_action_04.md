@@ -1278,3 +1278,235 @@ public:
 #### 9.2.1 启动和中断线程
 
 线程的中断多需要在线程的原有基础之上，添加线程中断的程序。
+
+std::condition_variable 在interruptible_wait中使用超时
+
+```c++
+
+class interrupt_flag
+{
+    //是否中断
+
+    std::atomic<bool> flag;
+    //环境变量
+
+    std::condition_variable* thread_cond;
+    //清除信号量
+
+    std::mutex set_clear_mutex;
+public:
+    interrupt_flag():thread_cond(0){}
+    void set()
+    {
+        flag.store(true,std::memory_order_relaxed);
+        std::lock_guard<std::mutex> lk(set_clear_mutex);
+        //设计环境变量
+
+        if(thread_cond)
+        {
+            //发射环境信号
+
+            thread_cond->notify_all();
+        }
+    }
+    //查看是否设置
+
+    bool is_set() const
+    {
+        return flag.load(std::memory_order_relaxed);
+    }
+    void set_condition_variable(std::condition_variable& cv)
+    {
+        //信号加锁
+
+        std::lock_guard<std::mutex> lk(set_clear_mutex);
+        //更新条件变量
+
+        thread_cond=&cv;
+    }
+    //清除环境变量
+
+    void clear_condition_variable()
+    {
+        std::lock_guard<std::mutex> lk(set_clear_mutex);
+        thread_cond=0;
+    }
+    struct clear_cv_on_destruct
+    {
+        ~clear_cv_on_destruct()
+        {
+            this_thread_interrupt_flag.clear_condition_variable();
+        }
+    };
+};
+thread_local interrupt_flag this_thread_interrupt_flag;
+//检查中断点，通过检查flag值来判断，如果flag为true抛出信号
+
+void interruption_point()
+{
+    if(this_thread_interrupt_flag.is_set())
+    {
+        throw thread_interrupted();
+    }
+}
+
+//中断等待
+
+void interruptible_wait(std::condition_variable& cv,std::unique_lock<std::mutex>& lk)
+{
+    interruption_point();
+    this_thread_interrupt_flag.set_condition_variable(cv);
+    //临时锁
+
+    interrupt_flag::clear_cv_on_destruct gurad;
+    //再次检查
+    cv.wait_for(lk,std::chrono::milliseconds(1));
+    interruption_point();
+}
+//中断等待
+
+template<typename Predicate>
+void interruptible_wait(std::condition_variable& cv,
+                        std::unique_lock<std::mutex>& lk,
+                        Predicate pred
+                        )
+{
+    interruption_point();
+    this_thread_interrupt_flag.set_condition_variable(cv);
+    interrupt_flag::clear_cv_on_destruct gurad;
+    while(!this_thread_interrupt_flag.is_set()&&!pred()) 
+    {
+        cv.wait_for(lk,std::chrono::milliseconds(1));
+    }
+    interruption_point();
+}
+```
+
+为std::condition_variable_any 设计的interruptible_wait
+
+```c++
+
+class interrupt_flag
+{
+    std::atomic<bool> flag;
+    //环境条件变量
+
+    std::condition_variable* thread_cond;
+    std::condition_variable_any* thread_cond_any;
+    //访问互斥信号量
+
+    std::mutex set_clear_mutex;
+public:
+    interrupt_flag():   
+    thread_cond(0),thread_cond_any(0){}
+    void set()
+    {
+        //更改值
+        
+        flag.store(true,std::memory_order_relaxed);
+        //加锁
+
+        std::lock_guard<std::mutex> lk(set_clear_mutex);
+        //环境变量
+
+        if(thread_cond)
+        {
+            thread_cond->notify_all();
+        }else if(thread_cond_any)
+        {
+            thread_cond_any->notify_all();
+        }
+    }
+    //等待函数
+
+    template<typename Lockable>
+    void wait(std::condition_variable_any& cv,Lockable& lk)
+        {
+            //传统默认锁
+
+            struct  custom_lock
+            {
+                interrupt_flag* self;
+                Lockable& lk;
+                
+                custom_lock(
+                    interrupt_flag* self_,
+                    std::condition_variable_any& cond,
+                    Lockable& lk_):
+                self(self_),
+                lk(lk_)
+                {
+                    self->set_clear_mutex.lock();
+                    self->thread_cond_any=&cond;
+                }
+
+                void unlock()
+                {
+                    lk.unlock();
+                    self->set_clear_mutex.unlock();
+                }
+
+                void lock()
+                {
+                    std::lock(self->set_clear_mutex,lk);
+                }
+                ~custom_lock()
+                {
+                    self->thread_cond_any=0;
+                    self->set_clear_mutex.unlock();
+                }
+            };
+            custom_lock cl(this,cv,lk);
+            interruption_point();
+            cv.wait(cl);
+            interruption_point();
+        }
+};
+//中断等待
+
+template<typename Lockable>
+void interruptible_wait(std::condition_variable_any& cv,Lockable& lk)
+{
+    this_thread_interrupt_flag.wait(cv,lk);
+}
+
+
+```
+### 第10章 多线程程序的测试和调试
+
+#### 10.1 与并发相关的错误类型
+
+- 不必要阻塞：一个线程被阻塞的时候,不能处理任何任务,因为它在等待其他“条件”的达成。即阻塞不是必要的
+    + 死锁:相互等待直到永远，无法自己跳出,主要原因是无法检查其它相关变量的变化
+    + 活锁:与死锁基本相同但不是线程阻塞等待，而是在循环中持续检查，如:自旋锁。问题可以解决。
+    + I/O阻塞或外部输入:当线程被外部输入所阻塞,线程也就不能做其他事情了(即使,等待输入的情况永远不会发生)。
+- 条件竞争:
+    + 数据竞争：因为未同步访问一块共享内存,将会导致代码产生未定义行为
+    + 破坏不变量:主要表现为悬空指针(因为其他线程已经将要访问的数据删除了),随机存储错误(因为局部更新,导致线程读取了不一样的数据),以及双重释放(比如:当两个线程对同一个队列同时执行pop操作,想要删除同一个关联数据),等等。
+    + 生命周期问题:线程访问变量时，变量的声明周期已经结束。
+
+### 10.2 定位并发错误的技术
+
+- 代码审阅——发现潜在的错误，主要考虑的问题
+    + 并发访问时,那些数据需要保护?
+    + 如何确定访问数据受到了保护?
+    + 是否会有多个线程同时访问这段代码?
+    + 这个线程获取了哪个互斥量?
+    + 其他线程可能获取哪些互斥量?
+    + 两个线程间的操作是否有依赖关系?如何满足这种关系？
+    + 这个线程加载的数据还是合法数据吗?数据是否被其他线程修改过?
+    + 当假设其他线程可以对数据进行修改,这将意味着什么?并且,怎么确保这样的事情不
+会发生?
+- 通过测试定位并发相关的错误，考虑因素
+    + “多线程”是有多少个线程(3个,4个,还是1024个?)
+    + 系统中是否有足够的处理器,能让每个线程运行在属于自己的处理器上
+    + 测试需要运行在哪种处理器架构上
+    + 在测试中如何对“同时”进行合理的安排
+- 可测试性设计
+    + 每个函数和类的关系都很清楚。
+    + 函数短小精悍。
+    + 测试用例可以完全控制被测试代码周边的环境。
+    + 执行特定操作的代码应该集中测试,而非分布式测试。
+    + 需要在完成编写后,考虑如何进行测试。
+
+
