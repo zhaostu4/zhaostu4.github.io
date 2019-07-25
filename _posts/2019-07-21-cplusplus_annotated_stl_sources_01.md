@@ -438,4 +438,30 @@ __default_alloc_template拥有配置器的标准接口函数allocate()。此函�
 #### 2.2.10 内存池(memory pool)
 _参考链接：_ [C++实现内存池](https://blog.csdn.net/u010183728/article/details/81531392);
 
-上文中提及使用内存池中的内存，提供给free-list方便存取内存。
+上文中提及使用内存池中的内存，提供给free-list方便存取内存。内存池主要是和线程池类似，使用预先分配来实现内存的集中分配和同一管理
+
+![内存池管理过程](../img/2019-07-25-21-32-29.png)
+
+### 2.3 内存基本处理工具
+
+STL中定义有5个全局函数，作用于未初始化空间之上。分别是`construct()`、`destroy()`、uninitailized_copy()、uninitailized_fill()、uninitialized_fill_n();分别对应于高层次函数copy()、fill()、fill_n();后面几个函数定义于<stl_uninitialized>
+
+- uninitialized_fill_n((_ForwardIterator __first, _Size __n, const _Tp& __x))：它接受三个参数；并通过value_type来判断对象有没有构造函数，有就进行，没有直接跳过。
+    + 迭代器 frist指向初始化空间的起始处
+    + n表示分配内存的数量
+    + x表示进行内存分配时候的初值
+- uninitialized_copy(_InputIterator __first, _InputIterator __last,_ForwardIterator __result);输入参数列表如下，它调用了`__uninitialized_copy()`函数，并且通过value_type来判断是否为POD(传统基本数据类型含有拷贝构造等函数)，是则直接使用`std::copy()`进行构造。不是就使用遍历并使用`td::_Construct`调用类的构造函数进行构造。
+    + frist 迭代器
+    + last 迭代器
+    + 表示最终结果
+- uninitialized_fill(_ForwardIterator __first, _ForwardIterator __last,const _Tp& __x)和上面一样也是需要判断POD来决定使用构造方式和类型。
+    + frist 迭代器
+    + last 迭代器
+    + 表示最终结果
+
+![三个内存基本版本](../img/2019-07-25-22-13-25.png)
+
+这一章主要讲述了STL中的alloctor通过源码解析，我们发现其实STL的迭代器使用了struct来进行构造，内部还是使用了指针运算符，而所谓的value_type也是指针相关的别名，感觉编译器厂商偷懒了，不过标准库的泛用性得到了保证。而且关于内存池确实是很好的亮点。慎用STL;
+
+## 迭代器(iterators) 概念与traits编程技法
+
