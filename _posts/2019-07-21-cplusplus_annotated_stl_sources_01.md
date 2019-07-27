@@ -28,7 +28,7 @@ STL六大组件
 - 配接器(adapters)：一种用来修饰容器(containers)或仿函数(functors)或迭代器(iterators)借口的东西
 - 配置器(allocators):负责空间配置与管理
 
-![STL六大组件之间的关系](../img/2019-07-21-17-10-18.png)
+![STL六大组件之间的关系](https://wangpengcheng.github.io/img/2019-07-21-17-10-18.png)
 
 
 ## 第二章 空间配置器
@@ -152,7 +152,7 @@ SGI标准的空间配置器，是对::operator new和::operator delete做了一�
 
 STL allocator将两阶段操作区分开来。内存配置操作由alloc:allocate()负责；内存释放操作由alloc::deallocate()负责；对象构造操作由::construct()负责，对象析构操作由::destroy()负责。
 
-![合作关系图](../img/2019-07-25-13-49-35.png)
+![合作关系图](https://wangpengcheng.github.io/img/2019-07-25-13-49-35.png)
 
 #### 2.2.3 构造和析构基本工具： `construct()`和`destory()`
 
@@ -279,7 +279,7 @@ _GLIBCXX_END_NAMESPACE_VERSION
 
 上述代码中`_Destroy_aux`主要是用来检测，对象是否有自定义的析构函数，如果有就进行迭代调用。如果没有(使用默认析构函数)直接跳过，避免资源浪费。
 
-![construct和destory示意](../img/2019-07-25-14-45-38.png)
+![construct和destory示意](https://wangpengcheng.github.io/img/2019-07-25-14-45-38.png)
 
 #### 2.2.4 空间的配置与释放，std::alloc
 
@@ -292,9 +292,9 @@ _GLIBCXX_END_NAMESPACE_VERSION
 
 考虑到小型区块可能造成的内存破碎问题，SGI设计了双层级配置器,第一级配置器直接使用`malloc()`和`free()`；第二级配置器则视情况采用不同的策略。当配置区块超过128byte时，视之为足够大，使用第一级配置器，当小于128byte时，视之为过小，采用复杂的memory pool整理方式。而不再求助于第一级适配器。使用哪一级适配器取决于`__USE_MALLOC`是否被定义。
 
-![第一与第二级适配器](../img/2019-07-25-15-07-37.png)
+![第一与第二级适配器](https://wangpengcheng.github.io/img/2019-07-25-15-07-37.png)
 
-![包装链接](../img/2019-07-25-15-10-16.png)
+![包装链接](https://wangpengcheng.github.io/img/2019-07-25-15-10-16.png)
 
 #### 2.2.5 一级适配器__malloc_alloc_template剖析
 
@@ -417,19 +417,19 @@ union obj{
 ```
 因为使用了union因此第一个指针直接指向了内存地址([c++ --> union介绍](https://www.cnblogs.com/jeakeven/p/5113508.html))。
 
-![](../img/2019-07-25-16-47-51.png)
+![](https://wangpengcheng.github.io/img/2019-07-25-16-47-51.png)
 
 ### 2.2.7 空间配置函数allocate()
 
 __default_alloc_template拥有配置器的标准接口函数allocate()。此函数首先判断区块大小，大于128bytes就调用第一级配置器，小鱼128bytes就检查对应的free list。如果有可用区块就直接拿来用，没有就将区块的大小上调至8倍数边界，然后调用`refill()`准备为`free list`重新填充空间。
 
-![free list调度](../img/2019-07-25-16-58-32.png)
+![free list调度](https://wangpengcheng.github.io/img/2019-07-25-16-58-32.png)
 
 #### 2.2.8 空间释放函数 deallocate()
 
 对于deallocate()函数首先判断区块大小，大于128bytes就调用第一级配置器，小鱼128bytes就找出对应的free list，将区块回收。
 
-![区块回收](../img/2019-07-25-16-58-32.png)
+![区块回收](https://wangpengcheng.github.io/img/2019-07-25-16-58-32.png)
 
 #### 2.2.9 重新填充 free-list
 
@@ -440,7 +440,8 @@ _参考链接：_ [C++实现内存池](https://blog.csdn.net/u010183728/article/
 
 上文中提及使用内存池中的内存，提供给free-list方便存取内存。内存池主要是和线程池类似，使用预先分配来实现内存的集中分配和同一管理
 
-![内存池管理过程](../img/2019-07-25-21-32-29.png)
+![内存池管理过程](https://wangpengcheng.github.io/img/2019-07-25-21-32-29.png)
+
 
 ### 2.3 内存基本处理工具
 
@@ -459,9 +460,16 @@ STL中定义有5个全局函数，作用于未初始化空间之上。分别是`
     + last 迭代器
     + 表示最终结果
 
-![三个内存基本版本](../img/2019-07-25-22-13-25.png)
+
+
+![三个内存基本版本](https://wangpengcheng.github.io/img/2019-07-25-22-13-25.png)
 
 这一章主要讲述了STL中的alloctor通过源码解析，我们发现其实STL的迭代器使用了struct来进行构造，内部还是使用了指针运算符，而所谓的value_type也是指针相关的别名，感觉编译器厂商偷懒了，不过标准库的泛用性得到了保证。而且关于内存池确实是很好的亮点。慎用STL;
 
-## 迭代器(iterators) 概念与traits编程技法
+## 第三章 迭代器(iterators) 概念与traits编程技法
+
+迭代器是一種抽象設計的概念，實現程序語言中並沒有直接對應的概念的實物。使用的23種設計模式中的迭代器模式：提供一種方法可以依次訪問某個聚合物所含的各個容器的元素。STL的中心思想在於：將數據容器和算法分開來
+
+
+
 
