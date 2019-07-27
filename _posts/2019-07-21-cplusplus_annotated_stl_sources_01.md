@@ -468,7 +468,208 @@ STL中定义有5个全局函数，作用于未初始化空间之上。分别是`
 
 ## 第三章 迭代器(iterators) 概念与traits编程技法
 
-迭代器是一種抽象設計的概念，實現程序語言中並沒有直接對應的概念的實物。使用的23種設計模式中的迭代器模式：提供一種方法可以依次訪問某個聚合物所含的各個容器的元素。STL的中心思想在於：將數據容器和算法分開來
+迭代器是一種抽象設計的概念，實現程序語言中並沒有直接對應的概念的實物。使用的23種設計模式中的迭代器模式：提供一種方法可以依次訪問某個聚合物所含的各個容器的元素。STL的中心思想在於：將數據容器和算法分開來。而迭代器就是扮演着兩者之間的膠合劑角色。
+
+### 3.2 迭代器是一種 smart pointer
+
+迭代器是一種行爲類似指針的對象，指针中最常见也最重要的行为便是任荣提领(dereference)和成员访问(member access)，因此迭代器最重要的就是对operator*和operator->进行重载操作。c++STL中有一个auto_ptr（11中已经废弃），是用来包装一个原生指针(native pointer)的对象。可以解决各种内存漏洞。下面是auto_ptr的源码精要。
+
+```c++
+template<class T>
+class auto_ptr
+{
+public:
+    explicit auto_ptr(T *p=0):pointer(p){}
+    template<class U>
+    auto_ptr(auto_ptr<U>& rhs):pointee(rhs.release()){}
+    ~auto_ptr(){delete pointee;}
+    template<class U>
+    auto_ptr<T>& operator=(auto_ptr<U>& rhs)
+    {
+        if(this!=&rhs) reset(rhs.release());
+        return *this;
+    }
+    T& operator*() const {return *pointee;}
+    T* operator->() const {return pointee;}
+    T* get() const {return pointee;}  
+private:
+    T *pointee;
+}
+```
+
+下面是一个简单迭代器
+
+```c++
+template <class Item>
+struct LisIter
+ {
+     Item* ptr;
+     ListIter(Item* p=0):ptr(p){}
+     //关键操作
+
+     Item& operator*() const {return *ptr;}
+     Item* operator->() const {return ptr;}
+     ListIter& operator++()
+     {
+        ptr=ptr->next();
+        return *this;
+     } 
+     ListIter operator++(int)
+     {
+        ListIter tmp=*this;
+        ++*this;
+        retrun tmp;
+     }
+     bool operator==(const ListIter& i) const
+     {
+        return ptr!=i.ptr;
+     }
+ }; 
+```
+
+迭代器的另外一个非常重要的功能就是隐藏其中的细节；这一点标准库已经做的很好了。
+
+### 3.3 迭代器相应型别(associated types)
+
+迭代器相应型别是一种类似的封装行为，并不只是“迭代器所指对象的型别”
+
+### 3.4 Traits编程技法--STL源码门钥
+
+迭代器所指的型别，称为该迭代器的 value type。value用于函数的传回值就无法正常工作了。使用内嵌类型可以很好的避免这种问题。
+
+```c++
+template <class T>
+struct MyIter
+{
+    //内嵌类型声明
+
+    typedef T value_type;
+    T* ptr;
+    MyIter(T* p=0):ptr(p){}
+    T& operator*() const {return *ptr;} 
+}
+
+template <class I>
+typename I::value_type func(I ite){return *ite;}
+
+MyIter<int> ite(new int(8));
+cout<<func(ite);
+```
+上面可以实现对类的特例化别名，但是对于基本数据类型却不可以，因此我们需要使用特例化模板`template<>`来对基本的数据类型进行封装;STL中提供了traits特性来对数据进行封装和改进。
+
+traits意义在于，如果I定义有自己的value type,那么通过这个traits的作用，萃取出来的value_type就是I::value_type。这样traits就可以拥有特例化版本。
+
+![traits特性](https://wangpengcheng.github.io/img/2019-07-27-16-01-10.png)
+
+常用的迭代器类型有5种：
+
+- value_type: 迭代器所指对象的型别。
+- difference_type:两个迭代器之间的距离，因此也可以用来表示一个容器的最大容量。表示头尾之间的距离参数。其原型是`typedef ptrdiff_t difference_type`;使用时可以用`typename iterator_traits<I>::difference_type`
+- reference_type: `typedef const T& reference type`
+    + 迭代器分为两种`const`和非`const`；不允许/允许改变所指内容的对象。
+- pointer type 主要还是对象的指针类型。
+- iterator_category: 主要用于大规模的迭代器
+
+根据移动特性与施行操作，迭代器被分为5类
+
+- input iterator:这种迭代器所指的对象，不允许外界改变。只读(read only)
+- output Iterator:唯写(write only)
+- Forward Iterator:允许“写入型”算法(如replace())在此种迭代器所形成的区间上进行读写操作。
+- Bidirectional Iterator:可以双向移动。某些算法需要逆向走访某个迭代器区间(例如逆向拷贝某范围内的元素)，可以使用Bidirectional Iterators。
+- Random Access Iterator: 前四中迭代器都只提供一部分指针算术能力，第五种则涵盖所有指针和算术能力，包括p+n,p-n,p[n],p1-p2,p1小于p2。
+
+
+![迭代器的分类和从属关系](https://wangpengcheng.github.io/img/2019-07-27-16-43-29.png);
+
+
+### 3.5 std::iterator的保证
+
+STL提供了一个iterator class 。每个新设计的迭代器都继承自它，可以保证STL所需之规范
+
+```c++
+
+template <
+      class Category,
+      class T,
+      class Distance=ptrdiff_t,
+      class Pointer=T*,
+      class Reference=T&
+          >
+struct iterator
+{
+  typedef Category iterator_category;
+  typedef T value_type;
+  typedef Distance difference_type;
+  typedef Pointer pointer;
+  typedef Reference reference;
+  
+};
+
+//使用
+
+std::iterator<std::forward_iterator_tag,Item> 
+```
+纯粹的接口类型类，因此没有额外的负担。
+
+总结：traits编程技法大量用于STL实现品中，利用“内嵌型别”的编程技巧与编译器的template参数推导功能,增强了c++的类型推导能力。
+
+### 3.6 iterator源码完整重列
+
+```c++
+//源自 <stl_iterator.h>
+
+struct input_iterator_tag{};
+struct output_iterator_tag{};
+struct forward_iterator_tag:public input_iterator_tag{};
+struct bidirectional_iterator_tag:public forward_iterator_tag{};
+struct random_access_iterator_tag:public bidirectional_iterator_tag{};
+//迭代器封装类
+
+template <
+      class Category,
+      class T,
+      class Distance=ptrdiff_t,
+      class Pointer=T*,
+      class Reference=T&
+          >
+struct iterator
+{
+  typedef Category iterator_category;
+  typedef T value_type;
+  typedef Distance difference_type;
+  typedef Pointer pointer;
+  typedef Reference reference;
+  
+};
+//traits
+
+template <class Iterator>
+struct iterator_traits{
+  typedef typename Iterator::iterator_category iterator_category;
+  typedef typename Iterator::value_type value_type;
+  typedef typename Iterator::difference_type difference_type;
+  typedef typename Iterator::pointer pointer;
+  typedef typename Iterator::reference reference;
+}
+//为原生指针而设计的traits偏特化版
+
+template <class T>
+struct iteraror_traits<T*>
+{
+    typedef random_access_iterator_tag iterator_category;
+    typedef T value_type;
+    typedef ptrdiff_t difference_type;
+    typedef T* pointer;
+    typedef T& reference;
+};
+...
+
+```
+
+### SGI STL的私房菜 __type_traits
+
+iterator_traits负责萃取迭代器的特性，__type_traits则负责萃取型别(type)的特性。它提供了一种机制，允许针对不同的型别属性，在编译时期完成函数派送决定。
+
 
 
 
