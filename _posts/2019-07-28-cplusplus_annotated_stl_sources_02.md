@@ -22,7 +22,7 @@ tags:
 - 序列式容器：数据的有序存放如list、vector
 - 关联式容器：数据的相互关联如map和pair等
 
-![序列容器和关联容器](../img/2019-07-27-19-54-47.png)
+![序列容器和关联容器](https://wangpengcheng.github.io/img/2019-07-27-19-54-47.png)
 
 第四章主要讲述序列容器
 
@@ -56,7 +56,7 @@ protected:
 
 }
 ```
-![vector示意图](../img/2019-07-27-20-38-53.png)
+![vector示意图](https://wangpengcheng.github.io/img/2019-07-27-20-38-53.png)
 
 
 这里内存分配的关键函数代码如下
@@ -121,13 +121,13 @@ void vector<T,Alloc>::insert_aux(iterator position,const T& x)
 }
 ```
 
-![局部清除操作](../img/2019-07-27-21-16-32.png)
+![局部清除操作](https://wangpengcheng.github.io/img/2019-07-27-21-16-32.png)
 
-![局部插入操作1](../img/2019-07-27-21-18-12.png)
+![局部插入操作1](https://wangpengcheng.github.io/img/2019-07-27-21-18-12.png)
 
-![局部插入操作2](../img/2019-07-27-21-19-32.png)
+![局部插入操作2](https://wangpengcheng.github.io/img/2019-07-27-21-19-32.png)
 
-![局部插入操作3](../img/2019-07-27-21-20-36.png)
+![局部插入操作3](https://wangpengcheng.github.io/img/2019-07-27-21-20-36.png)
 
 注意这里的迭代器失效。
 
@@ -141,7 +141,7 @@ list的插入和接合(splice)都不会造成原有的list迭代失效，这在v
 
 SGI的list不仅是一个双向链表，而且还是一个环状双向链表。
 
-![SGI](../img/2019-07-27-21-31-54.png)
+![SGI](https://wangpengcheng.github.io/img/2019-07-27-21-31-54.png)
 
 **list的构造和内存管理**
 
@@ -177,9 +177,9 @@ protected:
 ```
 list提供多个构造函数，default constructor允许我们不指定任何参数做出一个空的list出来。
 
-![空链表结构](../img/2019-07-27-21-42-02.png)
+![空链表结构](https://wangpengcheng.github.io/img/2019-07-27-21-42-02.png)
 
-![插入操作](../img/2019-07-27-21-43-26.png)
+![插入操作](https://wangpengcheng.github.io/img/2019-07-27-21-43-26.png)
 
 注意这里的插入是先产生在插入，并且是头插法。这样可以避免尾部迭代器的变动，减少工作量。
 
@@ -204,7 +204,7 @@ void transfer(iterator position,iterator first,iterator last)
 
 ```
 
-![转移操作图](../img/2019-07-27-21-53-20.png)
+![转移操作图](https://wangpengcheng.github.io/img/2019-07-27-21-53-20.png)
 
 list的splice()结合函数，有许多版本，便便指针的重新链接；但是因为链表的链接特性，因此链表无法使用sort()算法，必须使用自己的sort()
 
@@ -212,7 +212,7 @@ list的splice()结合函数，有许多版本，便便指针的重新链接；�
 
 deque是双向开口的连续性空间；
 
-![deque结构](../img/2019-07-27-21-57-16.png)
+![deque结构](https://wangpengcheng.github.io/img/2019-07-27-21-57-16.png)
 
 deque允许常数时间内对端进行匀速的插入或者移除操作，并且没有所谓的容量(capacity)的概念，因为他是动态地以分段连续空间组合而成的，随时可以增加一段新的空间并链接起来。因此deque的迭代器并不是普通的指针；因此除非必要，我们应该尽可能选择使用vector而非deque，为了操作的高效，可将deque先完整复制到一个vector身上，将vector排序后，再复制回去。
 
