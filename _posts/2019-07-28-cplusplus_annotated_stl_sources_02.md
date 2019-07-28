@@ -234,3 +234,276 @@ protected:
 
     size_type map_size;
 ```
+
+![deqeue结构](https://wangpengcheng.github.io/img/2019-07-27-22-13-47.png)
+
+下面是deque中的迭代器关键代码
+
+```c++
+struct _deque_iterator
+{
+    typedef __deque_iterator<T,T&,T*,BufSize> iterator;
+    static size_t buffer_size(){return __deque_buf_size(BufSize,sizeof(T));}
+    //保持与容器的联结
+    //此迭代器所指缓冲区中的当前行(current)元素
+
+    T* cur;
+    //缓冲区的头部元素
+
+    T* first;
+    //缓冲区的尾部元素
+
+    T* last;
+    //缓冲区管理中心
+
+    map_pointer node;
+
+    inline size_t __deque_buf_size(size_t n,size_t sz)
+    {
+        return n!=0?n:(sz<512?size_t(512/sz):size_t(1));
+    }
+
+};
+
+```
+
+![相互关系](https://wangpengcheng.github.io/img/2019-07-28-10-20-39.png)
+
+![插入结果](https://wangpengcheng.github.io/img/2019-07-28-10-23-19.png)
+
+deque数据结构
+
+```c++
+template <class T,class Alloc=alloc,size_t BufSiz=0>
+class deque
+{
+public:
+    typedef T value_type;
+    typedef value_type* pointer;
+    typedef size_t size_type;
+    ...
+protected:
+    //元素的指针的指针
+
+    typedef pointer* map_pointer;
+    //第一个节点
+
+    iterator start;
+    //最后一个节点
+
+    iterator finish;
+    //指向mao,mao是连续空间
+
+    map_pointer map;
+    //map内指针数量
+
+    size_type map_size;
+}
+
+```
+
+![尾端元素插入](https://wangpengcheng.github.io/img/2019-07-28-10-46-24.png)
+
+![前端元素插入](https://wangpengcheng.github.io/img/2019-07-28-10-48-20.png)
+
+![插入后续](https://wangpengcheng.github.io/img/2019-07-28-10-49-02.png)
+
+![元素寻找](https://wangpengcheng.github.io/img/2019-07-28-10-50-18.png)
+
+### 4.5 stack
+
+stack允许新增元素、移除元素、取得最顶端元素。但是不允许遍历行为。
+stack没有迭代器，所有元素都是靠存取函数进行操作。
+stack以list作为底层容器，键list作为底层结构并封闭其头端口。
+
+### 4.6 queue
+
+queue是一种先进先出的数据结构。有两个出口，允许新增元素、移除元素、从最低端加入元素、取得最顶端元素。
+
+queue主要是用deque作为双向开口的数据结构，作为缺省的情况下作为queue底部结构。
+
+queue没有迭代器，符合“先进先出”的条件，只有queue顶端的元素，才有机会被外界取用。queue不提供遍历功能，也不提供迭代器。
+
+### 4.7 heap(隐式表示，implicit representation)
+
+
+可以使用arry的i表示某一个节点，那么左子节点就必须位于array的2i处，右子节点必须位于array的2i+1处。
+根据元素排列方式，heap可以分为：
+- max-heap: 每个节点键值都大于或者等于其子节点的键值
+- min-heap: 每个节点键值都小于或者等于其子节点的键值
+
+![](https://wangpengcheng.github.io/img/2019-07-28-13-16-29.png)
+
+下面是进行插入排序的关键代码
+
+```c++
+template <class RandomAccessIterator>
+inline void push_heap(RandomAccessIterator first,
+                        RandomAccessIterator last)
+{
+    //调用此函数时，新元素应该已经置于底部容器的最尾端
+
+    __push_heap_aux(first,last,distance_type(first),value_type(first));
+}
+
+template <class RandomAccessIterator,class Distance,class T>
+
+inline void __push_heap_aux(RandomAccessIterator first,RandomAccessIterator last,Distance*,T*)
+{
+    //将新值置于底部容器的最底端
+
+    __push_heap(first,Distance((last-first)-1),Distance(0),T(*(last-1)));
+}
+
+template <class RandomAccessIterator,class Distance,class T>
+void __push_heap(RandomAccessIterator first,Distance holeIndex,Distance topIndex,T value)
+{
+    //找到父节点
+
+    Distance parent=(holeIndex-1)/2;
+    //这里使用while循环，循环调节插入的节点位置
+
+    while(holeIndex>topIndex&&
+        *(first+parent)<value) {
+        //当尚未达到顶端，且父节点小鱼新值(于是不符合heap的次序特性)
+
+        //令当前值为父值
+
+        *（first+holeIndex）=*(first+parent);
+        holeIndex=parent;
+        //更新parent index
+
+        parent=(holeIndex-1)/2;
+    }
+    //令洞值为新值，完成插入操作
+
+    *(first+holeIndex)=value;
+
+}
+```
+对于heap_pop：将根节点取走后，填入上述失去声明空间的叶节点值，再将它拿来和其它两个子节点比较值，并与较大子节点对调位置，直到根节点的键值大于左右两个子节点，或者直到放至叶节点为止。
+
+![pop heap](https://wangpengcheng.github.io/img/2019-07-28-20-19-46.png)
+
+```c++
+template <class RandomAccessIterator>
+inline void pop_heap(RandomAccessIterator first,
+                        RandomAccessIterator last)
+{
+    //调用此函数时，新元素应该已经置于底部容器的最尾端
+
+    __pop_heap_aux(first,last,value_type(first));
+}
+
+template <class RandomAccessIterator,class Distance,class T>
+
+inline void __pop_heap_aux(RandomAccessIterator first,RandomAccessIterator last,Distance*,T*)
+{
+    //pop操作应该为容器的第一个元素，因此，首先设定欲调整值为尾值，然后将首值调至尾节点(所以以上将迭代器result设为last-1)。然后重整[first,last-1)，使之重新形成一个合格的heap
+
+    __pop_heap(first,last-1,T(*(last-1)),distance_type(first));
+}
+
+template <class RandomAccessIterator,class Distance,class T>
+void __pop_heap(RandomAccessIterator first,
+        RandomAccessIterator last,
+        RandomAccessIterator result,
+        T value,
+        Distance*
+        )
+{
+    //设定尾值为首值，于是尾值即为欲求结果，可由客户端稍后再以底层容器之pop_back()取出尾值
+
+    *result=*first;
+    //重新调整heap,洞号为0(亦即树根处)，欲调整值为value(原尾值)；
+
+    __adjust_heap(first,Distance(0),Distance(last-first),value);
+
+}
+//一下这个__adjust_head()不允许指定“大小比较标准”
+template <class RandomAccessIterator,class Distance,class T>
+void __adjust_heap(
+    RandomAccessIterator first,
+    Distance holeIndex,
+    Distance len,
+    T value
+    )
+{
+    Distance topIndex=holeIndex;
+    //洞节点的右节点
+
+    Distance secondchild=2*holeIndex+2;
+    while(secondchild<len) {
+        //使secondchild代表较大节点
+
+        if(*(first+secondchild)<*(first+(secondchild-1)))
+        {
+            secondchild--;
+        }
+        //令较大子值为洞值，再令洞号下移至较大子节点处
+
+        *(first+holeIndex)=*(first+secondchild);
+        holeIndex=secondchild;
+        //找出新洞节点的右子节点
+
+        secondchild=2*(secondchild+1);
+    }
+    //没有右子节点，只有左子节点
+
+    if(secondchild==len){
+        //Percolate down:令左子值为洞值，再令洞号下移至左子节点处。
+
+        *(first+holeIndex)=*(first+(secondchild-1));
+        holeIndex=secondchild-1;
+    }
+    //将欲调整值填入目前的洞号内，注意，此时肯定满足次序特性
+
+    __push_heap(first,holeIndex,topIndex,value);
+}
+
+```
+
+**sort_heap算法**
+
+可以通过每次取得heap的最大值来进行pop_heap操作，对，每次操作将操作范围从后向前缩减一个元素(因为pop_heap会把键值最大的元素放在底部容器的最尾端)，当整个程序执行完毕时，我们便有了一个递增序列
+
+```c++
+template <class RandomAccessIterator>
+void sort_heap(RandomAccessIterator first,
+                RandomAccessIterator last)
+{
+    //以下，每执行一次pop_heap(),极值(在STL heap中为极大值)即被放在尾端。这样一直下去，最后得到排序结果
+
+    while(last-first>1) {
+        //每执行pop_heap()一次，操作范围即退缩一格
+
+        pop_heap(first,last--);
+    }
+}
+```
+
+![调整过程](https://wangpengcheng.github.io/img/2019-07-28 -21-36-15.png)
+
+**make_heap算法**
+
+```c++
+template <class RandomAccessIterator>
+inline void make_heap(
+    RandomAccessIterator first,
+    RandomAccessIterator last
+    )
+{
+    __make_heap(first,last,value_type(first),distance_type(first));
+}
+template <class RandomAccessIterator ,class T,class Distance>
+void __make_heap(RandomAccessIterator first,
+                RandomAccessIterator last,
+                T*,
+                Distance)
+{
+    //长度不够直接跳出
+
+    if(last-first<2) return;
+    Distance len=last-first;
+}
+```
