@@ -504,6 +504,403 @@ void __make_heap(RandomAccessIterator first,
     //长度不够直接跳出
 
     if(last-first<2) return;
+    //获取数据的长度
+
     Distance len=last-first;
+    //找出第一个需要重排的子树头部，以parent标出。由于任何叶节点都不需要执行 perlocate down,所以有一下计算。parent命名佳，以holeIndex更好
+
+    Distance parent=(len-2)/2;
+
+    while(true)
+    {
+        //重新排列以parent为首的子树。len是为了让__adjust_heap()判断操作范围
+
+        __adjust_heap(first,parent,len,T(*(first+parent)));
+        
+        if(parent==0) return;
+        //移动头部节点
+
+        parent--;
+    }
 }
+```
+注意heap没有迭代器
+
+### 4.8 priority_queue
+
+priority_queue是一个具有权值观念的queue，它允许加入新元素、移除旧元素、审视元素值等功能。其内部的函数是按照权值进行排序的。
+
+![priority_queue](../img/2019-07-29-13-37-30.png)
+
+
+### 4.9 slist
+
+STL list是一个双向链表(double linked list)。SGI STL 另外提供了一个单项链表(slist)。这个容器并不再标准规格之内。
+
+![节点和架构设计](../img/2019-07-29-15-07-53.png)
+
+![节点实际构造](../img/2019-07-29-15-09-01.png)
+
+## 第五章 关联式(associative)容器
+
+当元素被插入到关联式容器中时，容器内部结构(可能是RB-tree或者hash-table)便依照其键值大小，以某种特定规则将这个元素放置于合适的位置，关联式容器没有所谓头尾(只有最大元素和最小元素)；所以不会有所谓`push_back()`、`push_front()`等行为的操作。
+一般而言关联式容器的内部结构是一个二叉平衡树，以便获得良好的搜寻效率。二叉平衡树有许多变形包括：AVL-tree、RB-tree、AA-tree；其中RB-tree被广泛应用于关联式容器。
+
+### 5.1 树的导览
+
+这里可以去看数据结构与算法中关于树的描述，在此不做过多叙述。
+
+![树结构的相关术语整理](../img/2019-07-29-15-23-54.png)
+
+### 5.2 RB-tree(红黑树)
+_参考链接：_ [红黑树(四)之 C++的实现](https://www.cnblogs.com/skywang12345/p/3624291.html)
+
+AVL-tree基本规则：
+
+- 每个节点不是红色就是黑色(图中深色底纹代表黑色，浅色底纹代表红色，同下)。
+- 根节点为黑色
+- 如果节点为红，其子节点必须为黑色
+- 任一节点至NULL(树尾端)的任何路径，所含之黑节点数木必须相同
+
+关于它的特性，需要注意的是：
+- 特性(3)中的叶子节点，是只为空(NIL或null)的节点。
+- 特性(5)，确保没有一条路径会比其他路径长出俩倍。因而，红黑树是相对是接近平衡的二叉树。
+
+![红黑树示例](https://images0.cnblogs.com/i/497634/201403/251730074203156.jpg)
+
+![RB-tree的条件与实例](../img/2019-07-29-15-32-27.png)
+
+#### 5.2.1 插入节点
+
+因为红黑树的规则对于不同的插入存在以下四种情况：
+
+- 状况1：s为黑色x为外侧插入，对此情况，先对P,G做一次单旋转，再更改P,G颜色，即可重新满足红黑树的规则3。
+
+![状况1](../img/2019-07-29-16-25-21.png)
+
+- 状况2:S为黑且x为内侧插入，对此情况，我们必须先对P,X做一次单旋转并更改G,X颜色，再将结果对G做一次单旋转，级可再次满足红黑树规则3.
+
+![状况2](../img/2019-07-29-16-29-18.png)
+
+- 状况3:S为红色且X为外侧插入，对此情况，先对P和G做一次单旋转，并改变X的颜色。此时如果GG为黑，一切搞定，如果GG为红，则是状况4
+
+![状况3](../img/2019-07-29-16-32-15.png)
+
+- 状况4:S为红且X为外侧插入。对此情况，先对P和G做一次单旋转，并改变X的颜色。此时如果GG亦为红，还得持续往上做，直到不再有父子连续为红的情况发生。
+
+![状况4](../img/2019-07-29-16-34-38.png)
+
+#### 5.2.2 一个由上而下的程序
+
+一个由上而下的程序，假设新增节点为A,那么就沿着A的路径，只要看到某个节点X的两个子节点皆为红色，就把X该为红色，并把两个子节点改为黑色。然后在进行旋转变换。
+
+![自上而下的变换](../img/2019-07-29-16-47-07.png)
+
+![插入结果](../img/2019-07-29-16-48-18.png)
+
+#### 5.2.3 RB-tree的节点设计
+
+```c++
+typedef bool __rb_tree_color_type;
+//红色为0
+
+const __rb_tree_color_type __rb_tree_red=false;
+const __rb_tree_color_type __rb_tree_black=true;
+
+struct __rb_tree_node_base
+{
+    typedef __rb_tree_color_type color_type;
+    typedef __rb_tree_node_base* base_ptr;
+    //节点颜色，非红即黑
+
+    color_type color;
+    //节点的父节点指针
+
+    base_ptr parent;
+    //左节点指针
+
+    base_ptr left;
+    //右节点指针
+
+    base_ptr right;
+    static base_ptr minimum(base_ptr x)
+    {
+        while(x->left!=0)x=x->left;
+        return x;
+    }
+    static base_ptr maximum(base_ptr x)
+    {
+        while(x->right!=0)x=x->right;
+        return x;
+    }
+};
+
+template <class Value>
+struct  _rb_tree_node:public __rb_tree_node_base
+{
+    typedef __rb_tree_node<Value>* link_type;
+    //节点值
+
+    Value value_field;
+    
+};
+```
+
+#### 5.2.4 RB-tree的迭代器
+
+![迭代器和节点之间的关系](../img/2019-07-30-15-46-23.png)
+
+```c++
+
+struct __rb_tree_base_iterator
+{
+    typedef __rb_tree_node_base::base_ptr base_ptr;
+    typedef bidirectional_iterator_tag iterator_category;
+    typedef ptrdiff_t difference_type;
+    //用来与容器之间产生一个连接关系
+
+    base_ptr node;
+    void increment()
+    {
+        //状况1
+
+        if(node->right!=0)
+        {
+            //存在右节点，就往右节点走
+            
+            node=node->right;
+            //然后一直往左子树，走到底
+
+            while(node->left!=0) {
+                node=node->left;
+            }
+            //状况2
+
+        }else{
+            //没有右子节点，先找出父节点
+
+            base_ptr y=node->parent;
+            //如果现行节点本身就是个右子节点,就一直上朔，直到"不为右子节点"为止
+
+            while(node==y->right)
+            {
+                node=y;
+                y=y->node;
+            }
+            //如果此时右子节点不等于次吃的父节点状况3，此时的父节点即为解答，否则此时的node为解答状况4
+
+            if(node->right!=y)
+            {
+                node=y;
+            }
+        }
+    }
+    //注意：以上判断"若此时的右子节点不等于次吃的父节点"，是为了应付一种特殊情况：
+    //我们欲寻找根节点的下一个节点，而恰巧根节点无左右子节点
+    //以上的特殊做法必须配合RB-tree根节点与特殊之header之间的特殊关系
+
+    //以下可以实现于operator--内，因为再无他处会调用此函数了
+
+    void decrement()
+    {
+        //如果是红节点，且父节点的父节点等于自己,即node为head或者end节点的时候
+
+        if(node->color==__rb_tree_red&&
+            node->parent->parent==node){
+            node=node->right;
+        }else if(node->left!=0)
+        {
+            base_ptr y=node->left;
+            //一直向右循环查找下去，直到没有右子节点
+
+            while(y->right!=0){
+                y=y->right;
+            }
+            node=y; 
+        }else{
+            //即非根节点，亦无左子节点
+            //先找到符节点
+
+            base_ptr y=node->parent;
+            //找寻父节点的左子节点直到node不是左子节点
+
+            while(node==y->left)
+            {
+                //这里主要是一直上朔
+
+                node=y;
+                y=y->parent;
+            }
+        }
+    }
+
+};
+//RB-tree的正规迭代器
+
+template <class Value,class Ref,class Ptr>
+struct __rb_tree_iteraror:public __rb_tree_base_iterator
+{
+    typedef Value value_type;
+    typedef Ref reference;
+    typedef Ptr pointer;
+    typedef __rb_tree_iterator<Value,Value&,Value*> iterator;
+    typedef __rb_tree_iterator<Value,const Value&,const Value*> const_iterator;
+    typedef __rb_tree_iterator<Value,Ref,Ptr> self;
+    typedef __rb_tree_node<Value>* link_type;
+
+    __rb_tree_iterator() {}
+    __rb_tree_iterator(link_type x){node=x;}
+    __rb_tree_iterator(const iterator& it){node=it.node;}
+
+    reference operator*() const {return link_type(node)->value_field;}
+#ifndef __SGI_STL_NO_ARROW_OPERATOR
+    pointer operator->() const {return &(operator*());}
+#endif
+    self& operator++() {increment(); return *this;}
+    self operator++(int){
+        self tmp=*this;
+        increment();
+        return tmp;
+    }
+    self& operator--() {decrement();return *this;}
+    self operator--(int){
+        self tmp=*this;
+        decrement();
+        return tmp;
+    }
+};
+
+```
+
+![函数中比较费解的情况](../img/2019-07-30-21-04-00.png)
+
+这里主要是因为当红黑数中为空的时候，head与end互为父节点
+
+**RB-tree的数据结构**
+
+```c++
+
+template <class Key,class Value,class KeyOfValue,class Compare,class Alloc=alloc>
+class rb_tree{
+protected:
+    typedef void*  void_pointer;
+    typedef __rb_tree_node_base* base_ptr;
+    typedef __rb_tree_node<Value> rb_tree_node;
+    typedef simple_alloc<rb_tree_node,Alloc> rb_tree_node_allocator;
+    typedef __rb_tree_color_type color_type;
+public:
+    typedef key key_type;
+    typedef Value value_type;
+    typedef value_type* pointer;
+    typedef const value_type* const_pointer;
+    typedef value_type& reference;
+    typedef const value_type& const_reference;
+    typedef rb_tree_node* link_type;
+    typedef size_t size_type;
+    typedef ptrdiff_t difference_type;
+protected:
+    link_type get_node(){return rb_tree_node_allocator::allocate();}
+    void put_node(link_type p){rb_tree_node_allocator::deallocate(p);}
+
+    link_type create_node(const value_type& x)
+    {
+        link_type tmp=get_node();
+        __STL_TRY{
+            //构造内容
+
+            construct(&tmp->value_field,x);
+        }
+        __STL_UNWIND(put_node(tmp));
+        return tmp;
+    }
+    //复制一个节点(的值和颜色)
+
+    link_type clone_node(link_type x)
+    {
+        link_type tmp=create_node(x->value_field);
+        tmp->color=x->color;
+        tmp->left=0;
+        tmp->right=0;
+        return tmp;
+    }
+    void destroy_node(link_type p)
+    {
+        //析构内容
+
+        destroy(&p->value_field);
+        //释放内存
+
+        put_node(p);
+    }
+protected:
+    //节点数目
+
+    size_type node_count;
+    link_type header;
+    //节点的键值大小比较准则，应该会是一个function object;
+
+    Compare key_compare;
+    //方便的header成员取用
+
+    link_type& root() const {return (link_type&) header->parent;}
+    link_type& leftmost() const {return (link_type&) header->left;}
+    link_type& rightmost() const {return (link_type&) header->right;}
+    //获取节点x的成员变量
+
+    static link_type& left(link_type x){return (link_type&)(x->left);}
+    static link_type& right(link_type x){return (link_type&)(x->right);}
+    static link_type& parent(link_type x){return (link_type&)(x->parent);}
+    static reference value(link_type x){return x->value_field;}
+    static const Key& key(link_type x){return KeyOfValue()(value(x));}
+    static color_type& color(link_type x){return (color_type&)(x->color);}
+    //求取极大值和极小值
+    static link_type minimum(link_type x){
+        return (link_type) __rb_tree_node_base::minimum(x);
+    }
+    static link_type maximum(link_type x){
+        return (link_type)__rb_tree_node_base::maximum(x);
+    }
+public:
+    typedef __rb_tree_iterator<value_type,reference,pointer> iterator;
+private:
+    iterator __insert(base_ptr x,base_ptr y,const value_type& v);
+    link_type __copy(link_type x,link_type p);
+    void __erase(link_type x);
+    void init(){
+        //产生一个节点空间，令header指向它
+
+        header=get_node();
+        //令header为红色，用来区分header和root
+        
+        color(header)=__rb_tree_red;
+        root()=0;
+        //header的左右子节点都为自己
+
+        leftmost()=header;
+        rightmost()=header;
+    }
+public:
+    rb_tree(const Compare& comp=Compare()):node_count(0),key_compare(comp){init();}
+    ~rb_tree(){
+        clear();
+        put_node(header);
+    }
+    rb_tree<Key,Value,KeyOfValue,Compare,Alloc>& operator=(const rb_tree<Key,Value,KeyOfValue,Compare,Alloc>& x);
+    //相关的基本函数
+
+    Compare key_comp() const {return key_compare;}
+    iterator begin() {return leftmost();}
+    iterator end() {return header;}
+    bool empty() const {return node_count==0;}
+    size_type size() const {return node_count;}
+    size_type max_size() const {return size_type(-1);}
+public:
+    //将x插入到红黑树中,保持节点独一无二
+
+    pair<iterator,bool> insert_unique(const value_type& x);
+    //插入，允许值重复
+
+    iterator insert_equal(const value_type& x);
+}
+
 ```
