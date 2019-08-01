@@ -530,16 +530,16 @@ void __make_heap(RandomAccessIterator first,
 
 priority_queue是一个具有权值观念的queue，它允许加入新元素、移除旧元素、审视元素值等功能。其内部的函数是按照权值进行排序的。
 
-![priority_queue](../img/2019-07-29-13-37-30.png)
+![priority_queue](https://wangpengcheng.github.io/img/2019-07-29-13-37-30.png)
 
 
 ### 4.9 slist
 
 STL list是一个双向链表(double linked list)。SGI STL 另外提供了一个单项链表(slist)。这个容器并不再标准规格之内。
 
-![节点和架构设计](../img/2019-07-29-15-07-53.png)
+![节点和架构设计](https://wangpengcheng.github.io/img/2019-07-29-15-07-53.png)
 
-![节点实际构造](../img/2019-07-29-15-09-01.png)
+![节点实际构造](https://wangpengcheng.github.io/img/2019-07-29-15-09-01.png)
 
 ## 第五章 关联式(associative)容器
 
@@ -550,7 +550,7 @@ STL list是一个双向链表(double linked list)。SGI STL 另外提供了一�
 
 这里可以去看数据结构与算法中关于树的描述，在此不做过多叙述。
 
-![树结构的相关术语整理](../img/2019-07-29-15-23-54.png)
+![树结构的相关术语整理](https://wangpengcheng.github.io/img/2019-07-29-15-23-54.png)
 
 ### 5.2 RB-tree(红黑树)
 _参考链接：_ [红黑树(四)之 C++的实现](https://www.cnblogs.com/skywang12345/p/3624291.html)
@@ -568,7 +568,7 @@ AVL-tree基本规则：
 
 ![红黑树示例](https://images0.cnblogs.com/i/497634/201403/251730074203156.jpg)
 
-![RB-tree的条件与实例](../img/2019-07-29-15-32-27.png)
+![RB-tree的条件与实例](https://wangpengcheng.github.io/img/2019-07-29-15-32-27.png)
 
 #### 5.2.1 插入节点
 
@@ -576,27 +576,27 @@ AVL-tree基本规则：
 
 - 状况1：s为黑色x为外侧插入，对此情况，先对P,G做一次单旋转，再更改P,G颜色，即可重新满足红黑树的规则3。
 
-![状况1](../img/2019-07-29-16-25-21.png)
+![状况1](https://wangpengcheng.github.io/img/2019-07-29-16-25-21.png)
 
 - 状况2:S为黑且x为内侧插入，对此情况，我们必须先对P,X做一次单旋转并更改G,X颜色，再将结果对G做一次单旋转，级可再次满足红黑树规则3.
 
-![状况2](../img/2019-07-29-16-29-18.png)
+![状况2](https://wangpengcheng.github.io/img/2019-07-29-16-29-18.png)
 
 - 状况3:S为红色且X为外侧插入，对此情况，先对P和G做一次单旋转，并改变X的颜色。此时如果GG为黑，一切搞定，如果GG为红，则是状况4
 
-![状况3](../img/2019-07-29-16-32-15.png)
+![状况3](https://wangpengcheng.github.io/img/2019-07-29-16-32-15.png)
 
 - 状况4:S为红且X为外侧插入。对此情况，先对P和G做一次单旋转，并改变X的颜色。此时如果GG亦为红，还得持续往上做，直到不再有父子连续为红的情况发生。
 
-![状况4](../img/2019-07-29-16-34-38.png)
+![状况4](https://wangpengcheng.github.io/img/2019-07-29-16-34-38.png)
 
 #### 5.2.2 一个由上而下的程序
 
 一个由上而下的程序，假设新增节点为A,那么就沿着A的路径，只要看到某个节点X的两个子节点皆为红色，就把X该为红色，并把两个子节点改为黑色。然后在进行旋转变换。
 
-![自上而下的变换](../img/2019-07-29-16-47-07.png)
+![自上而下的变换](https://wangpengcheng.github.io/img/2019-07-29-16-47-07.png)
 
-![插入结果](../img/2019-07-29-16-48-18.png)
+![插入结果](https://wangpengcheng.github.io/img/2019-07-29-16-48-18.png)
 
 #### 5.2.3 RB-tree的节点设计
 
@@ -648,7 +648,7 @@ struct  _rb_tree_node:public __rb_tree_node_base
 
 #### 5.2.4 RB-tree的迭代器
 
-![迭代器和节点之间的关系](../img/2019-07-30-15-46-23.png)
+![迭代器和节点之间的关系](https://wangpengcheng.github.io/img/2019-07-30-15-46-23.png)
 
 ```c++
 
@@ -772,7 +772,7 @@ struct __rb_tree_iteraror:public __rb_tree_base_iterator
 
 ```
 
-![函数中比较费解的情况](../img/2019-07-30-21-04-00.png)
+![函数中比较费解的情况](https://wangpengcheng.github.io/img/2019-07-30-21-04-00.png)
 
 这里主要是因为当红黑数中为空的时候，head与end互为父节点
 
@@ -904,3 +904,404 @@ public:
 }
 
 ```
+RB-tree的构造方式有两种，一种是拷贝构造，一种是空值构造。下面是其init()的关键函数
+
+```c++
+private:
+    void init()
+    {
+        header=get_node();
+        color(header)=rb_tree_redl
+
+        root()=0;
+        leftmost()=header;
+        rightmost()=header;
+    }
+```
+
+![初始化结果](../img/2019-07-31-16-37-06.png)
+
+**RB-tree的关键操作**
+
+**元素插入 insert_equal()**
+
+```c++
+template <class Key,class Value,class KeyOfValue,class Compare,class Alloc>
+
+typename rb_tree<Key,Value,KeyOfValue,Compare,Alloc>::iterator 
+
+rb_tree<Key,Value,KeyOfValue,Compare,Alloc>::insert_equal(const Value& v)
+{
+    link_type y=header;
+    link_type x=root();
+    //从根节点开始向下寻找适当的传播节点，直到到根节点，注意这里y为x的parent节点
+
+    while(x!=0) {
+        y=x;
+        //遇大则左，遇小或者等于就右--v<x向左，v>=x向右
+
+        x=key_compare(KeyOfValue()(v),key(x))?left(x):right(x);
+    }
+    //x为新值插入点，y为插入点之父节点，v为新值
+
+    return __insert(x,y,v);
+}
+
+```
+
+**元素插入操作insert_unique()**
+
+元素插入操作--不允许重复值存在，否则插入无效
+函数返回的元素是一个pair值，第一个个是RB-tree迭代器，指向新增节点，第二个元素表示是否插入成功。
+
+```c++
+template <Class Key,class Value,class KeyOfValue,class Compare, class Alloc>
+
+pair<typename rb_tree<Key,Value,KeyOfValue,Compare,Alloc>::iterator,bool>
+
+rb_tree<Key,Value,KeyOfValue,Compare,Alloc>::insert_unique(const Value& v)
+{
+    link_type y=header;
+    //从根节点开始
+
+    link_type x=root();
+    //判断是否相同
+
+    bool comp=true;
+    //一直遍历到根节点
+
+    while(x!=0)
+    {
+        y=x;
+        //v是否小于目前节点的键值
+
+        comp=key_compare(KeyOfValue()(v),key(x));
+        //遇“大”向左，否则向右
+
+        x=comp?left(x):right(x);
+    }
+    //离开while循环之后，即插入父节点
+    //令迭代器j指向插入点的父节点
+
+    iterator j=iterator(y);
+    //如果在左边插入
+
+    if(comp)
+    {
+        //如果插入节点为最左节点
+
+        if(j==begin())
+        {
+            return pair<iterator,bool>(__insert(x,y,v),true); 
+        }else{
+            //调整j准备回头进行测试
+
+            --j;
+        }
+    }
+    //如果小于新值，将插入右侧
+    //比较是否存在重复的值
+
+    if(key_compare(key(j.node),KeyOfValue()(v))){
+        return pair<iterator,bool>(__insert(x,y,v),true);
+    }
+    return pair<iterator,bool>(j,false);
+
+}
+//关键插入程序
+
+template <class Key,class Value,class KeyOfValue,class Compare,class Alloc>
+typename rb_tree<Key,Value,KeyOfValue,Compare,Alloc>::iterator
+
+rb_tree<Key,Value,KeyOfValue,Compare,Alloc>::__insert(base_ptr x_,base_ptr y_,const Value& v)
+{
+    //将值隐式转换为节点指针，x插入位置，y插入父节点，v插入的值
+
+    link_type x=(link_type)x_;
+    link_type y=(link_type)y_;
+    link_type z;
+    //判断是否为首节点
+
+    if(y==header||x!=0||key_compare(KeyOfValue()(v),key(y)))
+    {
+        //产生一个新节点
+
+        z=create_node(v);
+        //重新调整最由节点
+
+        left(y)=z;
+        if(y==header){
+            root()=z;
+            rightmost()=z;
+            //如果y为最左节点
+
+        }else if(y==leftmost()){
+            //让最左节点永远指向z
+
+            leftmost()=z;
+        }
+
+        //不是head节点或者空节点
+
+    }else{
+        //产生一个新节点
+
+        z=create_node(v);
+        //令新节点作为插入节点的右兄弟节点
+
+        right(y)=z;
+        //更新最右指针位置
+
+        if(y==rightmost()){
+            rightmost()=z;
+        }
+    }
+    //设置新节点的父节点,右子节点和左子节点
+
+    parent(z)=y;
+    left(z)=0;
+    right(z)=0;
+    //调整和设置新节点的颜色
+
+    __rb_tree_rebalance(z,header->parent);
+    ++node_count;
+    //返回插入的迭代器
+
+    return iterator(z);
+}
+//调整rb-tree(旋转和改变颜色)，节点和节点的父节点
+
+inline void __rb_tree_rebalance(__rb_tree_node_base* x,__rb_tree_node_base*& root)
+{
+    //新节点毕为红
+
+    x->color=__rb_tree_red;
+    //假设父节点为红色,按照之前的4种情况进行判断然后调整
+
+    while(x!=root&&x->parent->color==__rb_tree_red){
+        //判断父节点是否为左子节点
+
+        if(x->parent==x->parent->parent->left){
+            //y指向右伯节点
+
+            __rb_tree_node_base* y=x->parent->parent->right;
+            //如果y存在并且也为红色
+
+            if(y&&y->color==__rb_tree_red)
+            {
+                //更改父节点为黑色
+
+                x->parent->color=__rb_tree_black;
+                //更改父节点为黑色
+
+                y->color=__rb_tree_black;
+                //更改祖父节点为红
+
+                x->parent->parent->color=__rb_tree_red;
+                //x重新指向祖节点,再次循环迭代更改
+
+                x=x->parent->parent;
+                //无伯父节点，或者伯父节点为黑
+
+            }else{
+                //如果新节点为右子节点
+
+                if(x==x->parent->right){
+                    //x重新指向父节点
+
+                    x=x->parent;
+                    //第一参数为左旋点进行左旋
+
+                    __rb_tree_rotate_left(x,root);
+                }
+                //改变颜色
+                x->parent->color=__rb_tree_black;
+                x->parent->parent->color=__rb_tree_red;
+                //第一参数为右旋点
+
+                __rb_tree_rotate_right(x->parent->parent,root);
+            }
+        //父节点为祖父节点之右子节点
+
+        }else{
+            //y为左伯父节点
+
+            __rb_tree_node_base* y=x->parent->parent->left;
+            //左伯父节点存在且为红色
+
+            if(y&&y->color==__rb_tree_red)
+            {
+                //更改父节点为黑
+
+                x->parent->color=__rb_tree_black;
+                //伯父节点为黑色
+
+                y->color=__rb_tree_black;
+                //更改祖父节点为红色
+
+                x->parent->parent->color=__rb_tree_red;
+                //移动指针准备继续向上查
+                
+                x=x->parent->parent;
+            //无伯父节点或伯父节点为黑
+
+            }else{
+                //如果新节点为父节点之左子节点
+
+                if(x==x->parent->left){
+                    x=x->parent;
+                    //第一参数为右旋点
+
+                    __rb_tree_rotate_right(x,root);
+                }
+                x->parent->color=__rb_tree_black;
+                x->parent->parent->color=__rb_tree_red;
+                //第一参数为左旋点
+
+                __rb_tree_rotate_left(x->parent->parent,root);
+            }
+        }
+    }//end while
+    //root节点永远为黑
+
+    root->color=__rb_tree_black;
+}
+//左旋函数，主要是将x和它的右子节点进行交换
+
+inline void __rb_tree_rotate_left(__rb_tree_bode_base* x,__rb_tree_bode_base*& root)
+{
+    //x为旋转点，y为旋转点的右子节点
+
+    __rb_tree_node_base* y=x->right;
+    //将x的右子节点为其右子节点的左节点
+
+    x->right=y->left;
+    //存在且不为0，则交换指针位置，指直接将x的右子节点与x交换位置
+
+    if(y->left!=0){
+        //更新x指针位置
+
+        y->left->parent=x;
+    }
+    y->parent=x->parent;
+    //这里分空节点和单左/右节点进行讨论
+
+    if(x==root){
+        root=y;
+    }else if(x==x->parent->left){
+        x->parent->left=y;
+    }else{
+        x->parent->right=y;
+    }
+    y->left=x;
+    x->parent=y;
+}
+
+inline void __rb_tree_rotate_right(__rb_tree_node_base* x,__rb_tree_node_base*& root)
+{
+    //x为旋转点,y为旋转的左子节点
+
+    __rb_tree_node_base* y=x->left;
+    x->left=y->right;
+    if(y->right!=0){
+        y->right->parent=x;
+    }
+    y->parent=x->parent;
+    //令y完全顶替x的地位(必须将x对其父节点的关系完全接收过来)
+
+    if(x==root){
+        root=y;
+    }else if(x==x->parent->right){
+        x->parent->right=y;
+    }else{
+        x->parent->left=y;
+    }
+    y->right=x;
+    x->parent=y;
+}
+
+//rb-tree的查找函数
+
+template <class Key,class Value,class KeyOfValue,class Compare,class Alloc>
+typename rb_tree<Key,Value,KeyOfValue,Compare,Alloc>::iterator
+
+rb_tree<Key,Value,KeyOfValue,Compare,Alloc>::find(const Key& k){
+    //rb树的头部
+
+    link_type y=header;
+    link_type x=root();
+
+    while(x!=0){
+        if(!key_compare(key(x),k)){
+            //x大于k向左走
+
+            y=x;
+            x=left(x);
+        }else{
+            //x小于k,遇到小值就向右走
+
+            x=right(x);
+        }
+    }
+    iterator j=iterator(y);
+    return (j==end()|| key_compare(k,key(j.node)))?end():j;
+}
+
+```
+
+![插入操作1](../img/2019-07-31-21-14-15.png)
+
+![插入操作2](../img/2019-07-31-21-16-48.png)
+
+![插入操作3](../img/2019-07-31-21-17-58.png)
+
+### 5.3 set
+
+set中所有元素都会根据元素的键值自动被排序。set的元素不像map那样可以同时拥有key和value,set的键值就是实值。并且set不允许两个元素拥有相同的值。
+
+set与list拥有相同的某些性质：操作过程中，除了删除元素的迭代器外，其它迭代器不会失效。
+
+set的compare默认情况下是使用`less<Key>`缺省情况下采用递增排序。
+
+set采用红黑树来进行排序和数据存储。
+
+### 5.4 map
+
+map的特性是，所有元素都会根据元素的键值自动被排序。map的所有元素都是pair，同时拥有实值(value)和键值(key)。pair的第一元素被视为键值，第二元素被视为实值。map不允许两个元素拥有相同的键值。
+
+下面是<std_pair.h>中的pair定义
+
+```c++
+template<class T1,class T2>
+struct pair
+{
+    typedef T1 first_type;
+    typedef T2 second_type;
+    T1 first;
+    T2 second;
+    pair():first(T1()),second(T2()){}
+    pair(const T1& a,const T2& b):first(a),second(b){}    
+};
+
+```
+![STL map](../img/2019-08-01-20-41-43.png)
+
+### 5.5 multiset
+
+multiset的特性以及用法和set完全相同，唯一的差别在于它允许键值重复。它的底层机制是使用RB-tree的insert_equal()而非insert_unique()；
+
+### 5.6 multimap
+
+与map的用法完全相同，唯一的差别在于，它允许键值重复。
+
+### 5.7 hashtable
+hashtable的原理和替换算法参考原王道数据结构不再过多叙述
+
+二叉搜索树具有对数时间平均的表现，但是这个是建立在数据输入有足够的随机性这个基础之上的。hash_table就是这种。
+
+#### 5.7.1 hashtable 概述
+
+碰撞问题解决办法
+
+- 线性探测
+- 
