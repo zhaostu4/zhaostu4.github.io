@@ -20,13 +20,13 @@ tags:
 
 **STL算法总览**
 
-![STL算法总览01](https://wangpengcheng.github.io/2019-08-02-16-13-21.png)
+![STL算法总览01](https://wangpengcheng.github.io/img/2019-08-02-16-13-21.png)
 
-![STL算法总览02](https://wangpengcheng.github.io/2019-08-02-16-14-40.png)
+![STL算法总览02](https://wangpengcheng.github.io/img/2019-08-02-16-14-40.png)
 
-![STL算法总览03](https://wangpengcheng.github.io/2019-08-02-16-18-06.png)
+![STL算法总览03](https://wangpengcheng.github.io/img/2019-08-02-16-18-06.png)
 
-![STL算法总览04](https://wangpengcheng.github.io/2019-08-02-16-18-57.png)
+![STL算法总览04](https://wangpengcheng.github.io/img/2019-08-02-16-18-57.png)
 
 **算法分类**
 
@@ -244,17 +244,17 @@ lexicographical_compare：字典排列方式对两个序列，进行比较
 - 如果达到last2而尚未达到last1,返回false
 - 同时达到，返回false
 
-![copy算法的完整脉络](https://wangpengcheng.github.io/2019-08-02-21-23-34.png)
+![copy算法的完整脉络](https://wangpengcheng.github.io/img/2019-08-02-21-23-34.png)
 
 当复制位置的起点在复制区间内时，将会发生错误。为了防止上述错误的发生，一般都会先把目标区段使用memmove()复制下来，再进行操作。
 
-![copy算法需要特别注意区间重叠的情况](https://wangpengcheng.github.io/2019-08-02-21-26-47.png)
+![copy算法需要特别注意区间重叠的情况](https://wangpengcheng.github.io/img/2019-08-02-21-26-47.png)
 
 copy改变的是[result,result+(last-first))中的迭代器所指对象，而并非更改迭代器本身。它会为输出区间的元素赋予新值，而不是产生新的元素。它不能改变输出区间的迭代器个数。因此不能将元素插入空容器中。
 
 **copy_backward 反向拷贝**
 
-![copy_backward操作示意图](https://wangpengcheng.github.io/2019-08-02-21-42-23.png)
+![copy_backward操作示意图](https://wangpengcheng.github.io/img/2019-08-02-21-42-23.png)
 
 ### 6.5 set 相关算法
 
@@ -291,21 +291,21 @@ OutputIterator set_union(InputIterator1 first1,InputIterator1 last1,
 
 ```
 
-![set_union分析](https://wangpengcheng.github.io/2019-08-02-21-52-12.png)
+![set_union分析](https://wangpengcheng.github.io/img/2019-08-02-21-52-12.png)
 
 #### 6.5.2 set_intersection构造交集
 
 基本上就是上面的条件判断反过来了，当相等时迭代器才增加。
 
-![set_intersection步进分析](https://wangpengcheng.github.io/2019-08-02-22-08-15.png)
+![set_intersection步进分析](https://wangpengcheng.github.io/img/2019-08-02-22-08-15.png)
 
 #### 6.5.3 set_difference
 
-![set_difference步进分析](https://wangpengcheng.github.io/2019-08-02-22-12-26.png)
+![set_difference步进分析](https://wangpengcheng.github.io/img/2019-08-02-22-12-26.png)
 
 #### 6.5.4 set_symmetric_difference 构造对称差集
 
-![set_symmetric_difference](https://wangpengcheng.github.io/2019-08-02-22-14-24.png)
+![set_symmetric_difference](https://wangpengcheng.github.io/img/2019-08-02-22-14-24.png)
 
 ### 6.7 其它算法
 
