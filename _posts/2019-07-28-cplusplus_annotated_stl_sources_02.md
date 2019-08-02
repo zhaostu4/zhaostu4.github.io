@@ -919,7 +919,7 @@ private:
     }
 ```
 
-![初始化结果](../img/2019-07-31-16-37-06.png)
+![初始化结果](https://wangpengcheng.github.io/img/2019-07-31-16-37-06.png)
 
 **RB-tree的关键操作**
 
@@ -1249,11 +1249,11 @@ rb_tree<Key,Value,KeyOfValue,Compare,Alloc>::find(const Key& k){
 
 ```
 
-![插入操作1](../img/2019-07-31-21-14-15.png)
+![插入操作1](https://wangpengcheng.github.io/img/2019-07-31-21-14-15.png)
 
-![插入操作2](../img/2019-07-31-21-16-48.png)
+![插入操作2](https://wangpengcheng.github.io/img/2019-07-31-21-16-48.png)
 
-![插入操作3](../img/2019-07-31-21-17-58.png)
+![插入操作3](https://wangpengcheng.github.io/img/2019-07-31-21-17-58.png)
 
 ### 5.3 set
 
@@ -1284,7 +1284,7 @@ struct pair
 };
 
 ```
-![STL map](../img/2019-08-01-20-41-43.png)
+![STL map](https://wangpengcheng.github.io/img/2019-08-01-20-41-43.png)
 
 ### 5.5 multiset
 
@@ -1304,4 +1304,174 @@ hashtable的原理和替换算法参考原王道数据结构不再过多叙述
 碰撞问题解决办法
 
 - 线性探测
-- 
+- 复式散列(double hashing):
+- 开链：在每个表格元素中维护一个list;hash function 为我们分配某一个list,然后我们在那个list上执行元素的相关操作。SGI STL的hash table就是这种做法
+
+#### 5.7.2 hashtale的桶子(buckets)与节点(nodes)
+
+![开链法的hash table](https://wangpengcheng.github.io/img/2019-08-02-10-04-57.png)
+
+注意：
+
+- hashtable 的迭代器没有后退操作，也没有所谓的反向迭代器。
+- hash tble 没有供应default constructor
+hash_table的关键数据结构
+```c++
+node* new_node(const value_type& obj)
+{
+    node* n=node_allocator::allocate();
+    n->next=0;
+    __STL_TRY{
+        construct(&n->val,obj);
+        return n;
+    }
+    __STL_UNWIND(node_allocator::deallocate(n));
+}
+
+void delete_node(node* n)
+{
+    destroy(&n->val);
+    node_allocator::deallocate(n);
+}
+hashtable(size_type n,
+    const HashFcn& hf,
+    const EqualKey& eql)
+    :hash(hf),equals(eql),get_key(ExtractKey()),num_elements(0)
+{
+    initialize_buckets(n);
+}
+
+void initialize_buckets(size_type n)
+{
+    const size_type n_buckets=next_size(n);
+    buckets.reserve(n_buckets);
+    buckets.insert(buckets.end(),n_buckets,(node*)0);
+    num_elements=0;
+}
+//返回接近n并大于n的质数
+
+size_type next_size(size_type n) const {return __stl_next_prime(n);}
+
+pair<iterator,bool> insert_unique(const value_type& obj)
+{
+    //是否需要重建表格
+
+    resize(num_elements+1);
+    return insert_unique_noresize(obj);
+}
+
+template <class V,class K,class HF,class Ex,class Eq,class A>
+void hashtable<V,K,HF,Ex,Eq,A>::resize(size_type num_elements_hint)
+{
+    //将元素个数(新增元素计入后)与bucket vector的大小比较。如果大于就重建表格
+
+    //这里的buckets是 vector<node*,Alloc> buckets
+
+    const size_type old_n=buckets.size();
+    //是否重新配置元素
+
+    if(num_elements_hint>old_n)
+    {
+        //找出下一个质数
+
+        const size_type n=next_size(num_elements_hint);
+        //确定下一个质数是否越界
+
+        if(n>old_n){
+            //设立新的桶
+
+            vector<node*,A> tmp(n,(node*)0);
+            __STL_TRY{
+                //处理每一个旧的bucket
+
+                for(size_type buckets=0;buckets<old_n;++buckets)
+                {
+                    //指向节点所对应串行的起始节点
+
+                    node* first=buckets[buckets];
+                    //以下处理每个就bucket所含(串行)的每个节点
+                    //遍历串行
+
+                    while(first){
+                        //找出节点落在那个新bucket内
+
+                        size_type new_bucket=bkt_num(first->val,n);
+                        //令旧bucket指向其所对应串行的下一个节点(以便迭代处理)
+
+                        buckets[bucket]=first->next;
+                        //将当前节点插入到新bucket内，成为对应串行的第一个节点
+
+                        first->next=tmp[new_bucket];
+                        //回到旧bucket所指的待处理串行，准备处理下一个节点
+
+                        first=buckets[bucket];
+                    }
+                }
+                //对调两个新旧桶
+
+                buckets.swap(tmp);
+                //注意，对调两方，如果大小不同，大的会变小，小的会变大
+                //离开时释放local tmp的内存
+
+            }
+        }
+    }
+}
+//插入节点的关键函数
+
+template <class V,class K,class HF,class Ex,class Eq,class A>
+void hashtable<V,K,HF,Ex,Eq,A>::insert_unique_noresize(const value_type& obj)
+{
+    //决定obj的桶位置
+
+    const size_type n=bkt_num(obj);
+    //first指向bucket对应之串行头部
+
+    node* first=buckets[n];
+    //如果位置已经被占用，即first!=0;循环遍历查找新位置
+
+    for(node* cur=first;cur;cur=cur->next)
+    {
+        if(equals(get_key(cur->val),get_key(obj))){
+            return pair<iterator,bool>(iterator(cur,this),false);
+        }
+    }
+    //离开以上循环，first指向bucket所值链表的头部节点
+    //产生新节点
+
+    node* tmp=new_node(obj);
+    tmp->next=first;
+    //令节点成为链表的第一个节点
+
+    buckets[n]=tmp;
+    //节点个数累加1
+
+    ++num_elements;
+    return pair<iterator,bool>(iterator(tmp,this),true);
+
+}
+
+```
+![表格重建操作分解](https://wangpengcheng.github.io/img/2019-08-02-16-02-48.png)
+
+hash_table的关键相关函数
+
+```c++
+size_type bkt_num_key(const key_type& key,size_t n) const
+{
+    //这里的hash函数在实例话模板的时候决定
+
+    return hash(key)%n;
+}
+
+```
+注意hash_table的中的数目的排序是无序的。
+
+### 5.8 hash_set
+
+hash_set以hashtable为底层机制。由于hash_set所供应的操作接口。
+注意：hash_table中没有自动排序功能
+
+### hash_map、hash_multiset、hash_multimap
+
+基本都与对应的类型相同，只是底层机制由hash_table来进行实现。
