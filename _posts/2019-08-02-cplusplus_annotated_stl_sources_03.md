@@ -309,5 +309,264 @@ OutputIterator set_union(InputIterator1 first1,InputIterator1 last1,
 
 ### 6.7 其它算法
 
+**find_end:查找最后一次出现的点**
+
+![find_end算法和find_first_of](../img/2019-08-03-15-00-00.png)
+
+**includes(应用于有序区间)**
+
+判断序列s2是否“涵盖于”序列s1。
+
+![includes算法的工作原理](../img/2019-08-03-15-04-04.png)
+
+**merge**
+将两个经过排序的集合S1和S2，合并起来置于另一段空间。所得结果也是一个有序(sorted)序列。
+
+![merge算法的工作原理示意](../img/2019-08-03-15-09-03.png)
+
+**paritition** 
+将区间中的元素重新排列，通过条件进行筛选。这个算法并不保证保留元素的原始相对位置，如果需要保留原始相对位置，应该使用stable_partition
+
+![](../img/2019-08-03-15-16-55.png)
+
+**remove**
+
+remove并不真正的删除这个元素，而是将每一个不与value相等的匀速轮番赋值给first之后的空间。返回值表示重新整理之后的最后元素的下一个位置。例如{0,1,0,2,0,3,0,4};执行remove(0)；最终结果为{1,2,3,4,0,3,0,4};返回的Forwarallterator指向第五个位置。如果要进行删除需要使用erase()来将迭代器后面的数据进行删除。注意array不适合使用remove()和remove_if()；因为它无法缩小尺寸，导致残余数据永远存在。应该使用remove_copy()和remove_copy_if();
+
+![remove相关参数](../img/2019-08-03-15-38-28.png)
+
+**rotate**
+
+rotate可以实现非对称的位置交换。
+
+![rotate操作示意图](../img/2019-08-03-15-50-41.png)
+关键代码：
+
+```c++
+
+template <class ForwardIterator,class Distance>
+void __rotate(ForwardIterator first,ForwardIterator middle,ForwardIterator last,Distance*,forward_iterator_tag)
+{
+    for(ForwardIterator i=middle;;)
+    {
+        //前段后段的元素一一交换
+
+        iter_swap(first,i);
+        //双双前景
+
+        ++first;
+        ++i;
+        //判断那个先行结束
+
+        //前段先行结束
+
+        if(first==middle)
+        {
+            //后段同时结束，整个就结束了
+
+            if(i==last) return;
+            //调整位置，对新的前后段再做交换
+
+            middle=i;
+            //后段先结束
+
+        }else if(i==last){
+            //调整，准备对新的前后段再做交换
+
+            i=middle;
+        }
+    }
+}
+
+```
+![rotate forward iterator版操作示意图](../img/2019-08-03-15-59-28.png)
+
+![rotate bidirectional iterator版操作示意图](../img/2019-08-03-16-00-32.png)
+
+![search_n的工作原理](../img/2019-08-03-16-02-20.png)
+
+**unique**移除重复的元素
+
+注意:unique只移除相邻的重复元素，如果你想移除所有重复元素，必须先行排序。
+所有保留下来的元素，其原始值相对次序不变
+
+![unique算法](../img/2019-08-03-18-29-47.png)
+
+**lower_bound/upper_bound(应用于有序区间)**
+
+这个是二分查找的一种版本，试图在已经排序的[first,last)中寻找匀速value。返回满嘴条件的第一个元素。upper_bound是返回最后一个值
+
+![](../img/2019-08-03-18-33-55.png)
+
+**next_permutation**
+
+取得[first,last)所标示的下一个排列组合，有就返回true,否则返回false。
+
+![](../img/2019-08-03-19-16-15.png)
+
+**next_permutation**
+与上面基本相同
+
+![next_permutation算法流程](../img/2019-08-03-19-17-59.png)
+
+**random_shuffle**
+
+将元素次序随机重排。
+
+#### 6.7.9 sort
+
+这个算法接受两个RandomAccesslterators(随机存取迭代器)，然后将区间内的所有元素以渐增方式由小到大重新排列。并且存在允许用户使用仿函数来进行排序。STL的所有关系型容器都拥有自动排序功能(底层采用RB-tree)；所以不需要用到这个sort算法。序列式容器中的stack,queue,priority-queue都有特定的出入口，不允许用户对元素排序。vector和dequeue适合使用sort算法。list的迭代器鼠疫Bldirectionaltterators不适合使用sort算法。
+
+STL的sort算法数据量大的时候采用Quick Sort(现在已经开始使用IntroSort 最坏算法复杂度为O(NlogN)) ;数据量小的时候使用Insertion Sort。主要是因为插入排序在数据量很小的时候有不错的效果。并且没有额外的开销和负荷。
+
+![插入排序](../img/2019-08-03-19-32-57.png)
+
+注意:这里是采用交换的方式进行的排序，不是链表的指直接插入。
+
+![快排流程](../img/2019-08-03-19-36-26.png)
+
+快速排序的一般流程
+
+1. 如果S的元素个数为0或者1，结束
+2. 取S中的任何一个元素，当做轴(pivot)v。
+3. 将s分割为L,R；两段，使得L内的每一个元素都小于或者等于v,R内的每一个元素都大于或等于v。
+4. 对L,R递归执行Quick Sort
+
+![](../img/2019-08-03-20-45-44.png)
+
+![](../img/2019-08-03-20-46-22.png)
+
+
+下面是快速排序的具体代码
+
+```c++
+template <class RandomAccessIterator>
+inline void sort(RandomAccessIterator first,
+                RandomAccessIterator last
+                )
+{
+    if(first!=last){
+        __introsort_loop(first,last,value_type(first),__lg(last-first)*2);
+        __final_insertion_sort(first,last);
+    }
+}
+//__lg()用来控制分割恶化的情况
+
+//找出2^k<=n的最大值K,例如n=7,k=2,n=20,k=4;
+
+template <class Size>
+inline Size __lg(Size n)
+{
+    Size k;
+    for(k=0;n>1;n>>=1) ++k;
+        return k;
+}
+//返回a,b，c之间的居中者
+template <class T>
+inline const T& __median(const T& a,const T& b,const T& c)
+{
+    if(a<b){
+        if(b<c){
+            return b;
+        }else if(a<c){
+            return c;
+        }else{
+            return a;
+        }
+    }else if(a<c){
+        return a;
+    }else if(b<c){
+        return c;
+    }else {
+        return b;
+    }
+}
+//数组分割返回分割后的右段的第一个位置
+template <class RandomAccessIterator,class T>
+RandomAccessIterator __unguarded_partition(
+                                            RandomAccessIterator first,
+                                            RandomAccessIterator last,
+                                            T pivot)
+{
+    while(true){
+        //找到>=pivot的元素就停下来
+
+        while(*first<pivot){++ first;}
+        //调整指针位置
+
+        --last;
+        //找到<=pivot的元素就停下来。
+
+        while(pivot<*last) --last;
+        //注意一下只适用于 random iterator
+        //交错，结束循环
+
+        if(!(first<last)) return first;
+        //大小值交换
+
+        iter_swap(first,last);
+        //调整
+
+        ++first;
+    }
+}
+
+//当匀速个数为40时，__introsoft_loop()的最后一个参数将是5*2，意思是最多允许分割10层。IntroSort算法如下：
+
+template <class RandomAccessIterator,class T,class Size>
+void __introsort_loop(RandomAccessIterator first,
+                      RandomAccessIterator last,
+                      T*,
+                      Size depth_limit)
+{
+    //__stl_threshold是一个全局常数，稍早定义为const int 16
+
+    while(last-first>__stl_threshold) {
+        if(depth_limit==0){
+            //分割恶化，改用heapsort
+
+            partial_sort(first,last,last);
+            return;
+        }
+        --depth_limit;
+        //选择一个够好的轴枢并决定分割点,并赋值给cut
+
+        RandomAccessIterator cut=__unguarded_partition(first,last,T(__median(*first,*(first+(last-first)/2),*(last-1))));
+        //根据cut对右半段递归进行sort
+
+        __introsort_loop(cut,last,value_type(first),depth_limit);
+        last=cut;
+
+        //这里是回到while循环，准备对左半段递归进行sort
+    }
+}
+
+```
+#### 6.7.10 equal_range(应用于有序区间)
+
+是二分查找法的一个版本。试图在已排序的[first,last)中寻找value。它返回一对迭代器i和j,i是在不破坏次序的前提下，value可以插入的第一个位置，j则是最后一个。因此i-j内都是value。
+
+
+#### 6.7.11 inplace_merge(应用于有序区间)
+
+将两个已经有序的序列重新结合成为一个新的有序序列。注意，这个算法会使用额外的内存空间(暂时缓冲区)。
+
+![](../img/2019-08-03-21-16-48.png)
+
+![](../img/2019-08-03-21-28-12.png)
+
+#### 6.7.12 nth_element
+
+重新排列，使得迭代器nth所指的元素，与整个迭代队列完整排序之后，同一位置的元素同值。同时保证[nth,last)内没有任何一个元素不大于[first,nth)；但对于[first,nth)和[nth,last)两个子区间内的元素次序则无任何保证。
+
+![nth_element操作实例拆解](../img/2019-08-03-22-07-31.png)
+
+#### 6.7.13 merge sort
+
+利用分治思想，以各个击破的方式来对区间进行排序：
+
+- 将区间对半分开，左右两段各自排序。
+- 使用inplace_merge重新组合为一个完整的有序序列
+- 递归对半操作，直到每一小段的长度为0或者1.
 
 
