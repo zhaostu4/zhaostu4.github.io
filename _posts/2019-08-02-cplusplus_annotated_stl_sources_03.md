@@ -569,4 +569,24 @@ void __introsort_loop(RandomAccessIterator first,
 - 使用inplace_merge重新组合为一个完整的有序序列
 - 递归对半操作，直到每一小段的长度为0或者1.
 
+merge sort的算法复杂度是是O(NlongN)但是因为使用了额外的资源，因此性能反而不如Quick Sort
+
+```c++
+template <class BidirectorIter>
+void mergesort(BidirectorIter first,BidirectorIter last)
+{
+    typename iterator_traits<BidirectorIter>::difference_type n=distance(first,last);
+    if(n==0||n==1)
+    {
+        return;
+    }else{
+        BidirectorIter mid=first+n/2;
+        mergesort(first,mid);
+        mergesort(mid,last);
+        inplace_merge(first,mid,last);
+    }
+
+}
+
+```
 
