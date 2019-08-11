@@ -311,35 +311,35 @@ OutputIterator set_union(InputIterator1 first1,InputIterator1 last1,
 
 **find_end:查找最后一次出现的点**
 
-![find_end算法和find_first_of](../img/2019-08-03-15-00-00.png)
+![find_end算法和find_first_of](https://wangpengcheng.github.io/img/2019-08-03-15-00-00.png)
 
 **includes(应用于有序区间)**
 
 判断序列s2是否“涵盖于”序列s1。
 
-![includes算法的工作原理](../img/2019-08-03-15-04-04.png)
+![includes算法的工作原理](https://wangpengcheng.github.io/img/2019-08-03-15-04-04.png)
 
 **merge**
 将两个经过排序的集合S1和S2，合并起来置于另一段空间。所得结果也是一个有序(sorted)序列。
 
-![merge算法的工作原理示意](../img/2019-08-03-15-09-03.png)
+![merge算法的工作原理示意](https://wangpengcheng.github.io/img/2019-08-03-15-09-03.png)
 
 **paritition** 
 将区间中的元素重新排列，通过条件进行筛选。这个算法并不保证保留元素的原始相对位置，如果需要保留原始相对位置，应该使用stable_partition
 
-![](../img/2019-08-03-15-16-55.png)
+![](https://wangpengcheng.github.io/img/2019-08-03-15-16-55.png)
 
 **remove**
 
 remove并不真正的删除这个元素，而是将每一个不与value相等的匀速轮番赋值给first之后的空间。返回值表示重新整理之后的最后元素的下一个位置。例如{0,1,0,2,0,3,0,4};执行remove(0)；最终结果为{1,2,3,4,0,3,0,4};返回的Forwarallterator指向第五个位置。如果要进行删除需要使用erase()来将迭代器后面的数据进行删除。注意array不适合使用remove()和remove_if()；因为它无法缩小尺寸，导致残余数据永远存在。应该使用remove_copy()和remove_copy_if();
 
-![remove相关参数](../img/2019-08-03-15-38-28.png)
+![remove相关参数](https://wangpengcheng.github.io/img/2019-08-03-15-38-28.png)
 
 **rotate**
 
 rotate可以实现非对称的位置交换。
 
-![rotate操作示意图](../img/2019-08-03-15-50-41.png)
+![rotate操作示意图](https://wangpengcheng.github.io/img/2019-08-03-15-50-41.png)
 关键代码：
 
 ```c++
@@ -379,35 +379,35 @@ void __rotate(ForwardIterator first,ForwardIterator middle,ForwardIterator last,
 }
 
 ```
-![rotate forward iterator版操作示意图](../img/2019-08-03-15-59-28.png)
+![rotate forward iterator版操作示意图](https://wangpengcheng.github.io/img/2019-08-03-15-59-28.png)
 
-![rotate bidirectional iterator版操作示意图](../img/2019-08-03-16-00-32.png)
+![rotate bidirectional iterator版操作示意图](https://wangpengcheng.github.io/img/2019-08-03-16-00-32.png)
 
-![search_n的工作原理](../img/2019-08-03-16-02-20.png)
+![search_n的工作原理](https://wangpengcheng.github.io/img/2019-08-03-16-02-20.png)
 
 **unique**移除重复的元素
 
 注意:unique只移除相邻的重复元素，如果你想移除所有重复元素，必须先行排序。
 所有保留下来的元素，其原始值相对次序不变
 
-![unique算法](../img/2019-08-03-18-29-47.png)
+![unique算法](https://wangpengcheng.github.io/img/2019-08-03-18-29-47.png)
 
 **lower_bound/upper_bound(应用于有序区间)**
 
 这个是二分查找的一种版本，试图在已经排序的[first,last)中寻找匀速value。返回满嘴条件的第一个元素。upper_bound是返回最后一个值
 
-![](../img/2019-08-03-18-33-55.png)
+![](https://wangpengcheng.github.io/img/2019-08-03-18-33-55.png)
 
 **next_permutation**
 
 取得[first,last)所标示的下一个排列组合，有就返回true,否则返回false。
 
-![](../img/2019-08-03-19-16-15.png)
+![](https://wangpengcheng.github.io/img/2019-08-03-19-16-15.png)
 
 **next_permutation**
 与上面基本相同
 
-![next_permutation算法流程](../img/2019-08-03-19-17-59.png)
+![next_permutation算法流程](https://wangpengcheng.github.io/img/2019-08-03-19-17-59.png)
 
 **random_shuffle**
 
@@ -419,11 +419,11 @@ void __rotate(ForwardIterator first,ForwardIterator middle,ForwardIterator last,
 
 STL的sort算法数据量大的时候采用Quick Sort(现在已经开始使用IntroSort 最坏算法复杂度为O(NlogN)) ;数据量小的时候使用Insertion Sort。主要是因为插入排序在数据量很小的时候有不错的效果。并且没有额外的开销和负荷。
 
-![插入排序](../img/2019-08-03-19-32-57.png)
+![插入排序](https://wangpengcheng.github.io/img/2019-08-03-19-32-57.png)
 
 注意:这里是采用交换的方式进行的排序，不是链表的指直接插入。
 
-![快排流程](../img/2019-08-03-19-36-26.png)
+![快排流程](https://wangpengcheng.github.io/img/2019-08-03-19-36-26.png)
 
 快速排序的一般流程
 
@@ -432,9 +432,9 @@ STL的sort算法数据量大的时候采用Quick Sort(现在已经开始使用In
 3. 将s分割为L,R；两段，使得L内的每一个元素都小于或者等于v,R内的每一个元素都大于或等于v。
 4. 对L,R递归执行Quick Sort
 
-![](../img/2019-08-03-20-45-44.png)
+![](https://wangpengcheng.github.io/img/2019-08-03-20-45-44.png)
 
-![](../img/2019-08-03-20-46-22.png)
+![](https://wangpengcheng.github.io/img/2019-08-03-20-46-22.png)
 
 
 下面是快速排序的具体代码
@@ -551,15 +551,15 @@ void __introsort_loop(RandomAccessIterator first,
 
 将两个已经有序的序列重新结合成为一个新的有序序列。注意，这个算法会使用额外的内存空间(暂时缓冲区)。
 
-![](../img/2019-08-03-21-16-48.png)
+![](https://wangpengcheng.github.io/img/2019-08-03-21-16-48.png)
 
-![](../img/2019-08-03-21-28-12.png)
+![](https://wangpengcheng.github.io/img/2019-08-03-21-28-12.png)
 
 #### 6.7.12 nth_element
 
 重新排列，使得迭代器nth所指的元素，与整个迭代队列完整排序之后，同一位置的元素同值。同时保证[nth,last)内没有任何一个元素不大于[first,nth)；但对于[first,nth)和[nth,last)两个子区间内的元素次序则无任何保证。
 
-![nth_element操作实例拆解](../img/2019-08-03-22-07-31.png)
+![nth_element操作实例拆解](https://wangpengcheng.github.io/img/2019-08-03-22-07-31.png)
 
 #### 6.7.13 merge sort
 
