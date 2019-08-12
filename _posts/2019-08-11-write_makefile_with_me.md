@@ -355,7 +355,497 @@ prereq-patterns:是目标依赖模式对target-pattern的再次依赖定义
 
     objects = foo.o bar.o
     all: $(objects)
+
+#将后缀中的.o变为.c
+
 $(objects): %.o: %.c
     $(CC) -c $(CFLAGS) $< -o $@
+    # $(CC) -c $(CFLAGS) foo.c bar.c -o foo.o bar.o
 
 ```
+
+### 5.8 自动生成依赖性
+
+gcc中可以使用-M编译选项开启自动依赖查找。
+
+## 6 书写命令
+使用`@`在命令前，这个命令将不会被make显示出来。例如:
+
+```makefile
+@echo 正在编译XXX模块
+#输出：正在编译XXX模块
+
+echo 正在编译XXX模块
+#输出：
+
+#    echo 正在编译XXX模块
+
+#   正在编译XXX模块
+
+```
+
+可以在make后面带入参数`-n`或者`--just-print`，只执行显示命令，但是不会执行命令。方便对Makefile进行调试。
+
+使用`-s`或者`--slient`则是全面禁止命令的显示。
+
+### 6.2 命令执行
+
+makefile中的命令会，一条一条的执行其后面的的命令，当需要上一命令结果应用在下一命令时，应该使用分号，分割相关命令。当命令相关联时，应该写在一行上。
+
+```makefile
+
+exec:
+    cd /home/
+    pwd
+# 打印执行文件夹路径，cd无作用。
+
+exec:
+    cd /home/;pwd
+# 打印 /home/ cd 有作用
+```
+
+### 6.3 命令错误
+make中命令错误会立即停止执行，因此需要，使用make clean进行重新的make; 可以在命令前使用`-`或者添加make的`-i/ignore-errors`参数实现忽略错误。可以使用`-k/--keep-going`保证make行为不停止。
+
+### 6.4 make的嵌套执行
+
+可以使用shell的脚本访问，执行子目录中的make，对与方便第三方依赖的单独编译。
+```makefile
+subsystem:
+    cd subdir && $(MAKE)
+#等价于
+
+subsystem:
+    $(MAKE) -C subdir
+```
+使用export 和unexport来进行变量的下级传递和使用。
+
+注意：
+- SHELL和MAKEFLAGS是一定会传递到下一层Makefile中的。
+- 可以使用`-w/--print-directory`；输出信息，让你看到当前的工作目录。
+
+### 6.5 定义命令包
+
+Makefile中可以使用相同命令序列来定义一个变量。以`define`开始,`endef`结束。例如:
+
+```makefile
+define run-yacc
+yacc $(firstword $^)
+mv y.tab.c $@
+endef
+```
+
+## 7 使用变量
+
+makefile中的变量，可以是数字开头，但不应该含有`:`、`#`、`=`或是空字符(空格、回车等)。并且变量的大小写敏感。
+
+### 7.1 变量基础
+
+可以定义变量，并用`${变量名}/$(变量名)`来使用变量，可以精确使用和展开，字符串之间的链接等。
+
+```makefile
+foo=c
+prog.o:prog.$(foo)
+    $(foo)$(foo) -$(foo) prog.$(foo)
+
+#翻译结果
+
+prog.o : prog.c
+    cc -c prog.c
+```
+
+### 7.2 变量中的变量
+
+makefile中的变量，不像c++需要预先声明，可以直接使用，只要make能在后面找到就行了，但是很容易引起嵌套的循环使用。
+
+变量的赋值
+
+|操作|含义|
+|:---|:---|
+|`=`|变量的直接赋值,可以使用后面定义的变量|
+|`:=`|赋值操作，前面的变量不能使用后面的变量，只能使用前面已经定义好了的变量|
+|`?=`|如百年来那个没有被定义过，则进行赋值，如果事先被定义过，就什么都不做|
+|`+=`|追加变量，给变量`+=`操作，可以追加新的变量|
+
+注意：谨慎使用`#`注释，在行后直接注释无`\n`换行符时，会引起变量中存在多余的空格；例如`dir := /foo/bar # directory to put the frobs in`中dir会多4个空格。
+
+### 7.3 变量的高级用法
+
+- 变量的替换：替换变量中的共有的部分，格式是`$(var:a=b)`或者`${var:a=b}`把变量`var`中所有以子没有`a`结尾(空格或者结束符)的`a`换成`b`。这样就可以执行简单的变量替换。
+
+```
+foo:=a.o b.o c.o
+bar:=$(foo:.o=.c)
+
+#bar是a.c b.c c.c
+```
+也可以使用静态模式进行替换。
+
+- 将变量值作为变量：将变量结果作为字符串使用，获取新变量的名称。
+
+```
+x=y
+y=z
+a:=$($(x))
+#最终a的结果是z
+
+```
+
+也可以进行多层次的嵌套。
+
+### 7.5 override 指示符号
+
+如果变量是通过make的命令行参数进行设置的，那么Makefile中对这个变量的赋值将会被忽略。可以使用`override`指示符，在Makefile中设置这类参数的值，进行重载
+
+```
+override <variable>=<value>
+override <variable>:=<value>
+override <variable>+=<value>
+```
+
+### 7.6 多行变量
+
+使用define关键字设置变量的值可以换行，只要define没有使用[Tab]开头，那么make就不会把其认为是命令
+
+```
+define two-lines
+echo foo
+echo ${bar}
+endef
+```
+
+### 7.7 环境变量
+
+make运行时，系统环境变量可被载入到Makefile文件中，但是如果Makefile已经定义，则会被覆盖，可以使用`-e`参数方式系统环境变量被覆盖。
+
+嵌套调用时，上层变量会以系统环境变量的方式传递到下层Makefile。默认情况只有通过命令行设置的变量会被传递。定义在文件中的变量，需要使用export关键字来声明。
+
+### 7.8 目标变量
+
+可以通过伪目标标签，设置目标局部变量，这个变量可以额全局变量同名，因为它的作用范围只在这条规则以及连带规则中。语法如下：
+
+```
+<target ...>:<variable-assignment>
+<target ...>:overide <variable-assignment>
+```
+
+使用示例：
+```makefile
+all: tran test test2
+my_test:=/usr/binb
+my_test:=${my_test:inb=a} /usr/include/boost 
+tran:
+    @echo "hello word"
+test2:my_test=test2
+test2:
+    echo ${my_test}
+test:
+    echo "test";echo $(SHELL) ;echo $(MAKEFLAGS) echo ${my_test}
+
+#result
+hello word
+echo "test";echo /bin/sh ;echo  echo /usr/ba /usr/include/boost 
+test
+/bin/sh
+echo /usr/ba /usr/include/boost
+echo test2
+test2
+
+```
+
+### 7.9 模式变量
+
+在GNU的make中还支持模式变量，使用一种模式，在模式中定义变量，使得变量可以根据模式进行判断赋值。使用格式和目标变量相同，例如：
+
+```
+%.o:CFLAGS = -O
+```
+
+## 8 使用条件判断
+
+使用条件判断根据不同的分枝情况选择执行分支。
+
+下面是根据编译器选择相关编译参数
+
+```makefile
+libs_for_gcc=-lgnu
+normal_libs=
+foo:$(objects)
+#判断编译器类型
+
+ifeq($(CC),gcc)
+    $(CC) -o foo $(objects) $(libs_for_gcc)
+else
+    $(CC) -o foo $(object) $(normal_libs)
+endif
+```
+
+判断语句的基本语法是：
+```makefile
+<conditional-directive>
+<text-if-true>
+endif
+#或者
+
+<conditional-directive>
+<text-if-true>
+else
+<text-if-false>
+endif
+
+```
+条件判断是ifeq或者ifneq、ifdef和ifndef
+
+```
+ifeq(<arg1>,<arg2>)
+ifeq '<arg1>' '<arg2>'
+ifeq "<arg1>" "<arg2>"
+ifeq "<arg1>" '<arg2>'
+ifeq '<arg1>' "<arg2>"
+#还可以这样判断
+
+ifeq ($(strip $(foo)),)
+<text-if-empty>
+endif
+```
+
+ifneq:
+
+```makefile
+ifneq (<arg1>, <arg2>)
+ifneq '<arg1>' '<arg2>'
+ifneq "<arg1>" "<arg2>"
+ifneq "<arg1>" '<arg2>'
+ifneq '<arg1>' "<arg2>"
+```
+
+ifdef和ifndef
+```
+ifdef <variable-name>
+endif
+
+ifndef <variable-name>
+endif
+```
+
+## 9 使用函数
+
+Makefile可以使用函数来处理变量，变量以`$`进行标识，其基本语法如下：
+
+```
+$(<function> <arguments>)
+#或者
+
+${<function> <arguments>}
+
+```
+
+中间参数以`,`进行分割。
+为了风格统一，建议都使用`()`的方式；如：`$(subst a,b,$(x))`
+
+```makefile
+comma:=,
+empty:=
+space:=$(empty) $(empty)
+foo:=a b c
+bar:=$(subst $(space),$(comma),$(foo))
+```
+上面的函数是指，将$(foo)中的$(space)全部替换成为$(comma)。
+最终$(bar)的结果是"a,b,c"。
+
+### 9.2 字符串处理函数
+
+|函数名称|函数|功能|返回|示例|注意|
+|:---|:---|:----|:-----|:------|:--------|
+|`subst`|`$(subst <from>,<to>,<text>)`|把字串 <text> 中的 <from> 字符串替换成 <to>|函数返回被替换过后的字符串|`$(subst ee,EE,feet on the street)`||
+|`patsubst`|`$(patsubst <pattern>,<replacement>,<text>)`|查找其中的匹配字符串并替换|替换过后的字符串|`$(patsubst %.c,%.o,x.c.c bar.c)`||
+|`strip`|`$(strip <string>)`|去掉<string>字符串中开头和结尾的空字符串|返回去除的值|`$(strip a b c )`|示例中去除了结尾的一个空格|
+|`findstring`|`$(findstring <find>,<in>)`|在字串 <in> 中查找 <find> 字串。|如果找到,那么返回 <find> ,否则返回空字符串。|`$(findstring a,a b c)`|示例返回"a"字符串|
+|`filter`|`$(filter <pattern...>,<text>)`|以 <pattern> 模式过滤 <text> 字符串中的单词,保留符合模式 <pattern> 的单词。可以有多个模式。|返回符合模式 <pattern> 的字串。|`$(filter %.c %.s,foo.c bar.c baz.s ugh.h)`|示例返回值是`foo.c bar.c baz.s`|
+|`filter-out`|`$(filter-out <pattern...>,<text>)`|以 <pattern> 模式过滤 <text> 字符串中的单词,去除符合模式 <pattern> 的单词。可以有多个模式。|返回不符合模式 <pattern> 的字串。|`$(filter-out main1.o main2.o,main1.o foo.o main2.o bar.o)`|返回值是`foo.o bar.o`|
+|`sort`|`$(sort <list>)`|给字符串 <list> 中的单词排序(升序)。|返回排序后的字符串。|`$(sort foo bar lose)`返回`bar foo lose`|sort 函数会去掉 <list> 中相同的单词。|
+|`word`|`$(word <n>,<text>)`|取字符串 <text> 中第 <n> 个单词。(从一开始)|返回字符串 <text> 中第 <n> 个单词。如果 <n> 比 <text> 中的单词数要大,那么返回空字符串。|`$(word 2, foo bar baz)`|示例返回值是"bar"|
+|`wordlist`|`$(wordlist <s>,<e>,<text>)`|字符串 <text> 中取从 <s> 开始到 <e> 的单词串。 <s> 和 <e> 是一个数字|返回字符串 <text> 中从 <s> 到 <e> 的单词字串。如果 <s> 比 <text> 中的单词数要大,那么返回空字符串。如果 <e> 大于 <text> 的单词数,那么返回从 <s> 开始,到 <text> 结束的单词串|`$(wordlist 2, 3, foo bar baz)`|返回值是`bar baz`|
+|`words`|`$(words <text>)`|统计 <text> 中字符串中的单词个数。|返回 <text> 中的单词数|`$(words, foo bar baz)`返回值为"3"|如果我们要取 <text> 中最后的一个单词,我们可以这样: $(word $(words <text>),<text>) 。|
+|`firstword`|`$(firstword <text>)`|取字符串 <text> 中的第一个单词。|返回字符串 <text> 的第一个单词|`$(firstword foo bar)`返回"foo"||
+
+### 9.3 文件名操作函数
+
+- dir: `$(dir <name...>)`
+    + 功能:从文件序列<names>中取出目录部分(最后一个“/”之前的部分)。
+    + 返回：返回文件名序列 <names> 的目录部分。
+    + 示例：`$(dir src/foo.c hacks)`返回值是`src/ ./`
+- notdir:`$(notdir <names...>)`
+    + 功能：从文件名序列 <names> 中取出非目录部分。非目录部分是指最后一个反斜杠(“ / ”)之后的部分。
+    + 返回：返回文件名序列 <names> 的非目录部分。
+    + 示例：`$(notdir src/foo.c hacks)`，返回值是"foo.c hacks"。
+- suffix:`$(suffix <names...>)`
+    + 功能：从文件名序列 <names> 中取出各个文件名的后缀。
+    + 返回：返回文件名序列 <names> 的后缀序列,如果文件没有后缀,则返回空字串。
+    + 示例：`$(suffix src/foo.c src-1.0/bar.c hacks)`；返回值是".c .c"。
+- basename:`$(basename <names...>)`
+    + 功能：从文件名序列 <names> 中取出各个文件名的前缀部分。
+    + 返回：返回文件名序列 <names> 的前缀序列,如果文件没有前缀,则返回空字串。
+    + 示例：`$(basename src/foo.c src-1.0/bar.c hacks)`；返回值是"src/foo src-1.0/bar hacks"。
+- addsuffix：`$(addsuffix <suffix>,<names...>)`
+    + 功能：把后缀 <suffix> 加到 <names> 中的每个单词后面。
+    + 返回：返回加过后缀的文件名序列。
+    + `$(addsuffix .c,foo bar)`,返回值是"foo.c bar.c"。
+- addprefix：`$(addprefix <prefix>,<names...>)`
+    + 功能：把前缀 <prefix> 加到 <names> 中的每个单词后面。
+    + 返回：返回加过前缀的文件名序列。
+    + 示例：`$(addprefix src/,foo bar)`；返回值是"src/foo src/bar"
+- join:`$(join <list1>,<list2>)`
+    + 功能：把 <list2> 中的单词对应地加到 <list1> 的单词后面。如果 <list1> 的单词个数要比 <list2> 的多,那么,<list1> 中的多出来的单词将保持原样。如果 <list2> 的单词个数要比 <list1> 多,那么, <list2> 多出来的单词将被复制到 <list2> 中。
+    + 返回：返回连接过后的字符串。
+    + 示例：`$(join aaa bbb , 111 222 333)`；返回值是`aaa111 bbb222 333`
+
+### 9.4 foreach函数
+
+- 语法：`$(foreach <var>,<list>,<text>)`
+- 功能：将list中的单词逐一去除，放到var指定的变量中，然后再执行<text>所包含表达式。
+- 示例：
+
+```makefile
+names:=a b c d
+files:=$(foreach n,$(names),$(n).o)
+
+#files返回值是 a.o b.o c.o d.o
+
+```
+### 9.6 call函数
+
+call函数是唯一一个可以用来创建新的参数化的函数，可以使用call向一个复杂函数中传递参数。其语法是：
+`$(call <expression>,<parm1>,<parm2>,<parm3>...)`
+
+执行时，后面的参数将函数中的变量进行取代。
+
+```
+reverse=$(1) $(2)
+
+foo=$(call reverse,a,b)
+#最后foo的结果是“a b”
+
+```
+
+### 9.7 origin 函数
+
+这个函数返回变量的来源；语法：`$(origin <variable>)`;来源类型如下：
+- undefined：从来就没有定义过
+- default:默认定义变量，如CC
+- environment:环境变量(注意make 没有“-e”参数)
+- file: 这个变量定义在Makefile中
+- command line :这个变量是被命令行定义的。
+- override :是被override重新定义的。
+- automatic: 是命令中定义的自动化变量。
+
+### 9.8 shell函数
+
+执行shell命令，它和"`"是一样的功能。将执行操作系统命令后的输出作为函数返回。使用示例：
+```
+contents:=$(shell cat foo)
+files:=$(shell echo *.c)
+```
+注意这个函数会新生成一个shell程序来执行命令。不应该被大量使用。
+
+### 9.9 控制make的函数
+
+$(error <text...>):输出错误，并退出
+$(warning <text...>)：输出一段警告信息，而make继续执行。
+
+## 10 make的运行
+
+### 10.1 make的退出码
+
+- 0：表示成功执行
+- 1：运行时产生错误，返回1。
+- 2：如果使用了“-q”参数，并且make使得一些目标不需要更新，那么返回2。
+
+使用`-f`可以指定make file文件，也可以在make后面添加指定的伪目标。
+
+一般伪目标函数
+
+- `all`：这个伪目标是所有目标的目标,其功能一般是编译所有的目标。
+- `clean`：这个伪目标功能是删除所有被 make 创建的文件。
+- `install`：这个伪目标功能是安装已编译好的程序,其实就是把目标执行文件拷贝到指定的目标中去。
+- `print`：这个伪目标的功能是例出改变过的源文件。
+- `tar`：这个伪目标功能是把源程序打包备份。也就是一个 tar 文件。
+- `dist`：这个伪目标功能是创建一个压缩文件,一般是把 tar 文件压成 Z 文件。或是 gz 文件。
+- `TAGS`：这个伪目标功能是更新所有的目标,以备完整地重编译使用。
+- `check`：check ” 和 “test”这两个伪目标一般用来测试 makefile 的流程。
+
+### 10.4 检查规则
+
+我们不想makefile中的规则执行起来，只想检查一下命令，可以使用一下相关参数：
+- `- n`
+- `--just-print`
+- `--dry-run`
+- `--recon`：不执行参数,这些参数只是打印命令,不管目标是否更新,把规则和连带规则下的命令打印出来,但
+不执行,这些参数对于我们调试 makefile 很有用处。
+- `- t` `--touch`:这个参数的意思就是把目标文件的时间更新,但不更改目标文件。也就是说, make 假装编译目标,但不是真正的编译目标,只是把目标变成已编译过的状态。
+- `- q` `--question`这个参数的行为是找目标的意思,也就是说,如果目标存在,那么其什么也不会输出,当然也不会执行编译,如果目标不存在,其会打印出一条出错信息。
+- `-W <file>`
+- `--what-if=<file>``
+- `--assume-new=<file>`
+- `--new-file=<file>`
+这个参数需要指定一个文件。一般是是源文件(或依赖文件), Make 会根据规则推导来运行依赖于这
+个文件的命令,一般来说,可以和“ -n ”参数一同使用,来查看这个依赖文件所发生的规则命令。
+另外一个很有意思的用法是结合“ -p ”和“ -v ”来输出 makefile 被执行时的信息(这个将在后面讲述)。
+
+### 10.5 make参数请查看相关文档。
+
+## 11 隐含规则
+
+隐含规则主要是make的自动推导。
+会为.o自动配置生成依赖生成项。
+注意
+- 因为隐藏规则的存在，当执行混合编译的时候，可能存在隐藏规则先后性的问题，例如`foo:foo.p`如果文件夹下存在`foo.c`隐含规则就会找到foo.c执行过后就不再向下找了。
+- 可以使用`-r/--no-builtin-rules`取消所有隐含参数设置。
+- 编译c时，<n>.o会自动添加目标依赖推导<n>.c，并生成指令`$(CC) –c $(CPPFLAGS) $(CFLAGS)`
+- 编译c++时，会自动推导为<n>.cc或者<n>.C,生成命令`$(CXX) $(CPPFLAGS) $(CFLAGS)`
+- 编译Pascal时，自动推导为<n>.p,生成指令为`$(PC) –c $(PFLAGS)`;
+- 编译Fortran/Ratfor时,自动推导为 “<n>.r” 或 “<n>.F” 或 “<n>.f”,其生成命令是:
+```
+".f" "$(FC) –c $(FFLAGS)"
+".F" "$(FC) –c $(FFLAGS) $(CPPFLAGS)"
+".f" "$(FC) –c $(FFLAGS) $(RFLAGS)"
+```
+- 汇编和汇编预处理：自动推导为<n>.s默认使用编译器“as”，生成命令：`$(AS) $(ASFLAGS)`。
+- 链接Object文件：运行C的编译器来运行链接程序(一般是“ld”),生成命令：`$(CC) $(LDFLAGS) <n>.o $(LOADLIBES) $(LDLIBS)`
+
+### 11.3 隐含规则使用的变量
+make中会预先定义一些执行的变量
+
+- AR:函数库打包程序。默认命令是“ ar ”
+- AS:汇编语言编译程序。默认命令是“ as ”。
+- CC:C语言编译程序，默认命令是“cc”。
+- CXX:C++ 语言编译程序。默认命令是“ g++ ”。
+- CO:从 RCS 文件中扩展文件程序。默认命令是“ co ”。
+- CPP：C 程序的预处理器(输出是标准输出设备)。默认命令是“ $(CC) – E ”。
+- FC:Fortran 和 Ratfor 的编译器和预处理程序。默认命令是“ f77 ”。
+- GET：从 SCCS 文件中扩展文件的程序。默认命令是“ get ”。
+- LEX：Lex 方法分析器程序(针对于 C 或 Ratfor )。默认命令是“ lex ”。
+- PC：Pascal 语言编译程序。默认命令是“ pc ”。
+- YACC：Yacc 文法分析器(针对于 C 程序)。默认命令是“ yacc ”。
+- YACCR:Yacc 文法分析器(针对于 Ratfor 程序)。默认命令是“ yacc – r ”。
+- MAKEINFO:转换 Texinfo 源文件( .texi )到 Info 文件程序。默认命令是“ makeinfo ”。
+- TEX:从 TeX 源文件创建 TeX DVI 文件的程序。默认命令是“ tex ”。
+- TEXI2DVI:从 Texinfo 源文件创建军 TeX DVI 文件的程序。默认命令是“ texi2dvi ”。
+- WEAVE:转换 Web 到 TeX 的程序。默认命令是“ weave ”。
+- CWEAVE:转换 C Web 到 TeX 的程序。默认命令是“ cweave ”。
+- TANGLE:转换 Web 到 Pascal 语言的程序。默认命令是“ tangle ”。
+- CTANGLE:转换 C Web 到 C 。默认命令是“ ctangle ”。
+- RM:删除文件命令。默认命令是“ rm – f ”。
+
+对应编译器参数变量：
+基本都是编译器名+FLAGS；如：CXXFLAGS
+
+注意隐含规则链：
+- 当存在编译器的相互准话你，例如一个.o文件的生成，可能是先将.y文件生成.c再由C的编译器生成。make会进自己最大的努力进行编译转换和推导。为了安全起见，需要使用伪目标“.INTERMEDIATE”来强制声明中间件。
+- 禁止同一个目标出现两次或者以上。防止自动推导时出现无限递归的情况。
+- make会对简单的中间产物进行优化，可能不会产生中间文件。
+
+### 11.5 定义模式规则
+模式规则中一般包含“%”
+
+
