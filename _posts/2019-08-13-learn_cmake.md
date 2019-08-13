@@ -87,7 +87,7 @@ _参考链接：_ [CMake文档](https://mubu.com/docbgFI4BMB6V);[CMake使用教�
 - 对于同一个变量，如果Cache文件里面有设置，那么CMakeLists文件里就会优先使用Cache文件里面的同名变量。
 - CMakeLists里面通过设置了一个Cache里面没有的变量，那就将这个变量的值写入到Cache里面
 - 例子：
-```
+```cmake
 //变量var的值被设置成1024，如果变量var在Cache中已经存在，该命令不会覆盖cac he里面的值
 
 SET（var 1024）
@@ -133,7 +133,8 @@ option命令可以帮助我们设置一个自定义的宏，如下：
 
 #### 4.1.1 判断cmake版本
 
-```
+```makefile 
+
 #检查当前版本是否小鱼3.12是，则更新版本号变量,否则设置版本为3.12
 
 if(${CMAKE_VERSION} VERSION_LESS 3.12)
@@ -226,7 +227,7 @@ link_directories
 - 控制输出路径的属性：EXECUTABLE_OUTPUT_PATH（exe的输出路径）、LIBRARY_OUTPUT_PATH（库文件的输出路径）
 
 示例：
-```
+```makefile
 set_target_properties(exe 
     PROPERTIES 
     LINK_FLAGS -static 
@@ -313,7 +314,7 @@ FOREACH有三种使用形式的语法，且每个FOREACH都需要一个ENDFOREAC
 
 - 语法：`FOREACH(loop_var arg1 arg2 ...) COMMAND1(ARGS ...) COMMAND2(ARGS ...) ...ENDFOREACH(loop_var)`​
 - 例子：
-```
+```cmake
 AUX_SOURCE_DIRECTORY(.SRC_LIST)
 FOREACH(F ${SRC_LIST}) 
     MESSAGE(${F})
@@ -326,7 +327,7 @@ ENDFOREACH(F)
 - 语法：`FOREACH(loop_var RANGE total) COMMAND1(ARGS ...) COMMAND2(ARGS ...)... ENDFOREACH(loop_var)`
 - 例子：
 
-```
+```cmake
 ​FOREACH(VAR RANGE 100)
     MESSAGE(${VAR})
 ENDFOREACH(VAR)​​
@@ -337,7 +338,7 @@ ENDFOREACH(VAR)​​
 - 语法： `FOREACH(loop_var RANGE start stop [step]) COMMAND1(ARGS ...) COMMAND2(ARGS ...)... ENDFOREACH(loop_var)`
 - 例子：
 
-```
+```cmake
 FOREACH(A RANGE 0 100 10)
     MESSAGE(${A})
 ENDFOREACH(A)​
@@ -385,7 +386,7 @@ CMake里面可以定义自己的函数（function）和宏（macro）
 使用示例
 - 宏(macro)
 
-```
+```cmake
 ​macro( [arg1 [arg2 [arg3 ...]]])     
     COMMAND1(ARGS ...)     
     COMMAND2(ARGS ...)     
@@ -395,7 +396,7 @@ endmacro()
 
 - 函数(function)
 
-```
+```cmake
 function( [arg1 [arg2 [arg3 ...]]])     
     COMMAND1(ARGS ...)     
     COMMAND2(ARGS ...)     
@@ -405,7 +406,7 @@ endfunction()
 
 ```
 使用示例:
-```
+```cmake
 macro(macroTest)
     set(test1 "aaa")
 endmacro()
@@ -431,32 +432,38 @@ message("${test2}")
 
 语法：
 
-```
-configure_file(
-    <input> 
-    <output>
-    [COPYONLY] [ESCAPE_QUOTES] 
-    [@ONLY]
-    [NEWLINE_STYLE [UNIX|DOS|WIN32|LF|CRLF] ]
-    )​;
-```
+`configure_file(<input> <output> [COPYONLY] [ESCAPE_QUOTES] [@ONLY] [NEWLINE_STYLE [UNIX|DOS|WIN32|LF|CRLF] ])​;`
 参数：
 
-- COPYONLY：只拷贝文件，不进行任何的变量替换。这个选项在指定了 NEWLINE_STYLE 选项时不能使用（无效）。
-- ESCAPE_QUOTES：躲过任何的反斜杠(C风格)转义。躲避转义，比如你有个变量在CMake中是这样的 set(FOO_STRING "\"foo\"") 那么在没有 ESCAPE_QUOTES 选项的状态下，通过变量替换将变为 `"foo"`，如果指定了 ESCAPE_QUOTES 选项，变量将不变。
-- @ONLY：限制变量替换:，让其只替换被 @VAR@ 引用的变量（那么 ${VAR}格式的变量将不会被替换）。这在配置 ${VAR} 语法的脚本时是非常有用的。
-- NEWLINE_STYLE:指定输出文件中的新行格式。UNIX 和 LF 的新行是 \n ，DOS 和 WIN32 和 CRLF 的新行格式是 \r\n 。 这个选项在指定了 COPYONLY 选项时不能使用（无效）。
+- COPYONLY：
+
+   只拷贝文件，不进行任何的变量替换。这个选项在指定了 NEWLINE_STYLE 选项时不能使用（无效）。
+- ESCAPE_QUOTES：
+
+    躲过任何的反斜杠(C风格)转义。躲避转义，比如你有个变量在CMake中是这样的 set(FOO_STRING "\"foo\"") 那么在没有 ESCAPE_QUOTES 选项的状态下，通过变量替换将变为 `"foo"`，如果指定了 ESCAPE_QUOTES 选项，变量将不变。
+- @ONLY：
+
+    限制变量替换:，让其只替换被 @VAR@ 引用的变量（那么 ${VAR}格式的变量将不会被替换）。这在配置 ${VAR} 语法的脚本时是非常有用的。
+- NEWLINE_STYLE:
+
+    指定输出文件中的新行格式。UNIX 和 LF 的新行是 \n ，DOS 和 WIN32 和 CRLF 的新行格式是 \r\n 。 这个选项在指定了 COPYONLY 选项时不能使用（无效）。
 
 ### 8.2 在CMake对文件的操作
 
 #### file命令：
 
-- file(WRITE filename "message to write"... ):WRITE选项会写一条消息到名为filename中，如果文件存在，则会覆盖原文件，如果文件不存在，他将创建该文件。
-- file(APPEND filename "message to write"... ):APPEND选项和WRITE选项一样，只是APPEND会写到文件的末尾。
-- file(READ filename variable [LIMIT numBytes] [OFFSET offset] [HEX])：READ选项会将读取的文件内容存放到变量variable，读取numBytes个字节，从offset位置开始，如果指定了[HEX]参数，二进制代码就会转换为十六进制的转换方式。
+- file(WRITE filename "message to write"... ):
+
+    WRITE选项会写一条消息到名为filename中，如果文件存在，则会覆盖原文件，如果文件不存在，他将创建该文件。
+- file(APPEND filename "message to write"... ):
+
+    APPEND选项和WRITE选项一样，只是APPEND会写到文件的末尾。
+- file(READ filename variable [LIMIT numBytes] [OFFSET offset] [HEX])：
+
+    READ选项会将读取的文件内容存放到变量variable，读取numBytes个字节，从offset位置开始，如果指定了[HEX]参数，二进制代码就会转换为十六进制的转换方式。
 - file(STRINGS filename variable [LIMIT_COUNT num] [LIMIT_INPUT numBytes] [LIMIT_OUTPUT numBytes] [LENGTH_MINIMUM numBytes] [LENGTH_MAXIMUM numBytes] [NEWLINE_CONSUME] [REGEX regex] [NO_HEX_CONVERSION])：
 
-STRINGS标志，将会从一个文件中将ASCII字符串的list解析出来，然后储存在variable 变量中，文件中的二进制数据将会被忽略，回车换行符会被忽略（可以设置NO_HEX_CONVERSION选项来禁止这个功能）。LIMIT_COUNT：设定了返回字符串的最大数量；LIMIT_INPUT：设置了从输入文件中读取的最大字节数；LIMIT_OUTPUT：设置了在输出变量中允许存储的最大字节数；LENGTH_MINIMUM：设置了返回字符串的最小长度，小于该长度的字符串将会被忽略；LENGTH_MAXIMUM设置了返回字符串的最大长度，大于该长度的字符串将会被忽略；NEWLINE_CONSUME：该标志允许新行被包含到字符串中，而不是终止他们；REGEX：指定了返回的字符串必须满足的正则表达式。例如：`file(STRINGS myfile.txt myfile)`，将myfile.txt中的文本按行存储到myfile这个变量中。
+    STRINGS标志，将会从一个文件中将ASCII字符串的list解析出来，然后储存在variable 变量中，文件中的二进制数据将会被忽略，回车换行符会被忽略（可以设置NO_HEX_CONVERSION选项来禁止这个功能）。LIMIT_COUNT：设定了返回字符串的最大数量；LIMIT_INPUT：设置了从输入文件中读取的最大字节数；LIMIT_OUTPUT：设置了在输出变量中允许存储的最大字节数；LENGTH_MINIMUM：设置了返回字符串的最小长度，小于该长度的字符串将会被忽略；LENGTH_MAXIMUM设置了返回字符串的最大长度，大于该长度的字符串将会被忽略；NEWLINE_CONSUME：该标志允许新行被包含到字符串中，而不是终止他们；REGEX：指定了返回的字符串必须满足的正则表达式。例如：`file(STRINGS myfile.txt myfile)`，将myfile.txt中的文本按行存储到myfile这个变量中。
 
 
 
