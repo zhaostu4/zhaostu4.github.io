@@ -87,6 +87,7 @@ _参考链接：_ [CMake文档](https://mubu.com/docbgFI4BMB6V);[CMake使用教�
 - 对于同一个变量，如果Cache文件里面有设置，那么CMakeLists文件里就会优先使用Cache文件里面的同名变量。
 - CMakeLists里面通过设置了一个Cache里面没有的变量，那就将这个变量的值写入到Cache里面
 - 例子：
+
 ```cmake
 //变量var的值被设置成1024，如果变量var在Cache中已经存在，该命令不会覆盖cac he里面的值
 
