@@ -18,7 +18,7 @@ tags:
 
 cmake学习笔记
 
-_参考链接：_ [CMake文档](https://mubu.com/docbgFI4BMB6V);[CMake使用教程](https://blog.csdn.net/dabenxiong666/article/details/53998998)
+_参考链接：_ [CMake文档](https://mubu.com/docbgFI4BMB6V);[CMake使用教程](https://blog.csdn.net/dabenxiong666/article/details/53998998);[Modern CMake](http://cliutils.gitlab.io/modern-cmake/)
 
 ## CMake链接
 
@@ -557,4 +557,318 @@ testadd_libraries(test ${DIR_LIB})​​
 
 ```
 
+## 10 运行其它程序
 
+CMakeLists.txt中可以使用`execute_process` 来运行系统中的程序。
+
+```cmake
+execute_process(
+    [COMMAND <cmd1> [args1...]] 
+    [COMMAND <cmd2> [args2...] [...]] 
+    [WORKING_DIRECTORY <directory>] 
+    [TIMEOUT <seconds>] 
+    [RESULT_VARIABLE <variable>] 
+    [OUTPUT_VARIABLE <variable>] 
+    [ERROR_VARIABLE <variable>] 
+    [INPUT_FILE <file>] 
+    [OUTPUT_FILE <file>] 
+    [ERROR_FILE <file>] 
+    [OUTPUT_QUIET] 
+    [ERROR_QUIET] 
+    [OUTPUT_STRIP_TRAILING_WHITESPACE] 
+    [ERROR_STRIP_TRAILING_WHITESPACE]
+    )​
+
+```
+
+**参数解析**
+
+- `COMMAND`：子进程的命令行，CMake使用操作系统的API直接执行子进程，所有的参数逐字传输，没有中间脚本参与，像“>”的输出重定向也会被直接的传输到子进程里面，当做普通的参数进行处理。
+- `WORKING_DIRECTORY`：指定的工作目录将会设置为子进程的工作目录
+- `TIMEOUT`：子进程如果在指定的秒数之内没有结束就会被中断
+- `RESULT_VARIABLE`：变量被设置为包含子进程的运算结果，也就是命令执行的最后结果将会保存在这个变量之中，返回码将是来自最后一个子进程的整数或者一个错误描述字符串
+- `OUTPUT_VARIABLE`、`ERROR_VARIABLE`：输出变量和错误变量
+- `INPUT_FILE`、`OUTPUT_FILE`、`ERROR_FILE`：输入文件、输出文件、错误文件
+- `OUTPUT_QUIET`、`ERROR_QUIET`:输出忽略、错误忽略，标准输出和标准错误的结果将被默认忽略.
+
+使用示例:
+
+```
+set(MAKE_CMD "/src/bin/make.bat")
+MESSAGE("COMMAND: ${MAKE_CMD}")
+execute_process(
+    COMMAND "${MAKE_CMD}" 
+    RESULT_VARIABLE 
+    CMD_ERROR OUTPUT_FILE CMD_OUTPUT
+    )
+MESSAGE( 
+    STATUS "CMD_ERROR:" 
+    ${CMD_ERROR}
+    )
+MESSAGE(
+    STATUS 
+    "CMD_OUTPUT:" 
+    ${CMD_OUTPUT}
+    )
+
+#输出：​​COMMAND:/src/bin/make.batCMD_ERROR:​No such file or directoryCMD_OUTPUT:​（因为这个路径下面没有这个文件）​​
+
+```
+
+
+## 11 find_package() 查找链接库函数
+
+### 11.1 find_package（）命令查找***.cmake的顺序。
+
+find_package()会优先从CMAKE_MODULE_PATH中寻找FindXXX.cmake来进行寻找。这种模式也成为Model模式。CMAKE_MODULE_PATH是cmake预先定义，但是一般没有值，一旦赋值则按照最先优先级去寻找。
+
+因此我们可以通过set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)来进行添加，比较建议的做法是`LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)`这样解可以在多个列表后面直接添加。
+
+如果没有在CMAKE_MODULE_PATH找到，就会在`../.cmake/packages`或者`../uesr/local/share/`中的包目录中查找：<库名字大写>Config.cmake或者<库名字小写>-config.cmake。这种查找模式称作Config模式。
+
+无论那种方式只要找到XXXX.cmake文件，里面都会定义下面这些变量
+
+- `<NAME>_FOUND<NAME>_INCLUDE_DIRS`
+- `<NAME>_INCLUDES<NAME>_LIBRARIES`
+- `<NAME>_LIBRARIES `
+- `<NAME>_LIBS<NAME>_DEFINITIONS`
+
+然后就可以使用`include_directories(<Name>_INCLUDE_DIRS)`来包含库的头文件。使用:`link_libraries(<NAME>_LIBRARIES)`来链接动态库。
+
+可以使用`cmake --help-module-list`命令来查看当前cmake支持的模块。
+
+### 11.2 find_package()的命令参数
+
+命令：
+
+```cmake
+FIND_PACKAGE( 
+    <name> 
+    [version] 
+    [EXACT] 
+    [QUIET] 
+    [NO_MODULE] 
+    [ [ REQUIRED | COMPONENTS ] [ componets... ] ]
+    )
+```
+**参数解释**
+
+- version：需要一个版本号，给出这个参数而没有给出EXACT，那个就是找到和给出的这个版本号相互兼容就符合条件。
+- EXACT：要求版本号必须和version给出的精确匹配。没有指定时只要兼容就不会报错，但是当指定后不符合就会报错，因此建议使用版本范围。如：
+
+```cmake
+find_package(OpenCV 3.0 QUIET)
+if(NOT OpenCV_FOUND)
+   find_package(OpenCV 2.4.3 QUIET)
+   if(NOT OpenCV_FOUND)
+      message(FATAL_ERROR "OpenCV > 2.4.3 not found.")
+   endif()
+endif()
+```
+
+- QUIET：会禁掉查找的包没有被发现的警告信息。对应于Find<Name>.cmake模块里面的的NAME_FIND_QUIETLY变量。
+- NO_MODULE：给出该指令之后，cmake将直接跳过Module模式的查找，直接使用Config模式查找。
+- COMPONENTS: 有些库不是一个整体比如Qt，其中还包含QtOpenGL和QtXml组件，当我们需要使用库的组件的时候，就使用COMPONENTS这个选项.
+
+### 11.3 编写find模块。
+
+**find模块的编写流程**
+
+- 使用：find_path和find_library查找模块的头文件以及库文件，然后将结果放到<NAME>_INCLUDE_DIR和<NAME>_LIBRARY里面。
+- 设置：`<NAME>_INCLUDE_DIRS`为`<NAME>_INCLUDE_DIR<dependency1>_INCLUDE_DIRS ...`
+- 设置 `<name>_LIBRARIES` 为 `<name>_LIBRARY <dependency1>_LIBRARIES ...`
+- 调用宏 find_package_handle_standard_args() 设置 `<name>_FOUND` 并打印或失败信息。
+
+find_path函数使用方式为：
+
+`find_path(<VAR> name1 [path1 path2 ...])`
+
+该命令搜索包含某个文件的路径，用于给定名字的文件坐在路径。<VAR>的cache将会被创建。在路径中找到文件就存到变量中。除非变量被清除否则，搜索不会继续进行(者也是cmake配置错误需要删除cache的原因)。如果没有发现该文件就在<VAR>里面存储`<VAR>-NOTFOUND`
+
+下面是一个FindBZip2.cmake模块的简单示例：
+
+```cmake
+
+#.rst:
+# FindBZip2
+# ---------
+#
+# Try to find BZip2
+#
+# Once done this will define
+#
+# ::
+#
+#   BZIP2_FOUND - system has BZip2
+#   BZIP2_INCLUDE_DIR - the BZip2 include directory
+#   BZIP2_LIBRARIES - Link these to use BZip2
+#   BZIP2_NEED_PREFIX - this is set if the functions are prefixed with BZ2_
+#   BZIP2_VERSION_STRING - the version of BZip2 found (since CMake 2.8.8)
+
+#=============================================================================
+# Copyright 2006-2012 Kitware, Inc.
+# Copyright 2006 Alexander Neundorf <neundorf@kde.org>
+# Copyright 2012 Rolf Eike Beer <eike@sf-mail.de>
+#
+# Distributed under the OSI-approved BSD License (the "License");
+# see accompanying file Copyright.txt for details.
+#
+# This software is distributed WITHOUT ANY WARRANTY; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the License for more information.
+#=============================================================================
+# (To distribute this file outside of CMake, substitute the full
+#  License text for the above reference.)
+
+#设置_BZIP2_PATHS
+
+set(_BZIP2_PATHS PATHS
+  "[HKEY_LOCAL_MACHINE\\SOFTWARE\\GnuWin32\\Bzip2;InstallPath]"
+  )
+#查找文件路径并保存到变量BZIP2_INCLUDE_DIR中
+
+find_path(BZIP2_INCLUDE_DIR bzlib.h ${_BZIP2_PATHS} PATH_SUFFIXES include)
+
+#如果没有定义BZIP2_LIBRARIES，进行查找
+
+if (NOT BZIP2_LIBRARIES)
+    find_library(BZIP2_LIBRARY_RELEASE NAMES bz2 bzip2 ${_BZIP2_PATHS} PATH_SUFFIXES lib)
+    find_library(BZIP2_LIBRARY_DEBUG NAMES bzip2d ${_BZIP2_PATHS} PATH_SUFFIXES lib)
+
+    include(${CMAKE_CURRENT_LIST_DIR}/SelectLibraryConfigurations.cmake)
+    SELECT_LIBRARY_CONFIGURATIONS(BZIP2)
+endif ()
+
+#include文件存在，进行正则匹配查找文件名中的版本信息。
+
+if (BZIP2_INCLUDE_DIR AND EXISTS "${BZIP2_INCLUDE_DIR}/bzlib.h")
+    file(STRINGS "${BZIP2_INCLUDE_DIR}/bzlib.h" BZLIB_H REGEX "bzip2/libbzip2 version [0-9]+\\.[^ ]+ of [0-9]+ ")
+    string(REGEX REPLACE ".* bzip2/libbzip2 version ([0-9]+\\.[^ ]+) of [0-9]+ .*" "\\1" BZIP2_VERSION_STRING "${BZLIB_H}")
+endif ()
+
+# handle the QUIETLY and REQUIRED arguments and set BZip2_FOUND to TRUE if
+# all listed variables are TRUE
+include(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
+#答应获取的相关信息
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(BZip2
+                                  REQUIRED_VARS BZIP2_LIBRARIES BZIP2_INCLUDE_DIR
+                                  VERSION_VAR BZIP2_VERSION_STRING)
+#如果找到了
+if (BZIP2_FOUND)
+   include(${CMAKE_CURRENT_LIST_DIR}/CheckSymbolExists.cmake)
+   include(${CMAKE_CURRENT_LIST_DIR}/CMakePushCheckState.cmake)
+   #确认cmake状态
+   cmake_push_check_state()
+   //设置CMAKE_REQUIRED_QUIET无错误的找到
+   set(CMAKE_REQUIRED_QUIET ${BZip2_FIND_QUIETLY})
+   set(CMAKE_REQUIRED_INCLUDES ${BZIP2_INCLUDE_DIR})
+   set(CMAKE_REQUIRED_LIBRARIES ${BZIP2_LIBRARIES})
+   CHECK_SYMBOL_EXISTS(BZ2_bzCompressInit "bzlib.h" BZIP2_NEED_PREFIX)
+   cmake_pop_check_state()
+endif ()
+#这个主要是给cmake-gui进行使用的
+mark_as_advanced(BZIP2_INCLUDE_DIR)
+
+
+```
+
+下面是对这个FindBZip2.cmake模块的调用示例：
+
+```cmake
+cmake_minimum_required(VERSION 2.8)
+project(helloword)
+add_executable(hello main.c)
+find_package(BZip2)
+#如果查找成功BZIP2_FOUND会被设置成为1
+
+if(BZIP2_FOUND)
+    include_directories(${BZIP2_INCLUDE_DIRS})
+    target_link_libraries(hello ${BZIP_LIBRARIES})
+endif(BZIP_FOUND)
+
+```
+
+## 12 自定义内容
+
+### 12.1  add_custom_command 为某一个工程添加一个自定义的命令
+
+_参考链接：_ [各平台编译器中的Pre-build及Post-build操作](https://www.jianshu.com/p/66df9650a9e2)
+
+```
+add_custom_command(TARGET target 
+    PRE_BUILD | PRE_LINK| POST_BUILD 
+    COMMAND command1[ARGS] [args1...] 
+    [COMMAND command2[ARGS] [args2...] ...] 
+    [WORKING_DIRECTORYdir] 
+    [COMMENT comment][VERBATIM]
+    )
+
+```
+执行命令的时间由第二个参数决定:
+
+1. PRE_BUILD - 命令将会在其他依赖项执行前执行。
+2. PRE_LINK - 命令将会在其他依赖项执行完后执行。
+3. POST_BUILD - 命令将会在目标构建完后执行。
+
+例子：
+
+```
+add_custom_command(
+    TARGET ${PROJECT_NAME} 
+    POST_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E sleep 5
+    )
+#目标就是TARGET后面跟的工程，​当PROJECT_NAME被生成的时候就会执行COMMAND后面的命令。
+
+add_custom_command(
+    TARGET test_elf ​
+    PRE_BUILD 
+    COMMAND 
+    move E:/cfg/start.o ${CMAKE_BINARY_DIR}/. && 
+    )
+
+#在test_el执行依赖之前，将start.o文件复制到编译目录
+```
+
+### 12.2 add_custom_command：（2）添加自定义命令来产生一个输出
+
+参数格式：
+
+```
+add_custom_command(
+    OUTPUT output1 [output2 ...]
+    COMMAND command1[ARGS] [args1...]
+    [COMMAND command2 [ARGS] [args2...] ...]
+    [MAIN_DEPENDENCYdepend]
+    [DEPENDS[depends...]]
+    [IMPLICIT_DEPENDS<lang1> depend1 ...]
+    [WORKING_DIRECTORYdir]
+    [COMMENT comment] [VERBATIM] [APPEND]
+    )
+
+```
+参数解析：
+
+-  其中ARGS选项 是为了向后兼容，MAIN_DEPENDENCY选项是针对VisualStudio给出一个建议，这两选项可以忽略。
+-  COMMAND：指定一些在构建阶段执行的命令。如果指定了多于一条的命令，他会按照顺序去执行。如果指定了一个可执行目标的名字（被add_executable()命令创建），他会自动被在构建阶段创建的可执行文件的路径替换。
+-  DEPENDS:指定目标依赖的文件，如果依赖的文件是和CMakeLists.txt相同目录的文件，则命令就会在CMakeLists.txt文件的，目录执行。如果没有指定DEPENDS，则只要缺少OUTPUT，该命令就会执行。如果指定的位置和CMAkeLists.txt不是同一位置，会先去创建依赖关系，先去将依赖的目标或者命令先去编译。
+-  WORKING_DIRECTORY：使用给定的当前目录执行命令，如果是相对路径，则相对于当前源目录对应的目录结构进行解析
+
+例子：
+
+```
+#首先生成creator的可执行文件 ​
+add_executable(creator creator.cxx) 
+#获取EXE_LOC的LOCATION属性存放到creator里面​​ 
+get_target_property(creator EXE_LOC LOCATION) ​
+#生成created.c文件 
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/created.c 
+    DEPENDS creator 
+    COMMAND ${EXE_LOC} 
+    ARGS ${PROJECT_BINARY_DIR}/created.c 
+    ) 
+#使用上一步生成的created.c文件来生成Foo可执行文件​​ 
+add_executable(Foo ${PROJECT_BINARY_DIR}/created.c)
+
+```
