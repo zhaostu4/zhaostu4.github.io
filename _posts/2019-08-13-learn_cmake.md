@@ -86,19 +86,21 @@ _参考链接：_ [CMake文档](https://mubu.com/docbgFI4BMB6V);[CMake使用教�
 - 当cmake第一次运行一个空的构建的时候，他就会创建一个CMakeCache.txt文件，文件里面存放了一些可以用来制定工程的设置，比如：变量、选项等
 - 对于同一个变量，如果Cache文件里面有设置，那么CMakeLists文件里就会优先使用Cache文件里面的同名变量。
 - CMakeLists里面通过设置了一个Cache里面没有的变量，那就将这个变量的值写入到Cache里面
-- 例子：
+
+例子：
 
 ```cmake
 //变量var的值被设置成1024，如果变量var在Cache中已经存在，该命令不会覆盖cac he里面的值
 
-SET（var 1024）
+SET(var 1024)
 //如果var在Cache中存在，就优先使用Cache里面的值，如果不存在，就将该值写入Cache里面​
    
-SET（var 1024..CACHE..）
+SET(var 1024..CACHE..)
 //无论Cache里面是否存在，都始终使用该值
    
-SET（var..CACHE..FORCE）
+SET(var..CACHE..FORCE)
 ```
+
 
 ### 3.3 添加变量到Cache文件中：-D
 注意：-D后面不能有空格，例如：cmake -DCMAKE_BUILD_TYPE:STRING=Debug
@@ -451,7 +453,7 @@ message("${test2}")
 
 ### 8.2 在CMake对文件的操作
 
-#### file命令：
+#### 8.2.1 file命令：
 
 - file(WRITE filename "message to write"... ):
 
@@ -466,7 +468,93 @@ message("${test2}")
 
     STRINGS标志，将会从一个文件中将ASCII字符串的list解析出来，然后储存在variable 变量中，文件中的二进制数据将会被忽略，回车换行符会被忽略（可以设置NO_HEX_CONVERSION选项来禁止这个功能）。LIMIT_COUNT：设定了返回字符串的最大数量；LIMIT_INPUT：设置了从输入文件中读取的最大字节数；LIMIT_OUTPUT：设置了在输出变量中允许存储的最大字节数；LENGTH_MINIMUM：设置了返回字符串的最小长度，小于该长度的字符串将会被忽略；LENGTH_MAXIMUM设置了返回字符串的最大长度，大于该长度的字符串将会被忽略；NEWLINE_CONSUME：该标志允许新行被包含到字符串中，而不是终止他们；REGEX：指定了返回的字符串必须满足的正则表达式。例如：`file(STRINGS myfile.txt myfile)`，将myfile.txt中的文本按行存储到myfile这个变量中。
 
+- file(GLOB variable [RELATIVE path] [globbing expressions]...)
+
+    GLOB：该选项将会为所有匹配表达式的文件生成一个文件list，并将该list存放在variable 里面，文件名的查询表达式和正则表达式类似，匹配和正则表达式相似。
+
+- file(GLOB_RECURSE variable [RELATIVE path] [FOLLOW_SYMLINKS] [globbing expressions]...)
+
+    GLOB_RECURSE会生成一个类似于通常GLOB选项的list，不过该选项可以递归查找文件中的匹配项。例如：/dir/*.py -就会匹配所有在/dir文件下面的python文件。
+
+- file(RENAME <oldname> <newname>)
+
+    RENAME选项对同一个文件系统下的一个文件或目录重命名。
+- file(REMOVE [file1 ...])
+
+    REMOVE选项将会删除指定的文件，包括在子路径下的文件。
+
+- file(REMOVE_RECURSE [file1 ...])
+
+    REMOVE_RECURSE选项会删除给定的文件以及目录，包括非空目录
+- file(MAKE_DIRECTORY [directory1 directory2 ...])
+
+    MAKE_DIRECTORY选项将会创建指定的目录，如果它们的父目录不存在时，同样也会创建。
+- file(RELATIVE_PATH variable directory file)
+     
+    RELATIVE_PATH选项会确定从direcroty参数到指定文件的相对路径，然后存到变量variable中。
+- file(TO_CMAKE_PATH path result)
+
+    TO_CMAKE_PATH选项会把path转换为一个以unix的 / 开头的cmake风格的路径
+- file(TO_NATIVE_PATH path result)
+
+    TO_NATIVE_PATH选项与TO_CMAKE_PATH选项很相似，但是它会把cmake风格的路径转换为本地路径风格
+- file(DOWNLOAD url file [TIMEOUT timeout] [STATUS status] [LOG log] [EXPECTED_MD5 sum] [SHOW_PROGRESS])
+
+    DOWNLOAD将给定的url下载到指定的文件中，如果指定了LOG log，下载的日志将会被输出到log中，如果指定了STATUS status选项下载操作的状态就会被输出到status里面，该状态的返回值是一个长度为2的list，list第一个元素是操作的返回值，是一个数字 ，第二个返回值是错误的字符串，错误信息如果是0，就表示没有错误；如果指定了TIMEOUT time选项，time秒之后，操作就会推出。如果指定了EXPECTED_MD5 sum选项，下载操作会认证下载的文件的实际MD5和是否与期望值相匹配，如果不匹配，操作将返回一个错误；如果指定了SHOW_PROGRESS，进度信息会被打印出来，直到操作完成。
+
+#### 8.2.2 source_group命令
+
+使用该命令可以将文件在VS中进行分组显示；`source_group("Header Files" FILES ${HEADER_FILES})`；以上命令是将变量HEADER_FILES里面的文件，在VS显示的时候都显示在“Header Files”选项下面
+
+## 9 如何构建项目
+
+使用include直接包含指定的文件，文件后缀名相关性不大，也可以使用add_subdirectories()来添加子文件夹，但是要求子文件夹中存在对应的CMakeList.txt文件。
+
+存在项目目录如下：
+
+- project_dir
+    + lib文件夹
+        * libA.c
+        * libB.c
+        * CMakeLists.txt
+    + include文件夹
+        * includeA.h
+        * inclueeB.h
+        * CMakeLists.txt
+    + main.c
+    + CMakeLists.txt
 
 
+第一层CMakeLists.txt内容如下：
+
+```cmake
+​#项目名称
+project(main)
+#需要的cmake最低版本
+cmake_minium_required(VERSION 2.8)
+#将当前目录下的源文件名都赋给DIR_SRC目录
+aux_source_directories(. DIR_SRC)
+#添加include目录
+include_directories(include)
+#生成可执行文件
+add_executable(main ${DIR_SRC})​​​​​​​​​​​​​​
+#添加子目录
+add_subdirectories(lib)
+#将生成的文件与动态库相连
+target_link_libraries(main test)​​​​​​
+#test是lib目录里面生成的​
+
+```
+
+lib目录下的CMakeLists
+
+```cmake
+
+#将当前的源文件名字都添加到DIR_LIB变量下​
+​aux_source_director(. DIR_LIB)
+​​#生成库文件命名为
+testadd_libraries(test ${DIR_LIB})​​
+
+```
 
 
