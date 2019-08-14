@@ -16,7 +16,7 @@ tags:
 
 > 2019-08-13 12:58:56
 
-cmake学习笔记
+# cmake学习笔记
 
 _参考链接：_ [CMake文档](https://mubu.com/docbgFI4BMB6V);[CMake使用教程](https://blog.csdn.net/dabenxiong666/article/details/53998998);[Modern CMake](http://cliutils.gitlab.io/modern-cmake/)
 
@@ -30,6 +30,9 @@ _参考链接：_ [CMake文档](https://mubu.com/docbgFI4BMB6V);[CMake使用教�
 - [CMake Tutorial](https://cmake.org/cmake-tutorial/)
 
 # CMake文档
+
+## 思维导图
+[点击查看思维导图](https://wangpengcheng.github.io/img/CMakeFile.png)
 
 -----
 
@@ -171,27 +174,49 @@ cmake中使用 `project(MyProject[C] [C++])` 不过后面的语言参数经常�
 ### 4.4 生成库文件
 
 cmake中使用`add_library`来实现库文件的生成；
-命令：`add_library(libname [SHARED|STATIC|MODULE] [EXCLUDE_FROM_ALL] source1 source2 ... sourceN)`
+命令：
+```cmake
+add_library(
+    libname 
+    [SHARED|STATIC|MODULE] 
+    [EXCLUDE_FROM_ALL] 
+    source1 
+    source2 
+    ... 
+    sourceN
+    )
+
+```
 
 - libname:生成的库文件的名字
-- [SHARED|STATIC|MODULE]：生成库文件的类型（动态库|静态库|模块）
-- [EXCLUDE_FROM_ALL]：有这个参数表示该库不会被默认构建​
+- `[SHARED|STATIC|MODULE]`：生成库文件的类型（动态库|静态库|模块）
+- EXCLUDE_FROM_ALL：有这个参数表示该库不会被默认构建​
 - source2 ... sourceN：生成库依赖的源文件，如果源文件比较多，可以使用​aux_sourcr_directory命令获取路径下所有源文件，具体章节参见：CMake基础知识简介->生成可执行文件->获取路径中所有源文件
 
 示例：`add_library(ALib SHARE alib.cpp)`
 
 ### 4.5 添加头文件目录
 
-命令1： `target_include_directories(<target> [SYSTEM] [BEFORE] <INTERFACE|PUBLIC|PRIVATE> [items1...] [<INTERFACE|PUBLIC|PRIVATE> [items2...] ...])`
+命令1： 
+
+```
+target_include_directories(
+    <target> [SYSTEM] 
+    [BEFORE] 
+    <INTERFACE|PUBLIC|PRIVATE> [items1...] 
+    [<INTERFACE|PUBLIC|PRIVATE> [items2...] ...]
+    )
+
+```
 
 示例1：`target_include_directories(RigelEditor PUBLIC ./include/rgeditor)`，表示给RigelEditor 这个子项目添加一个库文件的路径。
 
 命令2：`include_directories([AFTER|BEFORE] [SYSTEM] dir1 [dir2 …])`
 参数解析：
 
-- [AFTER|BEFORE]：指定了要添加路径是添加到原有列表之前还是之后 
-- [SYSTEM]​：若指定了system参数，则把被包含的路径当做系统包含路径来处理。
-- dir1 [dir2 …]​把这些路径添加到CMakeLists及其子目录的CMakeLists的头文件包含项目中相当于g++选项中的-l的参数的作用。
+- `AFTER|BEFORE`：指定了要添加路径是添加到原有列表之前还是之后 
+- `SYSTEM`​：若指定了system参数，则把被包含的路径当做系统包含路径来处理。
+- `dir1 [dir2 …]​`:把这些路径添加到CMakeLists及其子目录的CMakeLists的头文件包含项目中相当于g++选项中的-l的参数的作用。
 
 示例2：`include_directories("/opt/MATLAB/R2012a/extern/include")`
 
@@ -201,11 +226,21 @@ cmake中使用`add_library`来实现库文件的生成；
 
 #### 4.6.1 添加需要的库文件路径
 
-命令1:  `arget_link_libraries(<target> [item1 [item2 [...]]] [[debug|optimized|general] <item>] ...)`
+命令1:  
+
+```cmake
+arget_link_libraries(
+    <target> 
+    [item1 [item2 [...]]] 
+    [[debug|optimized|general] <item>] 
+    ...
+    )
+```
+
 参数解析：
 
 - item: 对应的链接库文件
-- debug|optimized|general:调试配置|其它配置|所有配置
+- `debug|optimized|general`:调试配置/其它配置/所有配置
 
 示例1：target_link_libraries(MyProject a b.a c.so) 将文件库链接到项目中，target_link_libraries中的库文件的顺序符合gcc/g++链接顺序规则，即：被依赖的库放在依赖其他的库的后面。
 
@@ -223,7 +258,18 @@ link_directories
 以上的几条命令的区分都是：是否带target前缀，在CMake里面，一个target有自己的属性集，如果我们没有显示的设置这些target的属性的话，CMake默认是由相关的全局属性来填充target的属性，我们如果需要单独的设置target的属性，需要使用命令：set_target_properties()
 
 命令格式：
-`set_target_properties(target1 target2 ... PROPERTIES 属性名称1 值 属性名称2 值 ... )`
+
+```
+set_target_properties(
+    target1 
+    target2 
+    ... 
+    PROPERTIES 属性名称1 值 
+    属性名称2 值 
+    ... 
+    )
+
+```
 
 - 控制编译选项的属性是：COMPILE_FLAGS
 - 控制链接选项的属性是：LINK_FLAGS
@@ -276,7 +322,21 @@ CMake中的缓存大多数存储在CMakeCache.txt文件文件中。
 
 ### 5.1 if
 
-基本语法：`if (expression)    COMMAND1(ARGS ...)    COMMAND2(ARGS ...)    ...else (expression)    COMMAND1(ARGS ...)    COMMAND2(ARGS ...)    ...endif (expression)`注意：ENDIF要和IF对应​
+基本语法：
+
+```
+if(expression)    
+    COMMAND1(ARGS ...)    
+    COMMAND2(ARGS ...)    
+    ...
+else(expression)    
+    COMMAND1(ARGS ...)    
+    COMMAND2(ARGS ...)    
+    ...
+endif(expression)
+```
+
+注意：ENDIF要和IF对应​
 
 - if (expression)，expression不为：空,0,N,NO,OFF,FALSE,NOTFOUND或<var>_NOTFOUND,为真
 - IF (not exp)，与上面相反
@@ -315,7 +375,16 @@ FOREACH有三种使用形式的语法，且每个FOREACH都需要一个ENDFOREAC
 
 **列表循环**
 
-- 语法：`FOREACH(loop_var arg1 arg2 ...) COMMAND1(ARGS ...) COMMAND2(ARGS ...) ...ENDFOREACH(loop_var)`​
+- 语法：
+
+```
+FOREACH(loop_var arg1 arg2 ...) 
+    COMMAND1(ARGS ...) 
+    COMMAND2(ARGS ...) 
+    ...
+ENDFOREACH(loop_var)
+```
+
 - 例子：
 ```cmake
 AUX_SOURCE_DIRECTORY(.SRC_LIST)
@@ -327,7 +396,17 @@ ENDFOREACH(F)
 
 **循环范围**
 
-- 语法：`FOREACH(loop_var RANGE total) COMMAND1(ARGS ...) COMMAND2(ARGS ...)... ENDFOREACH(loop_var)`
+- 语法：
+
+```
+FOREACH(loop_var RANGE total) 
+    COMMAND1(ARGS ...) 
+    COMMAND2(ARGS ...)
+    ... 
+ENDFOREACH(loop_var)
+```
+
+
 - 例子：
 
 ```cmake
@@ -338,7 +417,17 @@ ENDFOREACH(VAR)​​
 例子中默认起点为0，步进为1，作用就是输出：0~100。
 
 **范围步进循环**
-- 语法： `FOREACH(loop_var RANGE start stop [step]) COMMAND1(ARGS ...) COMMAND2(ARGS ...)... ENDFOREACH(loop_var)`
+- 语法:
+
+```
+FOREACH(loop_var RANGE start stop [step]) 
+    COMMAND1(ARGS ...) 
+    COMMAND2(ARGS ...)
+    ... 
+ENDFOREACH(loop_var)
+
+```
+
 - 例子：
 
 ```cmake
@@ -357,14 +446,41 @@ ENDFOREACH(A)​
 
 指令格式：
 
-- `target_include_directories(<target> [SYSTEM] [BEFORE]<INTERFACE|PUBLIC|PRIVATE> [items1...] [<INTERFACE|PUBLIC|PRIVATE> [items2...] ...])` 
+```
+target_include_directories(
+    <target> 
+    [SYSTEM] 
+    [BEFORE] 
+    <INTERFACE|PUBLIC|PRIVATE> 
+    [items1...] 
+    [<INTERFACE|PUBLIC|PRIVATE> [items2...] ...]
+    )
+
+```
 
     主要是设置include的头文件的查找目录，也就是GCC的[-lidr...]选项
 
-- `target_compile_definitions(<target> <INTERFACE|PUBLIC|PRIVATE> [items1...][<INTERFACE|PUBLIC|PRIVATE> [items2...] ...])`
+```
+
+target_compile_definitions(
+    <target> 
+    <INTERFACE|PUBLIC|PRIVATE> 
+    [items1...]
+    [<INTERFACE|PUBLIC|PRIVATE> [items2...] ...]
+    )
+
+```
 
     设置c++文件中预定义的宏变量。
-- `target_compile_options(<target> [BEFORE] <INTERFACE|PUBLIC|PRIVATE> [items1...] [<INTERFACE|PUBLIC|PRIVATE> [items2...] ...]`
+```
+
+target_compile_options(
+    <target> [BEFORE] 
+    <INTERFACE|PUBLIC|PRIVATE> [items1...] 
+    [<INTERFACE|PUBLIC|PRIVATE> [items2...] ...]
+    )
+
+```
 
     gcc其它的一些编译选项，比如-fPIC,-fPIC作用于编译阶段，告诉编译器产生与位置无关代码Position-Independent Code)，则产生的代码中，没有绝对地址，全部使用相对地址，故而代码可以被加载器加载到内存的任意位置，都可以正确的执行。这正是共享库所要求的，共享库被加载时，在内存的位置不是固定的。
 
@@ -435,7 +551,17 @@ message("${test2}")
 
 语法：
 
-`configure_file(<input> <output> [COPYONLY] [ESCAPE_QUOTES] [@ONLY] [NEWLINE_STYLE [UNIX|DOS|WIN32|LF|CRLF] ])​;`
+```
+configure_file(
+    <input> <output> 
+    [COPYONLY] 
+    [ESCAPE_QUOTES] 
+    [@ONLY] 
+    [NEWLINE_STYLE [UNIX|DOS|WIN32|LF|CRLF] ]
+    )​;
+```
+
+
 参数：
 
 - COPYONLY：
@@ -872,3 +998,114 @@ add_custom_command(
 add_executable(Foo ${PROJECT_BINARY_DIR}/created.c)
 
 ```
+注意：不要在多个相互独立的文件中使用该命令产生相同的文件，放置冲突。
+
+
+### 12.3 add_custom_target:增加定制目标。
+
+```
+add_custom_target(
+    Name [ALL] [command1 [args1...]] 
+    [COMMAND command2 [args2...] ...] 
+    [DEPENDS depend depend depend ... ] 
+    [BYPRODUCTS [files...]] 
+    [WORKING_DIRECTORY dir] 
+    [COMMENT comment] 
+    [VERBATIM] [USES_TERMINAL] 
+    [SOURCES src1 [src2...]]
+    )
+
+```
+
+add_custom_target 可以增加定制目标，常常用于编译文档、运行测试用例等。
+
+### 12.4 add_custom_command和add_custom_target的区别
+
+- 命令命名里面的区别就在于：command和target，前者是自定义命令，后者是自定义目标
+- 目标：使用add_custom_target定义的叫做自定义目标，因此这些“目标”区别于正常的目标，他们不生成exe或者lib，但是仍然会具有一些正常目标相同的属性，构建他们的时候，只是调用了为他们设置的命令，如果自定义目标对于其他目标有依赖，那么就会优先生成依赖的那些目标。
+- 自定义命令：自定义命令不是一个“可构建”的对象，并且没有可以设置的属性，自定义命令是一个在构建依赖目标之前被调用的命令，自定义命令的依赖可以通过add_custom_command(TARGET target …)形式显式设置，也可以通过add_custom_command(OUTPUT output1 …)生成文件的形式隐式设置。显示执行的时候，每次构建目标，首先会执行自定义的命令，隐式执行的时候，如果自定义的命令依赖于其他文件，则在构建目标的时候先去执行生成其他文件。
+
+
+## 13 C++中的常用选项
+
+_参考链接：_ [CMake编译中target_link_libraries中属性PRIVATE、PUBLIC、INTERFACE含义](https://blog.csdn.net/turbock/article/details/90034787)
+
+### 13.1 C++11功能的激活
+
+使用`target_compile_features(<target> <PRIVATE|PUBLIC|INTERFACE> <feature> [...])`
+
+添加c++11标准：`target_compile_features(<project_name> PUBLIC cxx_std_11)`。
+
+注意：target必须是由:`add_executable`或者`add_library`生成的目标。
+
+也可以使用下面的方式来进行支持：
+
+```cmake
+#设置c++标准级别
+
+set(CMAKE_CXX_STANDARD 11)
+#告诉cmake使用它
+
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#(可选)确保-std=c++11
+
+```
+
+### 13.2 中间过程优化
+
+```
+#检测编译器是否支持过程间优化
+
+check_ipo_supported(RESULT result)
+
+#如果不支持，判断进不去
+if(result)
+    #为工程设置过程间优化
+
+    set_target_properties(foo PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+```
+
+### 13.3 cmake中的option
+
+option命令可以设置默认值；例如`option(address "this is path for value" ON)`设置address的默认值为ON，并且添加注释提示。
+
+注意：没有设置默认值时，默认的默认值是OFF，如果值已经改变一定要清除CMakeCache.txt。
+
+可以另外当去创建option.txt文件，然后使用include进行包含。
+
+可以使用`cmake_dependent_option`设置存在依赖的option ,但是一般建议使用if判断来进行配置。
+
+```
+cmake_dependent_option(DEPENT_USE_CURL "this is dependent on USE_CURL" ON "USE_CURL;NOT USE_MATH" OFF)
+
+
+#设置一个option：​​DEPENT_USE_CURL,第二个参数是他的说明，ON后面的参数是一个表达式，当“USE_CURL”且“USE_MATH”为真的时候，DEPENT_USE_CURL取ON，为假取OFF
+```
+
+### 13.4 属性调试模块(CMakePrintHelpers)
+
+
+```
+
+CMAKE_PRINT_PROPERTIES(
+    [TARGETS target1 .. targetN]
+    [SOURCES source1 .. sourceN]
+    [DIRECTORIES dir1 .. dirN]
+    [TESTS test1 .. testN]
+    [CACHE_ENTRIES entry1 .. entryN]
+    PROPERTIES prop1 .. propN
+    )
+```
+
+如果要检查foo目标的INTERFACE_INCLUDE_DIRS和LOCATION的值，则执行：
+```
+cmake_print_properties(
+    TARGETS foo 
+    PROPERTIES 
+    INTERFACE_INCLUDE_DIRS 
+    LOCATION
+    )
+
+```
+
