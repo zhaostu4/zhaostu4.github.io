@@ -272,3 +272,193 @@ exit 0
 使用`{}`来构造执行语句块。
 
 #### 2.6.4 函数
+格式：
+```
+function_name()
+{
+    statements
+}
+
+```
+
+注意：当一个函数被调用时，脚本程序的位置参数($*、$@、$#、$1、$2等)会被替换为函数的参数。这也是读取传递给函数的参数的办法。当函数执行完毕后，参数会恢复为它们先前的值。
+
+函数操作字符串，一般是提前声明变量，或者使用`local`关键子在shell中声明局部变量，说明变量范围。否则都是按照全局变量处理。
+下面是一个简单的示例：
+
+```shell
+#!/bin/bash
+
+# file name yes_or_no 
+
+yes_or_no(){
+    echo "Is your name $* ?"
+    while [[ true ]]; do
+         echo -n "Enter yes or no: "
+         read x
+         case "$x" in
+             y | yes ) return 0;;
+             n | no ) return 1;;
+             * ) echo "Answer yes or no"
+         esac
+     done 
+}
+
+echo "Original parameter are $* "
+#将脚本输入的第一个参数，函数的第一个参数
+
+if yes_or_no "$1"
+then
+    echo "Hi $1 , nice name"
+else
+    echo "Never mind"
+fi
+
+exit 0
+# 输入： ./yes_or_no.sh  Rick Neil
+# 输出
+
+# Original parameter are Rick Neil 
+# Is your name Rick ?
+# Enter yes or no: y
+# Hi ./yes_or_no.sh  Rick Neil, nice name
+
+```
+
+#### 2.6.5 命令
+
+shell脚本中可以执行的命令分为两类:
+
+- 内置命令：shell中内置的命令,linux中大多数内部命令都提供了外部版本
+- 外置命令:非shell中的内置命令。
+
+**常用命令**
+
+- `break`:跳出一层循环。
+- `:`：是一个空命令。相当于true的别名，运行的比true快。例如`:${var:=value}`没有':'，shell将试图把$var作为一条命令来处理。
+- `continue`：跳过剩下的直接进行下一次循环。
+- `.`：表示在当前shell中执行命令`.`命令和`source`命令功能相同，可以避免创建shell执行时，由于新的环境所造成的变量丢失。例如:`. ./shell_script.sh`脚本中执行的变量会在当前shell中生效。
+- `echo`: 现代脚本中推荐使用`printf`命令。
+- `eval`：允许你对参数进行求值,相当于一个额外的`$`
+
+```shell
+#!/bin/bash
+
+foo=10
+x=foo
+y='$'$x
+echo $y
+
+eval z='$'$x
+echo $z 
+# 输出： $foo 10
+```
+注意：`z='$'$x`单独的输出是`foo`基本无效。
+
+- `exec`:
+    + 将当前shell替换为一个不同的程序，exec后面的代码不会执行。如:`exec wall "Thanks for all"`
+    + 修改当前文件描述符:`exec 3< afile`。
+- `exit n`：脚本以结束码`n`退出。0表示成功退出，`1-125`是脚本可以使用的错误代码。其余数字有保留含义。
+- `export`：将作为它参数的变量导出到子shell中，并使之在子shell中有效。主要是设置环境变量，这个环境变量可以被当前程序调用的其它脚本程序看到。
+- `expr`：将他的参数，当做一个表达式来进行求值；如:
+
+```
+x=`expr $x +1 ` 
+
+#或
+
+x=$(expr $x + 1)
+```
+可以使用`$()`代替反引号。在比较新的脚本程序送`expr`命令被`$(())`命令所代替。
+
+![常见表达式操作](../img/2019-08-15-14-46-09.png)
+
+- `printf`：字符输出命令;例如`prinf "%s \n" hello`
+
+![支持的转义序列](../img/2019-08-15-14-47-34.png)
+
+![字符转换限定符](../img/2019-08-15-14-49-16.png)
+
+- `return`:函数的返回参数，没有指定参数则默认返回最后一条命令的退出码。
+- `set`：设置shell参数变量，可以结合`$*`和`$2`等来进行参数变量的设置。
+- `shift`：所有变量左移一个位置，将`$2`变为`$1`，`$3`变为`$2`。
+- `trap`:`tarp command signal`,接收signal信号，再采取`command`行动。
+
+![signal信号](../img/2019-08-15-14-59-31.png)
+
+- `unset`：从环境中删除变量或者函数。
+- `find`:`find [path] [option] [testss] [actions]`找寻。
+
+![find命令参数选项](../img/2019-08-15-15-06-50.png)
+
+![find测试部分](../img/2019-08-15-15-08-40.png)
+
+![find操作符](../img/2019-08-15-15-09-28.png)
+
+![find动作](../img/2019-08-15-15-13-23.png)
+
+- `grep`：`grep [option] PATTERN [FILES]`
+
+![grep命令参数](../img/2019-08-15-15-13-23.png)
+
+##### 正则表达式
+
+![正则表达式含义](../img/2019-08-15-15-17-31.png)
+
+![特殊匹配模式](../img/2019-08-15-15-18-44.png)
+![特殊匹配模式](../img/2019-08-15-15-19-42.png)
+
+`-E`扩展匹配选项：
+
+![匹配选项](../img/2019-08-15-15-21-47.png)
+
+例如：
+
+```shell
+#查找以e结尾的字符
+
+grep e$ words2.txt
+#查找a-z重复10次的匹配字符
+
+grep -E [a-z]\{10\} words2.txt
+
+```
+
+#### 2.6.6 命令的执行
+
+脚本中获取命令结果可以使用`$()` ，例如`$(pwd)`获取当前输出文件夹。
+
+##### 2.6.6.1 算术扩展
+
+使用`expr`或者`$(())`可以进行算术扩展。
+
+`${}`的使用：
+
+![扩展参数列表](../img/2019-08-15-15-32-32.png)
+
+#### 2.6.8 调试脚本程序
+
+![脚本程序调试选项](../img/2019-08-15-15-35-31.png)
+
+### 2.7 迈向图形化:dialog工具
+
+使用dialog可以在shell中创建图形工具并且实现交互；
+
+```
+dialog --msgbox "hello word" 9 18
+```
+
+![对话框主要类型](../img/2019-08-15-15-39-49.png)
+
+![对话框参数](../img/2019-08-15-15-41-11.png)
+
+使用示例:
+
+```
+dialog --title "Check me" --checklist "Pick Numbers" 15 25 3 1 "one" "off" 2 "two" "on" 3 "tree" "off"
+```
+
+### 2.8 综合应用
+
+[代码地址](https://github.com/wangpengcheng/Learning-Note/blob/master/code/Begining_linux_Proramming_/ch02/app/cd_db)
+
