@@ -371,46 +371,46 @@ x=$(expr $x + 1)
 ```
 可以使用`$()`代替反引号。在比较新的脚本程序送`expr`命令被`$(())`命令所代替。
 
-![常见表达式操作](../img/2019-08-15-14-46-09.png)
+![常见表达式操作](https://wangpengcheng.github.io/img/2019-08-15-14-46-09.png)
 
 - `printf`：字符输出命令;例如`prinf "%s \n" hello`
 
-![支持的转义序列](../img/2019-08-15-14-47-34.png)
+![支持的转义序列](https://wangpengcheng.github.io/img/2019-08-15-14-47-34.png)
 
-![字符转换限定符](../img/2019-08-15-14-49-16.png)
+![字符转换限定符](https://wangpengcheng.github.io/img/2019-08-15-14-49-16.png)
 
 - `return`:函数的返回参数，没有指定参数则默认返回最后一条命令的退出码。
 - `set`：设置shell参数变量，可以结合`$*`和`$2`等来进行参数变量的设置。
 - `shift`：所有变量左移一个位置，将`$2`变为`$1`，`$3`变为`$2`。
 - `trap`:`tarp command signal`,接收signal信号，再采取`command`行动。
 
-![signal信号](../img/2019-08-15-14-59-31.png)
+![signal信号](https://wangpengcheng.github.io/img/2019-08-15-14-59-31.png)
 
 - `unset`：从环境中删除变量或者函数。
 - `find`:`find [path] [option] [testss] [actions]`找寻。
 
-![find命令参数选项](../img/2019-08-15-15-06-50.png)
+![find命令参数选项](https://wangpengcheng.github.io/img/2019-08-15-15-06-50.png)
 
-![find测试部分](../img/2019-08-15-15-08-40.png)
+![find测试部分](https://wangpengcheng.github.io/img/2019-08-15-15-08-40.png)
 
-![find操作符](../img/2019-08-15-15-09-28.png)
+![find操作符](https://wangpengcheng.github.io/img/2019-08-15-15-09-28.png)
 
-![find动作](../img/2019-08-15-15-13-23.png)
+![find动作](https://wangpengcheng.github.io/img/2019-08-15-15-13-23.png)
 
 - `grep`：`grep [option] PATTERN [FILES]`
 
-![grep命令参数](../img/2019-08-15-15-13-23.png)
+![grep命令参数](https://wangpengcheng.github.io/img/2019-08-15-15-13-23.png)
 
 ##### 正则表达式
 
-![正则表达式含义](../img/2019-08-15-15-17-31.png)
+![正则表达式含义](https://wangpengcheng.github.io/img/2019-08-15-15-17-31.png)
 
-![特殊匹配模式](../img/2019-08-15-15-18-44.png)
-![特殊匹配模式](../img/2019-08-15-15-19-42.png)
+![特殊匹配模式](https://wangpengcheng.github.io/img/2019-08-15-15-18-44.png)
+![特殊匹配模式](https://wangpengcheng.github.io/img/2019-08-15-15-19-42.png)
 
 `-E`扩展匹配选项：
 
-![匹配选项](../img/2019-08-15-15-21-47.png)
+![匹配选项](https://wangpengcheng.github.io/img/2019-08-15-15-21-47.png)
 
 例如：
 
@@ -434,11 +434,11 @@ grep -E [a-z]\{10\} words2.txt
 
 `${}`的使用：
 
-![扩展参数列表](../img/2019-08-15-15-32-32.png)
+![扩展参数列表](https://wangpengcheng.github.io/img/2019-08-15-15-32-32.png)
 
 #### 2.6.8 调试脚本程序
 
-![脚本程序调试选项](../img/2019-08-15-15-35-31.png)
+![脚本程序调试选项](https://wangpengcheng.github.io/img/2019-08-15-15-35-31.png)
 
 ### 2.7 迈向图形化:dialog工具
 
@@ -448,9 +448,9 @@ grep -E [a-z]\{10\} words2.txt
 dialog --msgbox "hello word" 9 18
 ```
 
-![对话框主要类型](../img/2019-08-15-15-39-49.png)
+![对话框主要类型](https://wangpengcheng.github.io/img/2019-08-15-15-39-49.png)
 
-![对话框参数](../img/2019-08-15-15-41-11.png)
+![对话框参数](https://wangpengcheng.github.io/img/2019-08-15-15-41-11.png)
 
 使用示例:
 
