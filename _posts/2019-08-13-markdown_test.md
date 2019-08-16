@@ -278,6 +278,14 @@ $$x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}$$
 
 $$\\sum_{i=0}^N\\int_{a}^{b}g(t,i)\\text{d}t$$
 
+
+$$x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}$$
+    \(x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}\)
+
+$\frac{公式一}{公式二}$
+
+
+
 多行公式：
 
 ```math
