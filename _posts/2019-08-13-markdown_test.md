@@ -276,6 +276,8 @@ $$\sin(\alpha)^{\theta}=\sum_{i=0}^{n}(x^i + \cos(f))$$
 $$x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}$$
 \\(x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}\\)
 
+$$\\sum_{i=0}^N\\int_{a}^{b}g(t,i)\\text{d}t$$
+
 多行公式：
 
 ```math
