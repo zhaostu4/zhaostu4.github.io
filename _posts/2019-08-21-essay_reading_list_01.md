@@ -51,7 +51,7 @@ neural networks with iterative hard thresholding methods](https://arxiv.org/abs/
     + 特征图剪枝:减少网络宽度
     + kxk核剪枝:减少网络参数，提升网络性能；
     + 核内剪枝:提升模型性能
-![剪枝方式](../img/2019-08-21-15-27-18.png)
+![剪枝方式](https://wangpengcheng.github.io/img/2019-08-21-15-27-18.png)
 
     + 最优脑损伤(Optimal brain damage, OBD)[8]：通过移除网络中不重要的连接 ,在网络复杂度和训练误差之间达到一种最优平衡状态 , 极大加快了网络的训练过程.
     + 最优脑手术 (Optimal brain sur-geon, OBS)[9]:损失函数中的 Hessian 矩阵没有约束,这使得 OBS 在其他网络中具有比 OBD 更普遍的泛化能力。上述两种方法都面临者严重的网络精度损失。
@@ -63,7 +63,7 @@ neural networks with iterative hard thresholding methods](https://arxiv.org/abs/
     + 去除对于输出精度影响较小的卷积核以及对应的特征图[33]:
     + 一次性 (One-shot) 优化方法:可获得60%∼70%的稀疏度[26]:
     + ThiNet[34]:在训练和预测阶段同时压缩并加速卷积神经网络,从下一卷积层而非当前卷积层的概率信息获取卷积核的重要程度 , 并决定是否剪枝当前卷积核 , 对于紧凑型网络也有不错的压缩效果。
-![网络剪枝对不同网络的压缩效果](../img/2019-08-21-15-44-48.png)
+![网络剪枝对不同网络的压缩效果](https://wangpengcheng.github.io/img/2019-08-21-15-44-48.png)
 
 ## 2. 张量分解
 
@@ -71,12 +71,12 @@ neural networks with iterative hard thresholding methods](https://arxiv.org/abs/
 
 **常见的张量分解方法有：**
 
-- CP分解：![主要公式](../img/2019-08-21-15-56-02.png)
+- CP分解：![主要公式](https://wangpengcheng.github.io/img/2019-08-21-15-56-02.png)
 - Tucker分解：将卷积分解为一个核张量与若干因子矩阵。是一种高阶的主成分分析方法。
-![主要公式](../img/2019-08-21-15-57-01.png)
-- 矩阵奇异值分解 (Singular value decomposition, SVD)常用于全连接层分解:![SVD公式](../img/2019-08-21-15-58-19.png)
+![主要公式](https://wangpengcheng.github.io/img/2019-08-21-15-57-01.png)
+- 矩阵奇异值分解 (Singular value decomposition, SVD)常用于全连接层分解:![SVD公式](https://wangpengcheng.github.io/img/2019-08-21-15-58-19.png)
 
-![张量分解过程](../img/2019-08-21-15-59-44.png)
+![张量分解过程](https://wangpengcheng.github.io/img/2019-08-21-15-59-44.png)
 
 图 3 (a)中W为原始张量数据维度为：(d,d,i,o);复杂度为O(d^2*i*o);进行b中的张量分解后复杂度为O(o*k)+O(d^2*k*i);大大降低了复杂度，复杂度降低为原来的(o/k),k越小压缩效果越明显。
 
@@ -106,7 +106,7 @@ neural networks with iterative hard thresholding methods](https://arxiv.org/abs/
 
 教师网络拥有良好的性能和泛化能力，学生网络拥有更好的针对性和性能
 
-![知识迁移过程](../img/2019-08-21-16-32-50.png)
+![知识迁移过程](https://wangpengcheng.github.io/img/2019-08-21-16-32-50.png)
 
 注释迁移主要由教师网络获取和学生网络训练两部分构成。
 
@@ -133,7 +133,7 @@ neural networks with iterative hard thresholding methods](https://arxiv.org/abs/
 #### 4.1.1 Inception-v1
 Szegedy [4] 等从网中网 (Net-work in network, NiN) [55] 中得到启发，提出了如图所示的 Inception-v1 网络结构：
 
-![Inception 结构](../img/2019-08-21-18-51-11.png)
+![Inception 结构](https://wangpengcheng.github.io/img/2019-08-21-18-51-11.png)
 
 **将不同尺寸的卷积核并行连接能够增加特征提取的多样性**；而引入的 1 × 1 卷积核则加速了网络运行过程。
 
@@ -145,15 +145,45 @@ Szegedy [4] 等从网中网 (Net-work in network, NiN) [55] 中得到启发，�
 
 除了将 7 × 7 、 5 × 5 等较大的卷积核分解为若干连续的 3 × 3 卷积核 , 还将 n × n 卷积核非对称分解为 1 × n 和 n × 1 两个连续卷积核 ( 当 n = 7 时效果最好 ).
 
-![卷积核分解](../img/2019-08-21-19-00-03.png)
+![卷积核分解](https://wangpengcheng.github.io/img/2019-08-21-19-00-03.png)
 
 nception 结构与残差结构相结合 , 发现了残差结构可以极大地加快网络的训练速度[58]:
 
 Xception[59]:用卷积核对输入特征图进行卷积操作.
 
-![Xception 模块](../img/2019-08-21-21-12-12.png)
+![Xception 模块](https://wangpengcheng.github.io/img/2019-08-21-21-12-12.png)
 
 ### 4.2 网中网（Network in network）
+
+Mlpcover[55]：即在卷积核后面添加一个多层感知机，(Multilayer perceptron, MLP)由于多层感知机能够拟合任何函数 , 因此 Mlpconv 结构增强了网络对局部感知野的特征辨识能力和非线性表达能力。
+
+![多层感知机卷积结构](https://wangpengcheng.github.io/img/2019-08-22-20-42-32.png)
+
+Maxout network in network(MIN)[56]:用Maxout替代ReLU解决梯度消失问题。之后[57]使用稀疏连MLP并使用分离卷积(Unshared convolution)空间维度上使用共享卷积。即卷积中的卷积 (Convolution in convolution, CiC)。
+
+MPNIN(Mlpconv-wise supervised pretraining network in network)[62]：通过监督式预处理方法初始化网络模型的各层训练参数 , 并结合批标准化与网中网结构能够训练更深层次的卷积神经网络。
+
+**Mlpconv 结构引入了额外的多层感知机,有可能会导致网络运行速度降低,对此进行改善将会是未来研究的一个方向.**
+
+### 4.3 残差模块
+
+随着卷积神经网络逐渐向更深层次发展 , 网络将面临退化问题而不是过拟合问题 , 具体表现在网络性能不再随着深度的增加而提升 , 甚至在网络深度进一步增加的情况下性能反而快速下降。
+
+- LSTM(Long short-term memory)[64]:用来解决这个问题，旁路连接的引入，突破了深度在达到 40 层时网络将面临退化问题的限制，进一步促进了网络深度的增加[65]。
+- 残差网络(Residual network,ResNet):残差网络的门限机制不再是可学习的 , 也即始终保持信息畅通状态 , 这极大地降低了网络复杂度 , 加速了网络训练过程 , 同时突破了由网络退化引起的深度限制。
+![残差模块](https://wangpengcheng.github.io/img/2019-08-22-22-04-25.png)。
+
+之后残差模块使得网络深度进一步加深，但是后面发现，深度并不能很好的进行参数和特征的学习，有人认为练超过50层的网络是毫无必要的[69].因此接下来的网络逐渐向宽度进行靠拢。通过增加宽度对其进行更改。
+
+### 4.4 其它精细模块
+
+- 全均值池化(Global average pooling, GAP)[55]:代替全连接层，相当于在整个网络结构上做正则化防止过拟合。
+- 密集模块 (Dense block):在任何两层网络之间都有直接连接[74]:改善了网络中信息与梯度的流动，对于网络具有正则化的作用。
+- 跨连卷积神经网络[75]：允许第二个池化层跨过两层直接与全连接层相连接。
+- MobileNet 将传统卷积过程分解为深度可分离卷积 (Depthwise convolution)和逐点卷积 (Pointwise convolution) 两步[77]
+- 反向残差模块 (Inverted residual with linear bottleneck)[78]:等将残差模块与深度可分离卷积相结合。
+- ShuffleNet[79]：等在MobileNet 的基础上进一步提出了基于逐点群卷积(Pointwise group convolution) 和通道混洗 (Channel shuffle).
+
 
 
 
