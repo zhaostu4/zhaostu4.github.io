@@ -28,6 +28,7 @@ NVCC是一种编译器驱动，通过命令行选项可以在不同阶段启动�
 - cudafe
 
 ### NVCC 编译流程
+
 1. 预处理：
 输入的cu文件有一个预处理过程，这一过程包括的步骤有将该源文件里的宏以及相关引用文件扩展开，然后将预编译已经产生的与C有关的CUDA系统定义的宏扩展开，并合并分支编译的结果。CUDA源文件经过预处理过程后会生成具有.cup后缀名的经过预处理的源文件，经过预处理的源文件是再现程序bug的最好形式。通常，这个预处理过程是隐式完成的，如果想要显示执行，可以用命令`nvcc -E x.cu -o x.cup`或`nvcc -E x.cu > x.cup`来实现。
 2. 前后端设备分离：
@@ -84,14 +85,66 @@ NVIDIA GPU真实架构如下：
 |sm_70|Volta support|
 |sm_75|Turing support|
 
+
 NVCC在提高兼容性的处理方式上采用了两种机制：即时编译(JIT)和fatbinaries
+
 #### 即时编译(Just-In-Time)
+
 过指定虚拟代码架构而不是真实的GPU，nvcc推迟PTX代码的组装，直到应用程序运行时（目标GPU完全已知）。 例如，当应用程序在sm_50或更高版本的架构上启动时，下面的命令允许生成完全匹配的GPU二进制代码。 
+
+Just-in-Time Compilation of Device Code;
+
+![Just-in-Time Compilation of Device Code](../img/2019-08-23-21-41-04.png)
+
+
 ```shell
 nvcc xx.cu –gpu-architecture=compute_50 –gpu-code=compute_50 
+
+nvcc x.cu --gpu-architecture=compute_50 --gpu-code=compute_50,sm_50,sm_52
+
 ```
 即使编译，即程序运行时，再根据当前的GPU编译成自己计算能力动态编译成应用程序。这就可以让GPU选择想要的版本进行编译。即双compute_的组合。但这种只能保证同一代的兼容性。
 注意：当GPU计算能力低于编译的虚拟框架时，JIT将失败。
+
+使用`--generate-code`可以编译多种GPU架构的代码。
+
+```shell
+nvcc x.cu \
+    --generate-code arch=compute_50,code=sm_50 \
+    --generate-code arch=compute_50,code=sm_52 \
+    --generate-code arch=compute_53,code=sm_53
+
+nvcc x.cu \
+    --generate-code arch=compute_50,code=compute_50 \
+    --generate-code arch=compute_53,code=compute_53
+
+nvcc x.cu \
+    --generate-code arch=compute_50,code=[sm_50,sm_52] \
+    --generate-code arch=compute_53,code=sm_53  
+
+```
+
+### 使用CUDA分离编译
+
+cuda5之后支持在设备上分离编译的模式，但是仍然以一个文件作为默认编译方式可以通过添加` --device-c `参数来实现分离编译，再使用`--device-link`来进行相关的链接。
+
+过程如下图所示：
+
+![](../img/2019-08-23-21-57-44.png)
+
+单个的编译流程和上图相似。
+
+注意
+- 编译过程中的32/64中间文件，会产生错误链接。
+- 设备编译的.o文件必须链接到host编译的.o文件，否则会产生_cudaRegisterLinkedBinary_name错误
+- 分离编译中的`__CUDA_ARCH__`关键字不能出现在header中，因为不同的目标可能包含不同的行为。如果都包含在header中并且依赖`__CUDA_ARCH__`在链接时就会产生错误。多个版本中的行为只有一个会被使用。
+- `-keep`选项可以让文件在当前文件夹中被编译，这样中间文件不会放在临时文件夹中。
+- 当使用`--keep`时，清除文件，需要使用`--keep --clean-targets`。否则文件不能被正常清除。
+- 使用`nvcc --resource-usage acos.cu` 输出文件的相关注册信息。
+
+#### 代码的适应性更改
+
+使用static关键字，可能得到多个设备符号在不同的文件中
 
 #### Fatbinaries
 在JIT中克服启动延迟，同时仍允许在新GPU上执行的另一种解决方案是指定多个代码实例，如nvcc x.cu –gpu-architecture = compute_50 –gpu-code = compute_50，sm_50，sm_52该命令为两个Kepler变体生成精确代码，以及在遇到下一代GPU时由JIT使用的PTX代码。nvcc将其设备代码组织在fatbinaries中，这些代码能够保存相同GPU源代码的多个翻译。在运行时，CUDA驱动程序将在设备功能启动时选择最合适的翻译。
@@ -1746,3 +1799,7 @@ add_cuda_dlink.reg.c只有这一个内容
 最后再有主机链接器(gcc)进行动态和静态链接库的链接。本次代码因为是机器码直接装入，因此不会有cuda的动态链接。
 
 从上面可以看出，cuda真的是比较喜欢静态链接。也知道cudnn为什么函数这么少，so的动态链接库这么大了，应该是将 **多个硬件版本的机器码**直接放进去了。
+
+
+总体而言，nvcc更像是qmake进行相关makefile和预处理代码的生成，调用gcc生成host二进制文件，调用cicc、ptxas、fatbinary分别生成汇编代码、机器码、静态代码。最后使用nvlink链接生成.obj文件，使用gcc link生成最终的可执行文件。
+
