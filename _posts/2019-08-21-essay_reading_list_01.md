@@ -131,7 +131,7 @@ neural networks with iterative hard thresholding methods](https://arxiv.org/abs/
 ### 4.1 Inception模块
 
 #### 4.1.1 Inception-v1
-Szegedy [4] 等从网中网 (Net-work in network, NiN) [55] 中得到启发，提出了如图所示的 Inception-v1 网络结构：
+Szegedy [4. 等从网中网 (Net-work in network, NiN) [55. 中得到启发，提出了如图所示的 Inception-v1 网络结构：
 
 ![Inception 结构](https://wangpengcheng.github.io/img/2019-08-21-18-51-11.png)
 
@@ -184,6 +184,111 @@ MPNIN(Mlpconv-wise supervised pretraining network in network)[62]：通过监督
 - 反向残差模块 (Inverted residual with linear bottleneck)[78]:等将残差模块与深度可分离卷积相结合。
 - ShuffleNet[79]：等在MobileNet 的基础上进一步提出了基于逐点群卷积(Pointwise group convolution) 和通道混洗 (Channel shuffle).
 
+## 5 总结
+
+主要研究方向：
+
+- 网络剪枝与稀疏化():
+
+稳定地优化并调整网络结构,目前大多数的方法是剔除网络中冗余的连接或神经元 , 这种低层级的剪枝具有非结构化 (Non-structural) 风险 ,在计算机运行过程中的非正则化 (Irregular) 内存存取方式反而会阻碍网络进一步加速.一些特殊的软硬件措施能够缓解这一问题,然而会给模型的部署另一方面,尽管一些针对卷积核和卷积图的结构化剪枝方法能够获得硬件友好型网络,在 CPU和GPU上速度提升明显,但由于剪枝卷积核和卷积通道会严重影响下一隐含层的输入,有可
+能存在网络精度损失严重的问题.
+- 张量分解():
+- 知识迁移
+- 精细模块设计
+
+主要评价指标：
+
+- 准确率
+- 运行时间
+- 模型大小
+- 有待加入的指标：
+    + 乘加 (Multiply-and-accumulate )操作量
+    + 推导时间
+    + 数据吞吐量
+    + 硬件能耗
+
+设计硬件友好型深度模型将有助于加速推进深度学习的工程化实现，也是网络结构优化的重点研究方向。
+
+### 参考文献列表
+
+1. Krizhevsky A, Sutskever I, Hinton G E. ImageNet classification with deep convolutional neural networks. In: Proceedings of Neural Information Processing Systems. Lake Tahoe,Nevada, USA: Curran Associates Inc, 2012. 1097−1105
+2. Zeiler M D, Fergus R. Visualizing and understanding convolutional networks. In: Proceedings of European Conference on Computer Vision. Zurich, Switzerland: Springer, 2014.818−833
+3. [Simonyan K, Zisserman A. Very deep convolutional networks for large-scale image recognition.arXiv: 1409.1556,2014.](https://arxiv.org/abs/1409.1556)
+4. Szegedy C, Liu W, Jia Y Q, Sermanet P, Reed S, Anguelov D. Going deeper with convolutions. In: Proceedings of IEEE Conference on Computer Vision and Pattern Recognition. IEEE: Boston, USA: 2015. 1−9
+5. He K M, Zhang X Y, Ren S Q, Sun J. Deep residual learning for image recognition. In: Proceedings of IEEE Conference on Computer Vision and Pattern Recognition. IEEE: LasVegas, USA: 2016. 770−778
+6. LeCun Y, Bottou L, Bengio Y, Haffner P. Gradient-based learning applied to document recognition. Proceedings of the IEEE, 1998, 86(11): 2278−2324
+7. He K M, Sun J. Convolutional neural networks at constrained time cost. In: Proceedings of Computer Vision and Pattern Recognition. Boston, USA: IEEE, 2015. 5353−5360
+8. LeCun Y, Denker J S, Solla S A. Optimal brain damage.In: Proceedings of Neural Information Processing Systems.MIT Press: Denver, Colorado, USA: 1990. 598−605
+9. Hassibi B, Stork D G, Wolff G. Optimal brain surgeon: extensions and performance comparisons. In: Proceedings of Neural Information Processing Systems. MIT Press: Denver, Colorado, USA: 1994. 263−270
+10. [Cheng Y, Wang D, Zhou P, Zhang T. A survey of model compression and acceleration for deep neural networks.arXiv: 1710.09282, 2017.](https://arxiv.org/abs/1710.09282)
+11. Cheng J, Wang P, Li G, Hu Q H, Lu H Q. Recent advances in efficient computation of deep convolutional neural networks.Frontiers of Information Technology & Electronic Engineering, 2018, 19(1): 64−77
+12. Lei Jie, Gao Xin, Song Jie, Wang Xing-Lu, Song Ming-Li.Compression of deep networks model: a review. Journal of Software, 2018, 29(02): 251−266( 雷杰 , 高鑫 , 宋杰 , 王兴路 , 宋明黎 . 深度网络模型压缩综述 . 软件学报 , 2018, 29(02):251-266.)
+13. [Hu H, Peng R, Tai Y W, Tang C K. Network trimming: a data-driven neuron pruning approach towards efficient deep architectures. arXiv: 1607.03250, 2016.](https://arxiv.org/abs/1607.03250)
+14. Cheng Y, Wang D, Zhou P. Model Compression and Acceleration for Deep Neural Networks: The Principles, Progress,and Challenges. IEEE Signal Processing Magazine, 2018,35(1): 126−136
+15. [Gong Y, Liu L, Yang M, Bourdev L. Compressing deep convolutional networks using vector quantization. arXiv:1412.6115, 2014.](https://arxiv.org/abs/1412.6115)
+16. Reed R. Pruning algorithms-a survey. IEEE Transactions on Neural Networks, 1993, 4(5): 740−747
+17. [Collins M D, Kohli P. Memory bounded deep convolutional networks. arXiv: 1412.1442, 2014.](https://arxiv.org/abs/1412.1442)
+18. [Jin X J, Yuan X T, Feng J S, Yan S C. Training skinny deep neural networks with iterative hard thresholding methods. arXiv: 1607.05423, 2016.](https://arxiv.org/abs/1607.05423)
+19. Zeiler M D, Fergus R. Less is more: towards compact CNNs. In: Proceedings of European Conference on Computer Vision. Amsterdam,The Netherlands: Springer, 2016.662−677
+20. Wen W, Wu C P, Wang Y D, Chen Y R, Li H. Learning structured sparsity in deep neural networks. In: Proceedings of Neural Information Processing Systems. Spain: 2016.2074−2082
+21. Lebedev V, Lempitsky V. Fast convnets using group-wise brain damage. In: Proceedings of IEEE Conference on Computer Vision and Pattern Recognition. Las Vegas, USA:IEEE, 2016. 2554−2564
+22. [Louizos C, Welling M, Kingma D P. Learning sparse neural networks through L 0 regularization. arXiv: 1712.01312,2017.](https://arxiv.org/abs/1712.01312)
+23. Hinton G E, Srivastava N, Krizhevsky A, Sutskever I,Salakhutdinov R R. Improving neural networks by preventing co-adaptation of feature detectors.arXiv: 1207.0580,2012.](https://arxiv.org/abs/1207.0580)
+24. Srivastava N, Hinton G, Krizhevsky A, Sutskever I,Salakhutdinov R.Dropout: a simple way to prevent neural networks from overfitting. The Journal of Machine Learning Research, 2014, 15(1): 1929−1958
+25. Li Z, Gong B, Yang T. Improved dropout for shallow and deep learning. In: Proceedings of Neural Information Processing Systems. Spain: 2016.2523−2531
+26. Anwar S, Sung W. Coarse pruning of convolutional neural networks with random masks. In: International Conference on Learning Representation. France: 2017.134−145
+27. Hanson S J, Pratt L Y. Comparing biases for minimal network construction with back-propagation. In: Proceedings of Neural Information Processing Systems. Denver, Colorado, USA: 1989. 177−185
+28. [Han S, Mao H, Dally W J. Deep compression: compressing deep neural networks with pruning, trained quantization and huffman coding. arXiv: 1510.00149,2015.](https://arxiv.org/abs/1510.00149)
+29. [Srinivas S, Babu R V. Data-free parameter pruning for deep neural networks. arXiv: 1507.06149, 2015.](https://arxiv.org/abs/1507.06149)
+30. [Guo Y, Yao A, Chen Y. Dynamic network surgery for efficient DNNs. In: Proceedings of Neural Information Processing Systems. Denver, Colorado, USA: 2016. 1379−1387]()
+31. [Liu X Y, Jeff Pool, Han S, William J.Dally. Efficient sparse-winograd convolutional neural networks. In: International Conference on Learning Representation. Canada: 2018.]()
+32. [He Y, Zhang X, Sun J. Channel pruning for accelerating very deep neural networks. In: Proceedings of International Conference on Computer Vision. Venice, Italy: 2017. 6]()
+33. [Li H, Kadav A, Durdanovic I, Samet H, Graf H P. Pruning filters for efficient convNets. arXiv: 1608.08710, 2016.](https://arxiv.org/abs/1608.08710)
+34. [Denil M, Shakibi B, Dinh L, De F N. Predicting parameters in deep learning. In: Proceedings of Neural Information Processing Systems. Lake Tahoe, Nevada, United States: 2013. 2148−2156]()
+35. [Denil M, Shakibi B, Dinh L, De F N. Predicting parameters in deep learning. In: Proceedings of Neural Information Processing Systems. Lake Tahoe, Nevada, United States: 2013.2148−2156]()
+36. [Rigamonti R, Sironi A, Lepetit V, Fua P. Learning separable filters. In: Proceedings of IEEE Conference on Computer Vision and Pattern Recognition.Portland, OR, USA: IEEE,2013. 2754−2761]()
+37. [Jaderberg M, Vedaldi A, Zisserman A. Speeding up convolutional neural networks with low rank expansions. arXiv:1405.3866, 2014.](https://arxiv.org/abs/1405.3866)
+38. [Denton E, Zaremba W, Bruna J, LeCun Y, Fergus R. Exploiting linear structure within convolutional networks for efficient evaluation. In: Proceedings of Neural Information Processing Systems. Montreal, Quebec, Canada: 2014.1269−1277]()
+39. [Lebedev V, Ganin Y, Rakhuba M, Oseledets I, Lempitsky V.Speeding-up convolutional neural networks using fine-tuned cp-decomposition. arXiv: 1412.6553, 2014.](https://arxiv.org/abs/1412.6553)
+40. [Tai C, Xiao T, Zhang Y, Wang X G. Convolutional neural networks with low-rank regularization. arXiv: 1511.06067, 2015.](https://arxiv.org/abs/1511.06067)
+41. [Zhang X, Zou J, Ming X, He K M, Sun J. Efficient and accurate approximations of nonlinear convolutional networkss.In: Proceedings of IEEE Conference on Computer Vision and Pattern Recognition. Boston, USA: IEEE, 2015. 1984−1992]()
+42. [Kim Y D, Park E, Yoo S, Choi T, Yang L, Shin D. Compression of deep convolutional neural networks for fast and low power mobile applications. arXiv: 1511.06530, 2015.](https://arxiv.org/abs/1511.06530)
+43. [Wang Y, Xu C, Xu C, Tao D. Beyond filters: Compact feature map for portable deep model. In: Proceedings of International Conference on Machine Learning. Sydney, Australia: 2017. 3703−3711]()
+44. [Astrid M, Lee S I. CP-decomposition with tensor power method for convolutional neural networks compression. In:Proceedings of IEEE Conference on Big Data and Smart Computing. Korea: IEEE, 2017. 115−118]()
+45. [Bucila C, Caruana R, Niculescu-Mizil A. Model compression. In: Proceedings of The 12th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining. Philadelphia, USA: 2006. 535−541]()
+46. [Ba L J, Caruana R. Do deep nets really need to be deep?In: Proceedings of Neural Information Processing Systems.Montreal, Quebec, Canada: 2014. 2654−2662]()
+47. [Hinton G, Vinyals O, Dean J. Distilling the knowledge in a neural network. arXiv: 1503.02531, 2015.](https://arxiv.org/abs/1503.02531)
+48. [(Romero A, Ballas N, Kahou S E, Chassang A, Gatta C, Bengio Y. Fitnets: hints for thin deep nets. arXiv: 1412.6550,2014)](https://arxiv.org/abs/1412.6550)
+49. [Luo P, Zhu Z, Liu Z, Wang X G, Tang X O. Face model compression by distilling knowledge from neurons. In: Proceedings of AAAI Conference on Artificial Intelligence. Phoenix,Arizona, USA: 2016. 3560−3566]()
+50. [Chen T, Goodfellow I, Shlens J. Net2net: accelerating learning via knowledge transfer. arXiv: 1511.05641, 2015.](https://arxiv.org/abs/1511.05641)
+51. [Zagoruyko S, Komodakis N. Paying more attention to attention: improving the performance of convolutional neural networks via attention transfer. In: International Conference on Learning Representation. France: 2017.]()
+52. [Lucas T, Iryna K, Alykhan T, Ferenc H. Faster gaze prediction with dense networks and Fisher pruning. arXiv:1801.05787, 2018.](https://arxiv.org/abs/1801.05787)
+53. [Yim J, Joo D, Bae J, Kim J. A gift from knowledge distillation: fast optimization, network minimization and transfer learning. In: Proceedings of Computer Vision and Pattern Recognition. Honolulu, HI, USA: IEEE, 2017.]()
+54. [Chen G, Choi W, Yu X, Han T, Chandraker M. Learning efficient object detection models with knowledge distillation.In: Proceedings of Neural Information Processing Systems.US: 2017. 742−751]()
+55. [Lin M, Chen Q, Yan S. Network in network. arXiv:1312.4400, 2013.](https://arxiv.org/abs/1312.4400)
+56. [Ioffe S, Szegedy C. Batch normalization: accelerating deep network training by reducing internal covariate shift. arXiv:1502.03167, 2015.](https://arxiv.org/abs/1502.03167)
+57. [Szegedy C, Vanhoucke V, Ioffe S, Shlens J, Wojna Z. Rethinking the inception architecture for computer vision. In:Proceedings of IEEE Conference on Computer Vision and Pattern Recognition. Las Vegas, NV, USA: IEEE, 2016.2818−2826]()
+58. [Szegedy C, Ioffe S, Vanhoucke V, Alemi A A. Inception-v4,inception-resnet and the impact of residual connections on learning. In: Proceedings of AAAI Conference on Artificial Intelligence. San Francisco, California USA: 2017. 12]()
+59. [Chollet F. Xception: Deep learning with depthwise separable convolutions. arXiv: 1800-1807, 2016.](https://arxiv.org/abs/1800-1807)
+60. [Chang J R, Chen Y S. Batch-normalized maxout network in network. arXiv: 1511.02583, 2015.](https://arxiv.org/abs/1511.02583)
+62. [Han X, Dai Q. Batch-normalized mlpconv-wise supervised pre-training network in network. Applied Intelligence, 2018,48(1): 142−155]()
+63. [Srivastava R K, Greff K, Schmidhuber J. Highway networks.arXiv: 1505.00387, 2015.](https://arxiv.org/abs/1505.00387)
+64. [Hochreiter S, Schmidhuber J. Long short-term memory.Neural Computation, 1997, 9(8): 1735−1780]()
+65. [Larsson G, Maire M, Shakhnarovich G. Fractalnet: ultra-deep neural networks without residuals. arXiv:1605.07648,2016.](https://arxiv.org/abs/1605.07648)
+66. [Huang G, Sun Y, Liu Z, Sedra D, Weinberger K Q. Deep networks with stochastic depth. In: Proceedings of European Conference on Computer Vision. Amsterdam, The Nether-lands: Springer, 2016. 646−661]()
+67. [He K M, Zhang X, Ren S, Sun J. Identity mappings in deep residual networks. In: Proceedings of European Conference on Computer Vision. Amsterdam, The Nether-lands:Springer, 2016. 630−645]()
+68. [Xie S, Girshick R, Dollar P, Tu Z W, He K M. Aggregated residual transformations for deep neural networks. In: Proceedings of Computer Vision and Pattern Recognition. Honolulu, HI, USA: IEEE, 2017. 5987−5995]()
+69. [LeCun Y, Bengio Y, Hinton G. Deep learning. Nature, 2015,521(7553): 436]()
+70. [Zagoruyko S, Komodakis N. Wide residual networks. arXiv:1605.07146, 2016.](https://arxiv.org/abs/1605.07146)
+71. [Targ S, Almeida D, Lyman K. Resnet in resnet: generalizing residual architectures. arXiv: 1603.08029, 2016.](https://arxiv.org/abs/1603.08029)
+72. [Zhang K, Sun M, Han X, Yuan X F, Guo L R, Liu T. Residual networks of residual networks: multilevel residual networks. IEEE Transactions on Circuits and Systems for Video Technology, 2017: 1−1]()
+73. [Abdi M, Nahavandi S. Multi-residual networks. arXiv:1609.05672, 2016.](https://arxiv.org/abs/1609.05672)
+74. [Huang G, Liu Z, Weinberger K Q. Densely connected convolutional networks. In: Proceedings of Computer Vision and Pattern Recognition. Honolulu, HI, USA: IEEE, 2017.]()
+75. [Zhang Ting, Li Yu-Jian, Hu Hai-He, Zhang Ya-Hong. A gender classification model based on cross-connected convolutional neural networks. Acta Automatica Sinica, 2016,42(6): 858-865( 张婷 , 李玉鉴 , 胡海鹤 , 张亚红 . 基于跨连卷积神经网络的性别分类模型 . 自动化学报 , 2016, 42(6): 858-865)]()
+76. [Li Yong, Lin Xiao-Zhu, Jiang Meng-Ying. Facial expression recognition with cross-connect LeNet-5 network. Acta Automatica Sinica, 2018, 44(1): 176-182( 李勇 , 林小竹 , 蒋梦莹 . 基于跨连接 LeNet-5 网络的面部表情识别 .自动化学报 , 2018, 44(1): 176-182)]()
+77. [Howard A G, Zhu M, Chen B, Kalenichenko D. Mobilenets:efficient convolutional neural networks for mobile vision applications. arXiv: 1704.04861, 2017.](https://arxiv.org/abs/1704.04861)
+78. [Sandler M, Howard A, Zhu M, Zhmoginov A, Chen L C.MobileNetV2: inverted residuals and linear bottlenecks. In:Proceedings of Computer Vision and Pattern Recognition.USA: IEEE, 2018. 4510−4520]()
+79. [Zhang X, Zhou X, Lin M, Sun J. ShuffleNet: an extremely efficient convolutional neural network for mobile devices. In:Proceedings of Computer Vision and Pattern Recognition.USA: IEEE, 2018.]()
 
 
 
