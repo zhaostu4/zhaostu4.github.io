@@ -20,6 +20,13 @@ tags:
 
 [[1]林景栋,吴欣怡,柴毅,尹宏鹏.卷积神经网络结构优化综述[J/OL].自动化学报:1-14[2019-08-21].https://doi.org/10.16383/j.aas.c180275.](http://kns.cnki.net/KCMS/detail/11.2109.TP.20190710.1703.009.html)
 
+#### 专业关键词
+
+- 结构优化(structure optimization)
+- 网络剪枝(network pruning)
+- 张量分解(tensor factorization)
+- 知识迁移(knowledge transferring)
+
 ## 1. 网路剪枝与稀疏化
 
 _参考文献：_ [Network trimming: a
