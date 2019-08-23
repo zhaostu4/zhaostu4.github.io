@@ -94,7 +94,7 @@ NVCC在提高兼容性的处理方式上采用了两种机制：即时编译(JIT
 
 Just-in-Time Compilation of Device Code;
 
-![Just-in-Time Compilation of Device Code](../img/2019-08-23-21-41-04.png)
+![Just-in-Time Compilation of Device Code](https://wangpengcheng.github.io/img/2019-08-23-21-41-04.png)
 
 
 ```shell
@@ -130,7 +130,7 @@ cuda5之后支持在设备上分离编译的模式，但是仍然以一个文件
 
 过程如下图所示：
 
-![](../img/2019-08-23-21-57-44.png)
+![](https://wangpengcheng.github.io/img/2019-08-23-21-57-44.png)
 
 单个的编译流程和上图相似。
 
