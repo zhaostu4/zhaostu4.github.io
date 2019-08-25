@@ -905,7 +905,11 @@ gcc分离出.cpp1.ii -> cicc为.cpp1.ii添加信息成为test.ptx -> ptxas将其
 
 ### 接下来让我使用shell脚本来按照上面执行看一下效果和文件变化。
 
-1. `gcc -D__CUDA_ARCH__=300 -E -x c++  -DCUDA_DOUBLE_MATH_FUNCTIONS -D__CUDACC__ -D__NVCC__  "-I/usr/local/cuda/bin/..//include"   -D"__CUDACC_VER_BUILD__=176" -D"__CUDACC_VER_MINOR__=0" -D"__CUDACC_VER_MAJOR__=9" -include "cuda_runtime.h" -m64 "test.cu" > "test.cpp1.ii"`生成文件test.cpp1.ii内容如下：
+### 1. gcc生成test.cpp1.ii
+
+`gcc -D__CUDA_ARCH__=300 -E -x c++  -DCUDA_DOUBLE_MATH_FUNCTIONS -D__CUDACC__ -D__NVCC__  "-I/usr/local/cuda/bin/..//include"   -D"__CUDACC_VER_BUILD__=176" -D"__CUDACC_VER_MINOR__=0" -D"__CUDACC_VER_MAJOR__=9" -include "cuda_runtime.h" -m64 "test.cu" > "test.cpp1.ii"`
+
+生成文件test.cpp1.ii内容如下：
 
 ```
 ## test.cpp1.ii 主要是头文件的链接信息
@@ -962,7 +966,9 @@ gcc分离出.cpp1.ii -> cicc为.cpp1.ii添加信息成为test.ptx -> ptxas将其
 这里主要是将.cu中使用的头文件罗列出来，方便后面进行对应的查找。
 
 
-2. `cicc --gnu_version=50400 --allow_managed   -arch compute_30 -m64  ....`
+#### 2.  cicc生成对应汇编代码
+
+`cicc --gnu_version=50400 --allow_managed   -arch compute_30 -m64  ....`
 者一步主要由test.cu是生成对应的.ptx文件，但是实际生成了test.cudafe1.c、test.cudafe1.gpu、test.cudafe1.stub.c、test.module_id、test.ptx六个文件。下面是每个文件对应的内容：
 
 **test.cudafe1.c**
@@ -1602,9 +1608,13 @@ BB0_10:
 
 这个是设备端的主要汇编语言，应该是直接生成对应的显卡机器码。
 
-3. `ptxas -arch=sm_30 -m64  "test.ptx"  -o "test.sm_30.cubin"` 产生test.sm_30.cubin二进制文件。
+#### 3. 产生test.sm_30.cubin二进制文件
 
-4. `fatbinary --create="test.fatbin" -64 "--image=profile=sm_30,file=test.sm_30.cubin" "--image=profile=compute_30,file=test.ptx" --embedded-fatbin="test.fatbin.c" --cuda`
+`ptxas -arch=sm_30 -m64  "test.ptx"  -o "test.sm_30.cubin"` 产生test.sm_30.cubin二进制文件。
+
+#### 4.重新生成二进制文件 
+
+`fatbinary --create="test.fatbin" -64 "--image=profile=sm_30,file=test.sm_30.cubin" "--image=profile=compute_30,file=test.ptx" --embedded-fatbin="test.fatbin.c" --cuda`
 
 这里主要生成了一个test.fatbin二进制文件和test.fatbin.c文件，主要应该是对前面的汇编码，进行了一次封装和函数指针的对齐，主要是统一host和device的函数调用地址。
 
@@ -1746,21 +1756,29 @@ static const __fatBinC_Wrapper_t __fatDeviceText __attribute__ ((aligned (8))) _
 ```
 
 
-5. `gcc -E -x c++ -D__CUDACC__ -D__NVCC__  "-I/usr/local/cuda/bin/..//include"   -D"__CUDACC_VER_BUILD__=176" -D"__CUDACC_VER_MINOR__=0" -D"__CUDACC_VER_MAJOR__=9" -include "cuda_runtime.h" -m64 "test.cu" > "test.cpp4.ii"`
+#### 5. gcc生成host代码 
+
+`gcc -E -x c++ -D__CUDACC__ -D__NVCC__  "-I/usr/local/cuda/bin/..//include"   -D"__CUDACC_VER_BUILD__=176" -D"__CUDACC_VER_MINOR__=0" -D"__CUDACC_VER_MAJOR__=9" -include "cuda_runtime.h" -m64 "test.cu" > "test.cpp4.ii"`
 
 生成test.cpp4.ii内容非常多基本就是将标准库展开，所有的.h文件代码嵌入文件中。主要内容是stl标准库中的代码+原来的main函数代码。这里主要是生成主机端执行的代码和普通的c++没有什么太大的区别
 
-6. `cudafe++ --gnu_version=50400 --allow_managed  --m64 --parse_templates --gen_c_file_name "test.cudafe1.cpp" --stub_file_name "test.cudafe1.stub.c" --module_id_file_name "test.module_id" "test.cpp4.ii"`
+#### 6. cudafe++ 生成test.cudafe1.cpp
+
+`cudafe++ --gnu_version=50400 --allow_managed  --m64 --parse_templates --gen_c_file_name "test.cudafe1.cpp" --stub_file_name "test.cudafe1.stub.c" --module_id_file_name "test.module_id" "test.cpp4.ii"`
 
 主要生成了test.cudafe1.cpp文件.
 
 文件主要包含引用include的内容，test.cudafe1.stub.c和.cu中源文件的内容，基本就是进行了再一次的拓展，主要目的应该是合并host和device接口的代码。
 
-7. `gcc -D__CUDA_ARCH__=300 -c -x c++  -DCUDA_DOUBLE_MATH_FUNCTIONS "-I/usr/local/cuda/bin/..//include"   -m64 -o "test.o" "test.cudafe1.cpp"`
+#### 7.  生成目标中间文件
+
+`gcc -D__CUDA_ARCH__=300 -c -x c++  -DCUDA_DOUBLE_MATH_FUNCTIONS "-I/usr/local/cuda/bin/..//include"   -m64 -o "test.o" "test.cudafe1.cpp"`
 
 主要是用上一步的test.cudafe1.cpp生成对应的.o中间文件。应该主要还是在host主机上运行
 
-8. `nvlink --arch=sm_30 --register-link-binaries="add_cuda_dlink.reg.c" -m64   "-L/usr/local/cuda/bin/..//lib64/stubs" "-L/usr/local/cuda/bin/..//lib64" -cpu-arch=X86_64 "test.o"  -o "add_cuda_dlink.sm_30.cubin"`
+#### 8. 链接内容
+
+`nvlink --arch=sm_30 --register-link-binaries="add_cuda_dlink.reg.c" -m64   "-L/usr/local/cuda/bin/..//lib64/stubs" "-L/usr/local/cuda/bin/..//lib64" -cpu-arch=X86_64 "test.o"  -o "add_cuda_dlink.sm_30.cubin"`
  
 使用这个链接命令生成了对应的.cubin二进制文件和add_cuda_dlink.reg.c文件
 add_cuda_dlink.reg.c只有这一个内容
@@ -1770,17 +1788,23 @@ add_cuda_dlink.reg.c只有这一个内容
 
 ```
 
-9. `fatbinary --create="add_cuda_dlink.fatbin" -64 -link "--image=profile=sm_30,file=add_cuda_dlink.sm_30.cubin" --embedded-fatbin="add_cuda_dlink.fatbin.c"`
+#### 9. 筛选和重新生成二进制文件 
+
+`fatbinary --create="add_cuda_dlink.fatbin" -64 -link "--image=profile=sm_30,file=add_cuda_dlink.sm_30.cubin" --embedded-fatbin="add_cuda_dlink.fatbin.c"`
 
 主要生成了`add_cuda_dlink.fatbin.c`和add_cuda_dlink.fatbin二进制文件。
 
 `add_cuda_dlink.fatbin.c`的内容和test.fatbin.c的内容基本一致。就是将test.fatbin中的静态代码重新进行添加，因为编译的参数可能会使用不同的sm和code在这里要进行筛选。本次代码因为没有加其它编译参数，因此相同
 
-10.  `gcc -c -x c++ -DFATBINFILE="\"add_cuda_dlink.fatbin.c\"" -DREGISTERLINKBINARYFILE="\"add_cuda_dlink.reg.c\"" -I. "-I/usr/local/cuda/bin/..//include"   -D"__CUDACC_VER_BUILD__=176" -D"__CUDACC_VER_MINOR__=0" -D"__CUDACC_VER_MAJOR__=9" -m64 -o "add_cuda_dlink.o" "/usr/local/cuda/bin/crt/link.stub"`
+#### 10. 编译生成中间文件 
+
+`gcc -c -x c++ -DFATBINFILE="\"add_cuda_dlink.fatbin.c\"" -DREGISTERLINKBINARYFILE="\"add_cuda_dlink.reg.c\"" -I. "-I/usr/local/cuda/bin/..//include"   -D"__CUDACC_VER_BUILD__=176" -D"__CUDACC_VER_MINOR__=0" -D"__CUDACC_VER_MAJOR__=9" -m64 -o "add_cuda_dlink.o" "/usr/local/cuda/bin/crt/link.stub"`
 
 生成add_cuda_dlink.o最后中间文件,其实估计中间文件应该和test.fatbin内容差不多，或者说test.fatbin是它的一部分。
 
-11. `g++ -m64 -o "add_cuda" -Wl,--start-group "add_cuda_dlink.o" "test.o"   "-L/usr/local/cuda/bin/..//lib64/stubs" "-L/usr/local/cuda/bin/..//lib64" -lcudadevrt  -lcudart_static  -lrt -lpthread  -ldl  -Wl,--end-group `
+11. 链接生成最终可执行文件 
+
+`g++ -m64 -o "add_cuda" -Wl,--start-group "add_cuda_dlink.o" "test.o"   "-L/usr/local/cuda/bin/..//lib64/stubs" "-L/usr/local/cuda/bin/..//lib64" -lcudadevrt  -lcudart_static  -lrt -lpthread  -ldl  -Wl,--end-group `
 
 链接add_cuda_dlink.o和test.o最终生成对应的`add_cuda`，对齐代码和可执行函数接口
 

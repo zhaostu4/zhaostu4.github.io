@@ -20,6 +20,7 @@ tags:
 - [Linux内核文档首页](https://www.kernel.org/doc/Documentation/)
 - [Linux文档](https://linux.die.net/)
 - [Linux c 开发手册](https://legacy.gitbook.com/book/wizardforcel/linux-c-api-ref/details)
+- [Linux Kernel API](https://www.kernel.org/doc/htmldocs/kernel-api/index.html)
 - [书中代码地址](http://www.wrox.com/WileyCDA/WroxTitle/Beginning-Linux-Programming-4th-Edition.productCd-0470147628,descCd-DOWNLOAD.html)
 
 
