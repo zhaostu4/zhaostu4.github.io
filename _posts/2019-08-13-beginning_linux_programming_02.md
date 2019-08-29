@@ -370,4 +370,38 @@ int main()
 
 linux提供了一个特殊的文件系统procfs，通常以/proc目录的形式呈现。包含了许多特殊文件用来对驱动程序和内核信息进行更高层次的访问。只要有正确的访问权限，就可以通过读写这些文件来获取信息或者设置参数。
 
-proc文件夹中包含以PID命名的文件夹和其它设备文件夹，设备的基本信息就放在其中。可以直接读取这些文件就可以获取其状态信息
+proc文件夹中包含以PID命名的文件夹和其它设备文件夹，设备的基本信息就放在其中。可以直接读取这些文件就可以获取其状态信息。例如：`cat /proc/cpuinfo`
+
+输出信息如下：
+```
+processor   : 0
+vendor_id   : GenuineIntel
+cpu family  : 6
+model       : 94
+model name  : Intel(R) Core(TM) i5-6400 CPU @ 2.70GHz
+stepping    : 3
+microcode   : 0xcc
+cpu MHz     : 1652.835
+cache size  : 6144 KB
+physical id : 0
+siblings    : 4
+core id     : 0
+cpu cores   : 4
+apicid      : 0
+initial apicid  : 0
+fpu     : yes
+fpu_exception   : yes
+cpuid level : 22
+wp      : yes
+
+......
+
+```
+
+可以使用`cat /proc/net/sockstat`获得网络套接字的使用统计。
+
+### 3.11 高级主题 fcnt1和mmap
+
+#### 3.11.1 fcnt1系统调用
+
+
