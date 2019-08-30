@@ -16,7 +16,10 @@ tags:
 ## 第三章 文件操作
 
 ### 3.1 linux文件结构
-_参考链接：_　[每天进步一点点——Linux中的文件描述符与打开文件之间的关系](https://blog.csdn.net/cywosp/article/details/38965239)；[Linux文件读写机制及优化方式](https://blog.csdn.net/u014743697/article/details/52663975);[【Linux学习笔记】标准IO缓冲：行缓冲、全缓冲、无缓冲](https://blog.csdn.net/LYJwonderful/article/details/80646602)
+_参考链接：_　
+- [每天进步一点点——Linux中的文件描述符与打开文件之间的关系](https://blog.csdn.net/cywosp/article/details/38965239)；
+- [Linux文件读写机制及优化方式](https://blog.csdn.net/u014743697/article/details/52663975);
+- [【Linux学习笔记】标准IO缓冲：行缓冲、全缓冲、无缓冲](https://blog.csdn.net/LYJwonderful/article/details/80646602)
 
 linux中一切皆是文件。
 
@@ -44,7 +47,7 @@ cd /mut/cdrom
 
 针对上述情况，linux提供了标准的函数接口`stdio.h`。
 
-![文件读取调用](../img/2019-08-24-14-17-46.png)
+![文件读取调用](https://wangpengcheng.github.io/img/2019-08-24-14-17-46.png)
 
 #### 3.4.1 write调用
 
@@ -105,7 +108,7 @@ int open(const char *path,int oflags,mode_t mode);
 ```
 open建立了一条文件或者设备的访问方式。调用成功，返回一个可以被read、write和其它系统调用的文件描述符fildes。这个不会和其它正在运行中的进程共享。即便是同一文件，不同进程，也会产生不同的共享访问符号。因此文件同时读写的时候，会相互副高。一般使用文件锁来防止出现冲突。
 
-![open的访问模式](../img/2019-08-24-14-41-31.png)
+![open的访问模式](https://wangpengcheng.github.io/img/2019-08-24-14-41-31.png)
 
 POSIX规范还标准化了一个creat调用，相当于`oflags=O_CREAT|O_WONLY|O_TRUNC`
 
@@ -135,8 +138,9 @@ open("myfile",O_CREAT,S_IRUSR|S_IXOTH);
 
 这里的权限设置，实际上海市发送权限请请求，是否被设置，取决于当时umask的值。
 
-![umask取值的含义1](../img/2019-08-24-14-56-18.png)
-![umask取值的含义2](../img/2019-08-24-14-57-20.png)
+![umask取值的含义1](https://wangpengcheng.github.io/img/2019-08-24-14-56-18.png)
+
+![umask取值的含义2](https://wangpengcheng.github.io/img/2019-08-24-14-57-20.png)
 
 chmod操作也就是在直接更改umask的值。
 
@@ -201,7 +205,7 @@ int lstat(const char *path,struct stat *buf);
 
 stat和lstat返回的是通过文件名查找到的状态信息。但是当文件是符号链接时，lstat返回符号链接本身信息，stat返回 **符号链接指向的信息**。stat结构成员内容如下：
 
-![结构体成员](../img/2019-08-24-15-30-18.png)
+![结构体成员](https://wangpengcheng.github.io/img/2019-08-24-15-30-18.png)
 
 st_mode关键字定义在头文件`sys/stat.h`中。这些宏包括对访问权限、问价类型标志以及一些用于帮助测试特定类型和权限的掩码的定义。
 
@@ -217,7 +221,7 @@ st_mode关键字定义在头文件`sys/stat.h`中。这些宏包括对访问权�
 - S_ISUID:文件设置了SUID位。
 - S_ISGID:文件设置了SGID位。
 
-![其它文件类型](../img/2019-08-24-15-36-41.png)
+![其它文件类型](https://wangpengcheng.github.io/img/2019-08-24-15-36-41.png)
 
 ##### 3.4.5.3 dup和dup2系统调用
 
@@ -261,10 +265,10 @@ int fseek(FILE *stream,long int offset, int whence);
 ### 3.6 格式化输入和输出
 
 - print、fprintf和sprintf:第一个将其送到标准输出.fprintf将自己输出输送到一个指定的文件流。sprintf将输出和一个结尾空字符写到作为参数传递过来的字符串s里。
-![输出格式1](../img/2019-08-24-19-17-41.png)
-![输出格式2](../img/2019-08-24-19-18-16.png)
+![输出格式1](https://wangpengcheng.github.io/img/2019-08-24-19-17-41.png)
+![输出格式2](https://wangpengcheng.github.io/img/2019-08-24-19-18-16.png)
 - scanf、fscanf、sscanf：与printf基本相同。
-![输入格式](../img/2019-08-24-19-19-55.png)
+![输入格式](https://wangpengcheng.github.io/img/2019-08-24-19-19-55.png)
 - fgetpos:获取当前文件流读写的位置。
 - fsetpos:设置文件流的当前读写位置
 - ftell:返回文件流当前读写位置的偏移
@@ -311,12 +315,18 @@ void seekdir(DIR *dirp,long int loc);
 - closedir：关闭目录流。
 
 一个目录扫描程序
-```
+
+```c++
 #include <unistd.h>
+
 #include <stdio.h>
+
 #include <dirent.h>
+
 #include <string.h>
+
 #include <sys/stat.h>
+
 #include <stdlib.h>
 
 void printdir(char *dir, int depth)
@@ -364,7 +374,7 @@ int main()
 
 错误代码存在子啊头文件`errno.h`中，关键内容如下所示：
 
-![错误处理图片](../img/2019-08-24-20-03-29.png)
+![错误处理图片](https://wangpengcheng.github.io/img/2019-08-24-20-03-29.png)
 
 ### 3.10 /proc文件处理系统
 
@@ -373,7 +383,8 @@ linux提供了一个特殊的文件系统procfs，通常以/proc目录的形式�
 proc文件夹中包含以PID命名的文件夹和其它设备文件夹，设备的基本信息就放在其中。可以直接读取这些文件就可以获取其状态信息。例如：`cat /proc/cpuinfo`
 
 输出信息如下：
-```
+```shell
+
 processor   : 0
 vendor_id   : GenuineIntel
 cpu family  : 6
@@ -404,4 +415,337 @@ wp      : yes
 
 #### 3.11.1 fcnt1系统调用
 
+- `fcnt1(fildes,F_DUPFD,newfd)`:返回一个新的文件描述符，其数值等于或者大于整数`newfd`;
+- `fcnt1(fildes,F_GETFD)`：返回在fcntl.h头文件中定义的文件描述符标志。其中包括FD_CLOEXEX，它的作用是决定是否在成功调用了某个exec系列的系统调用之后关闭该文件描述符。
+- `fcnt1(fildes,F_SETFD，flag)`:设置文件描述符标志
+- `fcnt1(fildes,F_GETFL)`和`fcnt1(fildes,F_GETFL，flags)`:获取和设置文件庄涛标志和访问模式。
+
+可以使使用fcntl实现建议性文件锁
+
+#### 3.11.2 mmap函数(内存映射)
+
+建立一段可被两个或更多个程序读写的内存。一个程序对它所做出的修改可以被其它程序看见。
+
+mmap创建一个指向一段内存区域的指针，该内存区域与可以通过一个打开文件的描述符访问的内容相关。
+```c++
+#include <sys/mman.h>
+
+void *mmap(void *addr,size_t len,int prot,int flags,int fildes,off_t off);
+``` 
+使用off参数来改变，经过共享内存段访问的文件中数据的起始偏移。打开的文件描述符有`fildes`参数给出。可以访问的数据量(内存段的成都)由len参数设置。
+使用addr来请求地址，如果取值为0，结果指针将会自动分配。
+prot参数用于设置内存段的访问权限，下面是其按位OR的结果
+
+- `PROT_READ`:允许读该内存段。
+- `PROT_WRITE`:允许写该内存段。
+- `PROT_EXEC`:允许执行该内存段。
+- `PROT_NONE`:该内存段不能被访问。
+flags参数影响如下：
+
+![选项图片](../img/2019-08-30-14-14-16.png)
+
+使用`msync`函数：把在该内存段的某个部分或整段中的修改写回到被映射的文件中(或者从被映射文件里读出)
+
+```c++
+#include <sys/mman.h>
+int msync(void *addr,size_t len,int flags);
+```
+flags参数如下所示：
+
+![flags相关参数](../img/2019-08-30-14-24-19.png)
+
+释放内存段
+
+```c
+
+/*  We start by defining a RECORD structure
+    and then create NRECORDS versions each recording their number.
+    These are appended to the file records.dat. 
+*/
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <stdlib.h>
+
+typedef struct {
+    int integer;
+    char string[24];
+} RECORD;
+
+#define NRECORDS (100)
+
+int main(int argc,char* argv[])
+{
+    //使用record数据结构用来保存相关记录和编号。
+
+    RECORD record, *mapped;
+    int i, f;
+    FILE *fp;
+
+    fp = fopen("records.dat","w+");
+    for(i=0; i<NRECORDS; i++) {
+        record.integer = i;
+        //输出相关信息
+
+        sprintf(record.string,"RECORD-%d",i);
+        //将信息写入到文件中
+
+        fwrite(&record,sizeof(record),1,fp);
+    }
+    fclose(fp);
+
+    fp = fopen("records.dat","r+");
+    //重置seek中的记录为第43条
+
+    fseek(fp,43*sizeof(record),SEEK_SET);
+    //读取相关数据
+
+    fread(&record,sizeof(record),1,fp);
+
+    record.integer = 143;
+    //输出相关的信息
+
+    sprintf(record.string,"RECORD-%d",record.integer);
+
+    fseek(fp,43*sizeof(record),SEEK_SET);
+    fwrite(&record,sizeof(record),1,fp);
+    fclose(fp);
+
+
+    //将记录映射到内存中，访问第43条记录，把它的整数值改为243(同时更新该记录中的字符串)
+    
+    //打开文件
+
+    f = open("records.dat",O_RDWR);
+    //进行函数映射
+
+    mapped = (RECORD *)mmap(0, NRECORDS*sizeof(record), 
+                          PROT_READ|PROT_WRITE, MAP_SHARED, f, 0);
+
+    //获取mmap中的第43个数据
+
+    mapped[43].integer = 243;
+    //将数据保存在mapped[43].string中
+
+    sprintf(mapped[43].string,"RECORD-%d",mapped[43].integer);
+    //将修改添加到文件中
+
+    msync((void *)mapped, NRECORDS*sizeof(record), MS_ASYNC);
+    //销毁映射的内存。
+
+    munmap((void *)mapped, NRECORDS*sizeof(record));
+    close(f);
+
+    exit(0);
+}
+```
+
+## 4 Linux环境
+
+在linux命令行中，建议每一个命令行开关都应该以一个短横线开头，其后包含单个字母或数字。获取参数和检查的代码如下：
+
+```c++
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[])
+{
+    int arg;
+
+    for(arg = 0; arg < argc; arg++) {
+        if(argv[arg][0] == '-')
+            printf("option: %s\n", argv[arg]+1);
+        else
+            printf("argument %d: %s\n", arg, argv[arg]);
+    }
+    exit(0);
+}
+```
+
+linux中提供了getopt函数，支持需要关联值和不需要关联值的选项
+
+```c++
+#include <unistd.h>
+
+int getopt(int aegc,char *const argv[],const char *optstring);
+extern char *optarg;
+extern int optind,opterr,optopt;
+```
+
+使用示例如下：
+
+```
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[])
+{
+    int opt;
+
+    while((opt = getopt(argc, argv, ":if:lr")) != -1) {
+        switch(opt) {
+        case 'i':
+        case 'l':
+        case 'r':
+            printf("option: %c\n", opt);
+            break;
+        case 'f':
+            printf("filename: %s\n", optarg);
+            break;
+        case ':':
+            printf("option needs a value\n");
+            break;
+        case '?':
+            printf("unknown option: %c\n", optopt);
+            break;
+        }
+    }
+    for(; optind < argc; optind++)
+        printf("argument: %s\n", argv[optind]);
+    exit(0);
+}
+
+//输入： ./argopt -i -lr 'hi there' -f fred.c -q
+
+/*
+输出：
+
+option: i
+option: l
+option: r
+filename: fred.c
+unknown option: q
+argument :hi there
+
+*/
+
+```
+
+getopt_long:接受以双划线(--)开始的长参数。使用示例如下：
+
+```c++
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+#define _GNU_SOURCE
+#include <getopt.h>
+
+int main(int argc, char *argv[])
+{
+    int opt;
+    struct option longopts[] = {
+	{"initialize", 0, NULL, 'i'},
+	{"file", 1, NULL, 'f'},
+	{"list", 0, NULL, 'l'},
+	{"restart", 0, NULL, 'r'},
+    //注意必须包含全为0的结构结尾
+
+	{0,0,0,0}
+    };
+
+    while((opt = getopt_long(argc, argv, ":if:lr", longopts, NULL)) != -1) {
+        switch(opt) {
+        case 'i':
+        case 'l':
+        case 'r':
+            printf("option: %c\n", opt);
+            break;
+        case 'f':
+            printf("filename: %s\n", optarg);
+            break;
+        case ':':
+            printf("option needs a value\n");
+            break;
+        case '?':
+            printf("unknown option: %c\n", optopt);
+            break;
+        }
+    }
+    for(; optind < argc; optind++)
+        printf("argument: %s\n", argv[optind]);
+    exit(0);
+}
+
+
+```
+
+![option结构体](../img/2019-08-30-15-42-39.png)
+
+### 4.2 环境变量
+
+linux中使用`getenv(const char* env_name)`和`int putenv(const char *string)`来进行环境变量的读取和设置。
+
+### 4.3 日期和时间
+
+linux中可以使用time函数来得到底层的时间值，它返回的是从纪元开始至今的秒数，tloc不是一个空指针，time函数还会把返回值写入tloc指针指向的位置。
+
+- difftime(time_t time1,time_t time2): 计算两个时间点之间的时间差。值作为浮点数返回。
+- `struct tm *gmttime(const time_t timeval)`:将底层时间值分解为一个结构函数。
+
+![tm结构的成员函数](../img/2019-08-30-21-22-52.png)
+
+```c++
+#include <time.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+int main()
+{
+    int i;
+    time_t the_time;
+
+    for(i = 1; i <= 10; i++) {
+        the_time = time((time_t *)0);
+        printf("The time is %ld\n", the_time);
+        sleep(2);
+    }
+    exit(0);
+}
+
+```
+下面是gmtime函数的使用示例：
+
+```c++
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    struct tm *tm_ptr;
+    time_t the_time;
+    (void) time(&the_time);
+    tm_ptr=gmtime(&the_time);
+
+    printf("Raw time is %ld\n",the_time);
+    printf("gmtime gives \n");
+    printf("date: %02d/%02d/%02d\n", 
+        tm_ptr->tm_year,tm_ptr->tm_mon+1,tm_ptr->tm_mday);
+    printf("time: %02d:%02d:%02d\n",
+        tm_ptr->tm_hour, tm_ptr->tm_min, tm_ptr->tm_sec);
+    exit(0);
+
+}
+```
+
+- `localtime(const time_t *timeval)`:会根据时区进行更正。
+- `mktime(struct tm *timeptr)`:将timeptr转换为原始的mktime函数。
+- `char *asctime(const struct tm *timeptr)`:返回时间字符串。表示实际的时间。
+- `char *ctime(const time_t *timeval)`:相当于`asctime(localtime(timeval))`,转换为更简单的本地时间。
+- `size_t strftime(char *s,size_t maxsize,const char *format, struct tm *timeptr)`:函数格式化timeptr指针指向的tm结构所表示的时间和日期，并将结果放在字符串s中。
+- `size_t strptime(const char *buff,const char *format,struct tm *timeptr)`:函数格式化timeptr指针指向的tm结构所表示的时间和日期，并将结果放在字符串s中。
+
+！[strftime的一般格式](../img/2019-08-30-21-44-41.png);
+
+### 4.4 临时文件
+
+linux中可以使用相关的函数，进行临时文件的操作。
+
+- `char *tmpnam(char *s)`:生成一个唯一的文件名。但是注意这里可能会存在另外一个程序创建出的文件名同名的文件。
+- `FILE *tmpfile(void)`:生成唯一的文件索引，可以避免重名的情况发生。
 
