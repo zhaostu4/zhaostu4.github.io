@@ -740,12 +740,224 @@ int main()
 - `size_t strftime(char *s,size_t maxsize,const char *format, struct tm *timeptr)`:函数格式化timeptr指针指向的tm结构所表示的时间和日期，并将结果放在字符串s中。
 - `size_t strptime(const char *buff,const char *format,struct tm *timeptr)`:函数格式化timeptr指针指向的tm结构所表示的时间和日期，并将结果放在字符串s中。
 
-！[strftime的一般格式](../img/2019-08-30-21-44-41.png);
+![strftime的一般格式](../img/2019-08-30-21-44-41.png)
 
 ### 4.4 临时文件
 
 linux中可以使用相关的函数，进行临时文件的操作。
 
 - `char *tmpnam(char *s)`:生成一个唯一的文件名。但是注意这里可能会存在另外一个程序创建出的文件名同名的文件。
-- `FILE *tmpfile(void)`:生成唯一的文件索引，可以避免重名的情况发生。
+- `FILE *tmpfile(void)`:生成唯一的文件索引，可以避免重名的情况发生。返回一个文件流指针。该文件以读写的方式打开(通过w+方式的fopen),当对它的所有引用全部关闭时，该文件会被自动删除。
+- `char *mktemp(char* template)/int mkstemp(char *template)`：指定函数模板返回创建的文件。template参数必须是一个以6个x字符结尾的字符串。
 
+### 4.5 用户信息
+
+在`sys/types.h`中存在类型`uid_t`。它通常是一个小整数，一般情况下UID的值都大于100。可以使用`getuid`函数返回程序关联的UID，它通常是启动程序的用户的UID。getlogin函数返回与当前用户关联的登录名称。
+
+用户账号数据库。通常保存在系统文件`/etc/passwd`中。每行分别对应用户的：用户名、加密口令、用户标识符(UID)、组标识符(GID)、全名、home目录、默认shell.
+
+由此可以实现用户名和密码的相关查找信息可以进行修改和访问,密码信息一般放在`/etc/shadow`文件中。用相关的密码访问接口。
+
+```c++
+#include <sys/types.h>
+
+#include <pwd.h>
+
+struct passwd *getpwuid(uid_t uid);
+struct passwd *getpwnam(const char *name);
+```
+
+下面是passwd关键的数据结构
+
+![passwd相关数据结构](../img/2019-09-02-14-42-41.png)
+
+从密码数据库中提取相关信息
+```c++
+
+#include <sys/types.h>
+#include <pwd.h>
+
+#include <stdio.h>
+
+#include <unistd.h>
+
+#include <stdlib.h>
+
+int main()
+{
+    //定义uid和
+
+    uid_t uid;
+    gid_t gid;
+    //定义结构体
+
+    struct passwd *pw;
+    uid=getuid();
+    gid=getgit();
+
+    printf("User is %s \n",getlogin());
+
+    printf("User IDs: uid=%d,gid=%d\n",uid,gid);
+    pw=getpwuid(uid);
+    //输出对应的参数
+
+    printf("UID passwd entry:\n name=%s, uid=%d,home=%s,shell=%s \n",pw->pw_name,pw->pw_uid,pw->pw_gid,pw->pw_dir,pw->pw_shell);
+    //获取root用户的相关信息
+
+    pw=getpwnam("root");
+    printf("root passwd entry: \n");
+    printf("UID passwd entry:\n name=%s, uid=%d,home=%s,shell=%s \n",pw->pw_name,pw->pw_uid,pw->pw_gid,pw->pw_dir,pw->pw_shell);
+    exit(0);
+}
+
+```
+### 4.6 主机信息
+
+主机信息结构体`utsname`存储在`sys/utsname.h`文件中。可以使用`int gethostname(char* name,size_t namelen)`函数来进行查询。成功返回0，否则返回-1。
+
+```c++
+#include <sys/utsname.h>
+
+int uname(struct utsname *name);
+
+```
+![uname相关参数](../img/2019-09-02-14-59-20.png)
+
+下面是简单的使用示例：
+
+```c++
+
+#include <sys/utsname.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    char computer[256];
+    struct utsname uts;
+
+    //获取相关参数
+    if(gethostname(computer, 255) != 0 || uname(&uts) < 0) {
+        fprintf(stderr, "Could not get host information\n");
+        exit(1);
+    }
+
+    printf("Computer host name is %s\n", computer);
+    printf("System is %s on %s hardware\n", uts.sysname, uts.machine);
+    printf("Nodename is %s\n", uts.nodename);
+    printf("Version is %s, %s\n", uts.release, uts.version);
+    exit(0);
+}
+
+```
+
+### 4.7 使用日志
+
+一般linux的系统日志文件保存在`/usr/adm`或者`/var/log`目录中。文件`/var/log/message`包含所有的系统信息。`/var/log/mail`包含来自邮件系统的其它日志信息，`/var/log/debug`可能包含调试信息。具体的可以根据`/etc/syslog.conf`文件或者`/etc/syslog-ng/sys-log-ng.conf`文件来检查系统的配置。我的Ubuntu 18.04 优麒麟存在于`/etc/rsyslog.conf`文件中。
+
+可以使用如下的API进行操作
+
+```c++
+
+#include <syslog.h>
+//输出日志函数
+
+void syslog(int priority,const char* message,arguments...);
+//关闭和打开日志函数
+
+void closelog(void);
+void openlog(const char *ident,int logopt,int facility);
+//设置日志掩码,控制日志的优先级
+
+int setlogmask(int maskpri);
+
+```
+这个函数向系统的日志发送一条日志信息。每条信息中的priority参数对应了日志的级别。
+
+![LOG_USER相对值](../img/2019-09-02-15-44-49.png)
+
+![logopt参数选项](../img/2019-09-02-15-48-42.png)
+
+下面是简单是示例：
+
+```c++
+#include <syslog.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+int main()
+{
+    int logmask;
+
+    openlog("logmask", LOG_PID|LOG_CONS, LOG_USER);
+    syslog(LOG_INFO,"informative message, pid = %d", getpid());
+    syslog(LOG_DEBUG,"debug message, should appear");
+    logmask = setlogmask(LOG_UPTO(LOG_NOTICE));
+    syslog(LOG_DEBUG,"debug message, should not appear");
+    exit(0);
+}
+```
+
+### 4.8 资源和限制
+
+在`limit.h`中定义了许多代表操作系统方面限制的显示。相关常量如下所示：
+
+![限制常量使用](../img/2019-09-02-15-58-48.png)
+
+相关的设置函数
+
+```c++
+#include <sys/resource.h>
+
+int getpriority(int which,id_t who);
+int getpriority(int which,id_t who,int priority);
+int getrlimit(int resource,struct rlimit *r_limit);
+int getrlimit(int resource,const struct rlimit *r_limit);
+int getrusage(int who,struct rusage *r_usage);
+```
+cpu耗费时间参数
+
+![确定cpu耗费时间参数](../img/2019-09-02-16-03-03.png)
+
+其中`timeval`结构定义在头文件`sys/time.h`中。
+
+一个程序耗费的CPU时间可分为：
+
+- 用户时间： 程序自身的指令所耗费等待时间。
+- 系统时间： 操作系统为程序执行所需要花费的时间，即执行输入输出操作的系统调用或其它系统函数所花费的时间。
+
+**注意：多线程中程序运行时间的统计不能使用`ctime.h`中的`clock()`函数；因为它是根据cpu总的cpu运转时钟来的，会比单个的时间长；使用`time`(最小单位为s)或`timeval`(有秒和微秒)函数来通过系统时间对多线程耗费的时间进行统计计算。([多线程C++运行时间统计](https://blog.csdn.net/u012526003/article/details/80862801))**
+
+可以使用getrusage函数将cpu时间信息写入参数`r_usage`指向的`rusage`结构中。参数`who`可以是一下常量：
+
+![who常量选值](../img/2019-09-02-16-24-09.png)
+
+使用which参数确定优先级
+
+![获取用户当前优先级](../img/2019-09-02-16-25-17.png)
+
+使用`getrlimit`和`setrlimit`来读取和设置系统资源方面的限制函数。
+
+![软件限制参数](../img/2019-09-02-16-45-10.png)
+
+linux中一般的线程数量限制([Linux最大线程数限制](https://www.cnblogs.com/guojintao/articles/10389713.html);[Linux资源限制](https://blog.csdn.net/qq_36441027/article/details/81040229))为
+- 系统：62228
+- 用户最大进程数：1024
+- 单个进程最大线程数：1024
+- 线程栈的大小(一般限制因素)：8M([Linux最大线程数限制](https://blog.csdn.net/qq_37924084/article/details/78403764))
+
+除了线程数和内存，linux中还有其它许多因素可以进行限制；它们一般由`rlimit`函数中的`resource`参数指定。在头文件`sys/resource.h`中定义
+
+![相关限制参数](../img/2019-09-02-16-56-19.png)
+
+### 第五章 终端
+
+终端输入和输出的模式：
+
+1. 标准模式与非标准模式：
+- 标准模式：用户按下回车键之后，程序接受终端的输入，允许退格和删除。
+- 非标准模式：用户输入接收程序的设置。
+
+linux会暂存用户输入的内容，直到用户按下回车键，
