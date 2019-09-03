@@ -952,7 +952,7 @@ linux中一般的线程数量限制([Linux最大线程数限制](https://www.cnb
 
 ![相关限制参数](https://wangpengcheng.github.io/img/2019-09-02-16-56-19.png)
 
-### 第五章 终端
+## 第五章 终端
 
 终端输入和输出的模式：
 
@@ -960,4 +960,143 @@ linux中一般的线程数量限制([Linux最大线程数限制](https://www.cnb
 - 标准模式：用户按下回车键之后，程序接受终端的输入，允许退格和删除。
 - 非标准模式：用户输入接收程序的设置。
 
-linux会暂存用户输入的内容，直到用户按下回车键，
+linux会暂存用户输入的内容，直到用户按下回车键。linux终端的输出缓冲设置是行缓冲。因此会以行为单位进行输出和输入。
+
+注意：linux/uinux都是以换行符`\n`表示一行的结束，并不是换行符，其它操作系统(如MS-DOS)用回车符和换行符两个自读的结合来表示一行的结束。使用重定向输出(`>`或`>>`)和输入(`<`或`<<`)可以重新定义输入和输出。
+
+使用`unistd.h`中的`int isatty(int fd)`可以判断出该描述符是否连接到了一个终端(连接返回1，否则返回0)。
+
+linux中的`/dev/tty`特殊设备直接对终端进行读写，指向当前的终端或登录会话.
+
+### 5.3 终端驱动程序和通用终端接口
+
+linux中可以使用通用终端接口(GTI)来控制终端。
+
+![终端模型结构图](https://wangpengcheng.github.io/img/2019-09-03-20-17-24.png)
+
+主要的控制功能有：
+
+- 行编辑:是否允许使用退格键进行编辑。
+- 缓存：是立即读取字符，还是等待一段可配置的延迟之后再读取它们。
+- 回显：允许控制字符的回显，例如读取密码时。
+- 回车/换行(CR/LF):定义如何在输入/输出时映射回车/换行符，比如打印`\n`字符时如何处理。
+- 线速:很少用于PC控制台，但对调制解调器或通过串行线连接的终端非常重要。
+
+下面是uinux中的硬件模型
+
+![设备模型](https://wangpengcheng.github.io/img/2019-09-03-20-31-02.png)
+
+### 5.4 termios结构
+
+termios数据结构和相关单数调用都定义在头文件`termios.h`中，当使用其中的函数时，需要添加动态连接库`ncurses`。
+
+![最小termios的结构体定义](https://wangpengcheng.github.io/img/2019-09-03-20-39-54.png)
+可以使用`int tcgetattr(int fd,struct termios *termios_p)`来进行结构体的初始化，再使用`int tcsetattr(int fd,int actions,const strcut termios *termios_p)`来进行对应值的修改。
+
+action选项如下：
+- TCSANON:立刻对值进行修改。
+- TCSADRAIN:等当前的输出完成之后再对值进行修改。
+- TCSAFLUSH:等当前的输出完成之后再对值进行修改,但丢弃还未从`read`调用返回的当前可用的任何输入。
+设置的值，影响的功能按照不同的模式被分成一下几组：
+
+- 输入模式：输入模式控制输入数据(终端驱动程序从串行口或者键盘接收到的字符)在被传递给程序之前的处理方式。设置`c_iflag`成员的标志进行控制，其可选值如下：
+
+![c_iflags相关选项](https://wangpengcheng.github.io/img/2019-09-03-20-48-47.png)
+
+- 输出模式：控制输出模式的字符串，通过设置`c_oflag`成员的标志对输出模式进行控制。选项如下所示：
+![输出标志设置](https://wangpengcheng.github.io/img/2019-09-03-20-55-51.png)
+
+注意：如果没有设置OPOST，则所有其它标志都被忽略。
+- 控制模式：控制终端的硬件特性。`c_cflag`成员的标志对控制模式进行配置。可选参数如下：
+
+![硬件相关设置](https://wangpengcheng.github.io/img/2019-09-03-20-58-38.png)
+
+- 本地模式：控制终端的各种特性。更改`c_lflag`参数，成员的宏内容如下：
+
+![c_lflag宏定义内容](https://wangpengcheng.github.io/img/2019-09-03-21-11-59.png)
+
+这里最重要的两个标志是ECHO(抑制键入字符的回显)和ICANON(将终端在两个截然不同的接收字符处理模式间进行切换，设置了ICANON标志，就启用标准输入行进行处理模式，否则，就启用非标准处理模式)。
+
+- 特殊控制字符：对于一些特殊的组合按键(如`ctrl+c`)进行处理。并且使用`c_cc`数组成员将各种特殊控制字符映射到对应的支持函数。每个字符的位置是由一个宏进行定义的，但并不限制这些字符必须是控制字符。根据模式的不同数组下标不同
+    + 标准模式的数组下标：
+
+![标准模式的数组下标](https://wangpengcheng.github.io/img/2019-09-03-21-33-43.png)
+    + 非标准模式的数组下标：
+
+![非标准模式下的数组下标](https://wangpengcheng.github.io/img/2019-09-03-21-35-32.png)
+
+#### 5.4.2 特殊控制字符
+
+![特殊控制字符](https://wangpengcheng.github.io/img/2019-09-03-21-36-41.png)
+
+#### 5.4.3 TIME和MIN值
+
+TIME和MIN的值只能用于非标准模式，两者结合起来共同控制对输入的读取。两者的结合分为四中情况：
+
+- MIN=0&&TIME=0:read调用总是立刻返回，如果存在待处理的字符，就会返回；如果没有就会返回0,并且不读取任何字符。
+- MIN=0&&TIME>0:字符可以处理或者是经过TIME个十分之一秒的时间间隔，read调用就返回。如果因为超时而未读到任何字符，read就返回0，否则返回读取的字符数目。
+- MIN>0&&TIME=0:这种情况下，read将一直等待，直到有MIN个字符可以读取时才返回读取字符的数量。达到文件尾时返回0.
+- MIN>0&&TIME>0:当read被调用时，会等待接收一个字符，在接收到一个字符以及后续的每个字符之后，一个字符间隔定时器被启动(或者重启)。当有MIN个字符可读或两个字符之间的时间间隔超过TIME*0.1s时，read调用返回。
+
+#### 5.4.4 通过shell王文终端模式
+
+
+```shell
+#查看当亲的termios.h设置情况
+
+stty -a
+
+#重新设置标识符的快捷键
+
+stty sane
+# 通过保存设置和重新读取来更改终端设置
+
+#输出和保存设置
+
+stty -g > save_stty
+#读取设置
+
+stty $(cat save_stty)
+
+#直接操作设置
+
+stty -icanon min 1 time0
+
+#重新恢复启用回显功能
+
+stty -echo
+
+```
+
+#### 5.4.5 终端速度
+
+使用如下函数更改终端的刷新速度
+
+```c++
+#include <termios.h>
+speed_t cfgetispeed(const struct termios *);
+speed_t cfgetospeed(const struct termios *);
+int cfsetispeed(struct termios *,speed_t speed);
+int cfsetospeed(struct termios *,speed_t speed);
+```
+speed_t 相关参数：
+
+- B0:挂起终端
+- B1200：1200波特
+- B2400：2400波特
+- B9600：9600波特
+- B19200：19200波特
+- B38400：38400波特
+
+
+#### 5.4.6 其它函数
+
+```c++
+#include <termios.h>
+
+//让调用程序一直等待
+
+int tcdrain(int fd);
+int tcflow(int fd,int flowtypes);
+
+```
