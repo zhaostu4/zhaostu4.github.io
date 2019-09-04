@@ -2,7 +2,7 @@
 layout:     post
 title:      Linux程序设计 学习笔记 (一)
 subtitle:   Linux程序设计 学习笔记 (一)
-date:       2019-08-13
+date:       2019-09-03
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
 catalog: true
