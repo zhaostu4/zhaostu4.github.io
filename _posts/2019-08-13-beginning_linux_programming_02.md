@@ -13,6 +13,14 @@ tags:
     - 程序设计
 ---
 
+## 参考链接：
+
+- [Linux内核文档首页](https://www.kernel.org/doc/Documentation/)
+- [Linux文档](https://linux.die.net/)
+- [Linux c 开发手册](https://legacy.gitbook.com/book/wizardforcel/linux-c-api-ref/details)
+- [Linux Kernel API](https://www.kernel.org/doc/htmldocs/kernel-api/index.html)
+- [书中代码地址](http://www.wrox.com/WileyCDA/WroxTitle/Beginning-Linux-Programming-4th-Edition.productCd-0470147628,descCd-DOWNLOAD.html)
+
 ## 第三章 文件操作
 
 ### 3.1 linux文件结构
@@ -1097,6 +1105,64 @@ speed_t 相关参数：
 //让调用程序一直等待
 
 int tcdrain(int fd);
+//暂停或重新开始输出
+
 int tcflow(int fd,int flowtypes);
+//清空输入、输出或者两者都清空
+
+int tcflush(int fd,int in_out_selector);
 
 ```
+
+### 5.5 终端的输出
+
+使用`curses.h`中的`terminfo()`函数可以实现相关信息的查询。
+
+使用`echo $TERM`可以识别当前的终端类型.终端的相关信息保存在`/usr/lib/terminfo`或`/usr/share/terminfo`目录中。
+
+查看终端输出设置
+
+```shell
+infocmp vt100 
+
+#	Reconstructed via infocmp from file: /lib/terminfo/v/vt100
+vt100|vt100-am|dec vt100 (w/advanced video),
+    am, mc5i, msgr, xenl, xon,
+    cols#80, it#8, lines#24, vt#3,
+    acsc=``aaffggjjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~,
+    bel=^G, blink=\E[5m$<2>, bold=\E[1m$<2>,
+    clear=\E[H\E[J$<50>, cr=^M, csr=\E[%i%p1%d;%p2%dr,
+    cub=\E[%p1%dD, cub1=^H, cud=\E[%p1%dB, cud1=^J,
+    cuf=\E[%p1%dC, cuf1=\E[C$<2>,
+    cup=\E[%i%p1%d;%p2%dH$<5>, cuu=\E[%p1%dA,
+    cuu1=\E[A$<2>, ed=\E[J$<50>, el=\E[K$<3>, el1=\E[1K$<3>,
+    enacs=\E(B\E)0, home=\E[H, ht=^I, hts=\EH, ind=^J, ka1=\EOq,
+    ka3=\EOs, kb2=\EOr, kbs=^H, kc1=\EOp, kc3=\EOn, kcub1=\EOD,
+    kcud1=\EOB, kcuf1=\EOC, kcuu1=\EOA, kent=\EOM, kf0=\EOy,
+    kf1=\EOP, kf10=\EOx, kf2=\EOQ, kf3=\EOR, kf4=\EOS, kf5=\EOt,
+    kf6=\EOu, kf7=\EOv, kf8=\EOl, kf9=\EOw, lf1=pf1, lf2=pf2,
+    lf3=pf3, lf4=pf4, mc0=\E[0i, mc4=\E[4i, mc5=\E[5i, rc=\E8,
+    rev=\E[7m$<2>, ri=\EM$<5>, rmacs=^O, rmam=\E[?7l,
+    rmkx=\E[?1l\E>, rmso=\E[m$<2>, rmul=\E[m$<2>,
+    rs2=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h, sc=\E7,
+    sgr=\E[0%?%p1%p6%|%t;1%;%?%p2%t;4%;%?%p1%p3%|%t;7%;%?%p4%t;5%;m%?%p9%t\016%e\017%;$<2>,
+    sgr0=\E[m\017$<2>, smacs=^N, smam=\E[?7h, smkx=\E[?1h\E=,
+    smso=\E[7m$<2>, smul=\E[4m$<2>, tbc=\E[3g,
+
+```
+
+可以使用`int setupterm(char *term,int fd,int *errret)`设置终端的输出功能。
+
+### 5.6 检测击键动作
+
+参考链接：[linux键盘驱动](https://www.cnblogs.com/lifexy/p/7553861.html)
+
+使用一般方法进行相关的键盘检测。
+
+### 5.7 虚拟控制台
+
+linux中提供了虚拟控制台的功能，一组终端设备共享PC电脑的屏幕、键盘和鼠标。虚拟控制台可以通过字符设备文件/dev/ttyN进行使用。一般从数字1开始。
+
+
+
+
