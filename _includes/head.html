@@ -1,3 +1,4 @@
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -58,7 +59,8 @@
 	<script type="text/x-mathjax-config">
 	MathJax.Hub.Config({
 	  tex2jax: {
-	    inlineMath: [['$','$'], ['\\(','\\)']],
+	    inlineMath: [['$','$'], ['\\(','\\)']],  //行中的公式
+        displayMath: [['$$','$$'], ["\\[","\\]"]],  //段落中的公式
 	    processEscapes: true
 	  }
 	});
@@ -67,9 +69,23 @@
 	<script type="text/x-mathjax-config">
 	    MathJax.Hub.Config({
 	      tex2jax: {
-	        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+	        skipTags:['script', 'noscript', 'style', 'textarea', 'pre'], //避开特殊标签
+            processHtmlClass:'language-math',
 	      }
 	    });
 	</script>
-
+    <style type="text/css">
+        //这里设置样式
+        code.has-jax{
+            font: inherit;
+            font-size: 100%;
+            background: inherit;
+            border: inherit;
+        }
+    </style>
+    <!--flowchart.js-->
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.0/raphael-min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    
+    <script src="{{ "/js/flowchart-latest.js " | prepend: site.baseurl }}"></script>
 </head>

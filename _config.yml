@@ -88,6 +88,9 @@ ba_track_id: 4b4b33b70559d548603afcd03258bacb
 featured-tags: true                     # 是否使用首页标签
 featured-condition-size: 1              # 相同标签数量大于这个数，才会出现在首页
 
+#plugin
+# plugins:
+#   - jemoji
 
 
 # Progressive Web Apps
