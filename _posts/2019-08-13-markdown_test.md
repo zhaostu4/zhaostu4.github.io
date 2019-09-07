@@ -10,8 +10,6 @@ catalog: true
 tags:
     - C++
     - 基础编程
-    - Linux
-    - MakeFile
 ---
 
 

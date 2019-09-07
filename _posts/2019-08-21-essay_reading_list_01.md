@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      文集补校(一)
+title:      文集补校(二)
 subtitle:   卷积神经网络结构优化综述
 date:       2019-08-13
 author:     王鹏程
@@ -8,10 +8,10 @@ header-img: img/post-bg-ios10.jpg
 catalog: true
 tags:
     - 卷积神经网络结构优化综述
-    - Linux
     - 优化
     - 神经网络
     - 论文笔记
+    - 论文
 ---
 
 # 卷积神经网络结构优化综述
@@ -278,24 +278,24 @@ MPNIN(Mlpconv-wise supervised pretraining network in network)[62]：通过监督
 58. [Szegedy C, Ioffe S, Vanhoucke V, Alemi A A. Inception-v4,inception-resnet and the impact of residual connections on learning. In: Proceedings of AAAI Conference on Artificial Intelligence. San Francisco, California USA: 2017. 12]()
 59. [Chollet F. Xception: Deep learning with depthwise separable convolutions. arXiv: 1800-1807, 2016.](https://arxiv.org/abs/1800-1807)
 60. [Chang J R, Chen Y S. Batch-normalized maxout network in network. arXiv: 1511.02583, 2015.](https://arxiv.org/abs/1511.02583)
-62. [Han X, Dai Q. Batch-normalized mlpconv-wise supervised pre-training network in network. Applied Intelligence, 2018,48(1): 142−155]()
-63. [Srivastava R K, Greff K, Schmidhuber J. Highway networks.arXiv: 1505.00387, 2015.](https://arxiv.org/abs/1505.00387)
-64. [Hochreiter S, Schmidhuber J. Long short-term memory.Neural Computation, 1997, 9(8): 1735−1780]()
-65. [Larsson G, Maire M, Shakhnarovich G. Fractalnet: ultra-deep neural networks without residuals. arXiv:1605.07648,2016.](https://arxiv.org/abs/1605.07648)
-66. [Huang G, Sun Y, Liu Z, Sedra D, Weinberger K Q. Deep networks with stochastic depth. In: Proceedings of European Conference on Computer Vision. Amsterdam, The Nether-lands: Springer, 2016. 646−661]()
-67. [He K M, Zhang X, Ren S, Sun J. Identity mappings in deep residual networks. In: Proceedings of European Conference on Computer Vision. Amsterdam, The Nether-lands:Springer, 2016. 630−645]()
-68. [Xie S, Girshick R, Dollar P, Tu Z W, He K M. Aggregated residual transformations for deep neural networks. In: Proceedings of Computer Vision and Pattern Recognition. Honolulu, HI, USA: IEEE, 2017. 5987−5995]()
-69. [LeCun Y, Bengio Y, Hinton G. Deep learning. Nature, 2015,521(7553): 436]()
-70. [Zagoruyko S, Komodakis N. Wide residual networks. arXiv:1605.07146, 2016.](https://arxiv.org/abs/1605.07146)
-71. [Targ S, Almeida D, Lyman K. Resnet in resnet: generalizing residual architectures. arXiv: 1603.08029, 2016.](https://arxiv.org/abs/1603.08029)
-72. [Zhang K, Sun M, Han X, Yuan X F, Guo L R, Liu T. Residual networks of residual networks: multilevel residual networks. IEEE Transactions on Circuits and Systems for Video Technology, 2017: 1−1]()
-73. [Abdi M, Nahavandi S. Multi-residual networks. arXiv:1609.05672, 2016.](https://arxiv.org/abs/1609.05672)
-74. [Huang G, Liu Z, Weinberger K Q. Densely connected convolutional networks. In: Proceedings of Computer Vision and Pattern Recognition. Honolulu, HI, USA: IEEE, 2017.]()
-75. [Zhang Ting, Li Yu-Jian, Hu Hai-He, Zhang Ya-Hong. A gender classification model based on cross-connected convolutional neural networks. Acta Automatica Sinica, 2016,42(6): 858-865( 张婷 , 李玉鉴 , 胡海鹤 , 张亚红 . 基于跨连卷积神经网络的性别分类模型 . 自动化学报 , 2016, 42(6): 858-865)]()
-76. [Li Yong, Lin Xiao-Zhu, Jiang Meng-Ying. Facial expression recognition with cross-connect LeNet-5 network. Acta Automatica Sinica, 2018, 44(1): 176-182( 李勇 , 林小竹 , 蒋梦莹 . 基于跨连接 LeNet-5 网络的面部表情识别 .自动化学报 , 2018, 44(1): 176-182)]()
-77. [Howard A G, Zhu M, Chen B, Kalenichenko D. Mobilenets:efficient convolutional neural networks for mobile vision applications. arXiv: 1704.04861, 2017.](https://arxiv.org/abs/1704.04861)
-78. [Sandler M, Howard A, Zhu M, Zhmoginov A, Chen L C.MobileNetV2: inverted residuals and linear bottlenecks. In:Proceedings of Computer Vision and Pattern Recognition.USA: IEEE, 2018. 4510−4520]()
-79. [Zhang X, Zhou X, Lin M, Sun J. ShuffleNet: an extremely efficient convolutional neural network for mobile devices. In:Proceedings of Computer Vision and Pattern Recognition.USA: IEEE, 2018.]()
+61. [Han X, Dai Q. Batch-normalized mlpconv-wise supervised pre-training network in network. Applied Intelligence, 2018,48(1): 142−155]()
+62. [Srivastava R K, Greff K, Schmidhuber J. Highway networks.arXiv: 1505.00387, 2015.](https://arxiv.org/abs/1505.00387)
+63. [Hochreiter S, Schmidhuber J. Long short-term memory.Neural Computation, 1997, 9(8): 1735−1780]()
+64. [Larsson G, Maire M, Shakhnarovich G. Fractalnet: ultra-deep neural networks without residuals. arXiv:1605.07648,2016.](https://arxiv.org/abs/1605.07648)
+65. [Huang G, Sun Y, Liu Z, Sedra D, Weinberger K Q. Deep networks with stochastic depth. In: Proceedings of European Conference on Computer Vision. Amsterdam, The Nether-lands: Springer, 2016. 646−661]()
+66. [He K M, Zhang X, Ren S, Sun J. Identity mappings in deep residual networks. In: Proceedings of European Conference on Computer Vision. Amsterdam, The Nether-lands:Springer, 2016. 630−645]()
+67. [Xie S, Girshick R, Dollar P, Tu Z W, He K M. Aggregated residual transformations for deep neural networks. In: Proceedings of Computer Vision and Pattern Recognition. Honolulu, HI, USA: IEEE, 2017. 5987−5995]()
+68. [LeCun Y, Bengio Y, Hinton G. Deep learning. Nature, 2015,521(7553): 436]()
+69. [Zagoruyko S, Komodakis N. Wide residual networks. arXiv:1605.07146, 2016.](https://arxiv.org/abs/1605.07146)
+70. [Targ S, Almeida D, Lyman K. Resnet in resnet: generalizing residual architectures. arXiv: 1603.08029, 2016.](https://arxiv.org/abs/1603.08029)
+71. [Zhang K, Sun M, Han X, Yuan X F, Guo L R, Liu T. Residual networks of residual networks: multilevel residual networks. IEEE Transactions on Circuits and Systems for Video Technology, 2017: 1−1]()
+72. [Abdi M, Nahavandi S. Multi-residual networks. arXiv:1609.05672, 2016.](https://arxiv.org/abs/1609.05672)
+73. [Huang G, Liu Z, Weinberger K Q. Densely connected convolutional networks. In: Proceedings of Computer Vision and Pattern Recognition. Honolulu, HI, USA: IEEE, 2017.]()
+74. [Zhang Ting, Li Yu-Jian, Hu Hai-He, Zhang Ya-Hong. A gender classification model based on cross-connected convolutional neural networks. Acta Automatica Sinica, 2016,42(6): 858-865( 张婷 , 李玉鉴 , 胡海鹤 , 张亚红 . 基于跨连卷积神经网络的性别分类模型 . 自动化学报 , 2016, 42(6): 858-865)]()
+75. [Li Yong, Lin Xiao-Zhu, Jiang Meng-Ying. Facial expression recognition with cross-connect LeNet-5 network. Acta Automatica Sinica, 2018, 44(1): 176-182( 李勇 , 林小竹 , 蒋梦莹 . 基于跨连接 LeNet-5 网络的面部表情识别 .自动化学报 , 2018, 44(1): 176-182)]()
+76. [Howard A G, Zhu M, Chen B, Kalenichenko D. Mobilenets:efficient convolutional neural networks for mobile vision applications. arXiv: 1704.04861, 2017.](https://arxiv.org/abs/1704.04861)
+77. [Sandler M, Howard A, Zhu M, Zhmoginov A, Chen L C.MobileNetV2: inverted residuals and linear bottlenecks. In:Proceedings of Computer Vision and Pattern Recognition.USA: IEEE, 2018. 4510−4520]()
+78. [Zhang X, Zhou X, Lin M, Sun J. ShuffleNet: an extremely efficient convolutional neural network for mobile devices. In:Proceedings of Computer Vision and Pattern Recognition.USA: IEEE, 2018.]()
 
 
 
