@@ -278,26 +278,27 @@
 </script>
 <!--set data flow-->
 <script type="text/javascript">
+    /*
     console.log("Hello word");
      window.onload =function(){
         console.log("Hello word");
         
 
         //获取元素标签
-        var test=document.getElementsByClassName("language-flow");
-
+        //var test=document.getElementsByClassName("language-flow");
+        var test=document.getElementById("code");
         if(!test){
         console.log("This is empty");
         }else{
             //便利test进行工作
-            for(var i=0;i<test.length;++i){
+            //for(var i=0;i<test.length;++i){
                 //创建子节点
                 var canvas1=document.createElement("div");
 
                 //将节点添加到当前节点上
-                test[i].appendChild(canvas1);
+                test.appendChild(canvas1);
                 //获取code
-                var code=test[i].innerText;
+                var code=test.value;
                 console.log(code);
                 //创建图表数据
                 var chart;
@@ -308,11 +309,11 @@
                 //开始绘制
                 chart.drawSVG(canvas1);
                 //清除相关内容
-                test[i].innerText="";
-            }
+                test.innerText="";
+          //  }
         }
-        console.log(test[0].innerHTML);
-    };
+       // console.log(test[0].innerHTML);
+    };*/
 </script>
 
 {% endif %}
