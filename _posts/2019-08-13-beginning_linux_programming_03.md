@@ -523,3 +523,102 @@ int main()
 
 ## 第七章 数据管理
 
+本章中的主要内容
+- 动态内存管理：可以做什么以及Linux不允许做什么。
+- 文件锁定：协调锁、共享文件的锁定区域和避免死锁。
+- dbm数据库：一个大多数linux系统都提供的、基本的、不基于SQL的数据库函数库。
+
+### 7.1 
+
+linux中的内存管理中一般情况下是265M的堆栈大小。linux中可以使用标准的c语言接口进行内存分配。注意当linux中的内存耗尽的时候，会linux内核会使用交换空间(独立的磁盘空间)。内核会在物理内存和交换空间之间移动数据和程序代码。
+每个Linux系统中运行的程序都只能看到属于自己的内存映像，不同的程序看到的内存映像不同。只有操作系统知道物理内存是如何安排的。
+
+Linux可以允许输出空指针，但是不允许空指针写入内存。
+
+**linux中一旦程序调用free释放了一块内存，它就不再属于这个进程。它将由malloc函数库负责管理。在对一块内存调用free之后，就绝不能再对其进行读写操作了**
+
+其它内存释放函数：
+
+- `void *calloc(size_t number_of_elements,size_t element_size);`:结构数组分配内存，需要元素个数和每个元素的大小作为其参数。并且分配的内存全部初始化为0.返回数组中第一个元素的指针。
+- `void *realloc(void *existing_memory,size_t new_size);`:释放内存。
+
+
+### 7.2 文件锁定
+
+文件锁与线程锁类似，都是使用锁来进行的。可以使用原子文件锁，来直接锁定文件，也可以只锁定文件的一部分，从而可以独享对这一部分内容的访问。
+
+创建文件锁后，通常被放在一个特定的位置，linux中通常会在/var/spool目录中创建一个文件。
+注意：**文件锁只是建议锁，不是强制锁**
+
+可以贼打开文件时使用锁，想干参数在`fcnt.h`中，在此不做过多叙述。第三章中函数有详细叙述。
+
+文件读取使用fread时，将整个文件都读取到了内存中，再传递给程序，文件内容中未被锁定的部分。当其它部分被更改后，内容锁消失；但是因为程序获取的还是fread上次读取的内容，因此会产生数据的错误。可以使用`read()`和`write()`读取部分内容，避免这个问题的发生。
+
+下面是一个简单的读写锁示例
+
+```c
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+
+const char *test_file = "/tmp/test_lock";
+
+int main() {
+    int file_desc;
+    int byte_count;
+    char *byte_to_write = "A";
+    struct flock region_1;
+    struct flock region_2;
+    int res;
+
+        /* open a file descriptor */
+
+    file_desc = open(test_file, O_RDWR | O_CREAT, 0666);
+    if (!file_desc) {
+        fprintf(stderr, "Unable to open %s for read/write\n", test_file);
+        exit(EXIT_FAILURE);
+    }
+
+        /* put some data in the file */
+
+    for(byte_count = 0; byte_count < 100; byte_count++) {
+        (void)write(file_desc, byte_to_write, 1);
+    }
+
+        /* setup region 1, a shared lock, from bytes 10 -> 30 */
+
+    region_1.l_type = F_RDLCK;
+    region_1.l_whence = SEEK_SET;
+    region_1.l_start = 10;
+    region_1.l_len = 20; 
+    
+        /* setup region 2, an exclusive lock, from bytes 40 -> 50 */
+
+    region_2.l_type = F_WRLCK;
+    region_2.l_whence = SEEK_SET;
+    region_2.l_start = 40;
+    region_2.l_len = 10;
+
+        /* now lock the file */
+
+    printf("Process %d locking file\n", getpid());
+    res = fcntl(file_desc, F_SETLK, &region_1);
+    if (res == -1) fprintf(stderr, "Failed to lock region 1\n");
+    res = fcntl(file_desc, F_SETLK, &region_2);
+    if (res == -1) fprintf(stderr, "Failed to lock region 2\n");    
+
+        /* and wait for a while */
+        
+    sleep(60);
+
+    printf("Process %d closing file\n", getpid());    
+    close(file_desc);
+    exit(EXIT_SUCCESS);
+}
+```
+
+下图显示了当程序开始等待时文件锁定的状态
+
+![文件锁定状态](../img/2019-09-11-22-05-31.png)
+
