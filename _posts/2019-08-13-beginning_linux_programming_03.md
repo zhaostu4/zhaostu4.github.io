@@ -620,5 +620,154 @@ int main() {
 
 下图显示了当程序开始等待时文件锁定的状态
 
-![文件锁定状态](../img/2019-09-11-22-05-31.png)
+![文件锁定状态](https://wangpengcheng.github.io/img/2019-09-11-22-05-31.png)
 
+#### 7.2.5 其它锁命令
+
+使用lockf函数。通过文件描述符进行操作
+
+```c
+#include <unistd.h>
+int lockf(int filds,int function ,off_t size_to_lock);
+```
+function参数取值如下：
+
+- F_ULOCK:解锁
+- F_LOCK:设置独占锁
+- F_TLOCK:测试并设置独占锁
+- F_TEST:特使其它进程设置的锁
+
+size_to_clock参数是操作的字节数，它从文件的当前偏移值开始计算。
+
+### 7.3 数据库
+
+#### 7.3.1 abm数据库
+
+这里主要介绍dbm数据库，这个是linux中数据库自带的基本的版本。其基本文件包含在`ndbm.h`中可以使用`-I/usr/include/gdbm -lgdbm`参数进行链接。
+
+#### 7.3.3 dbm访问函数
+
+```c
+#include <ndbm.h>
+//打开数据库
+
+DBM *dbm_open(const char* filename,int file_open_flags,mode_t file_mode);
+//存储数据库
+
+int dbm_store(DBM *database_descriptor,datum key, datum content ,int store_mode );
+//数据库查询函数
+
+datum dbm_fetch(DBM *database_descriptor,datum key);
+//关闭数据库
+
+datum dbm_close(DBM *database_descriptor);
+```
+其它操作函数
+
+```c
+//删除数据库
+
+int dbm_delete(DBM *database_descriptor,datum key);
+//测试数据库错误
+
+int dbm_error(DBM *database_descriptor);
+//清除数据库中所有以被置位的错误条件标志
+
+int dbm_clearerr(DBM *database_descriptor);
+//获取第一个关键数据
+int dbm_firstkey(DBM *database_descriptor);
+//获取第二个关键数据
+
+int dbm_nextkey(DBM *database_descriptor);
+
+```
+## 第 八 章 MySQL
+
+### MySQL安装
+
+参考连接:
+- [Ubuntu 16.04 mysql安装配置](https://www.jianshu.com/p/3111290b87f4)
+- [Ubuntu18.04 安装MySQL](https://blog.csdn.net/weixx3/article/details/80782479)
+
+可以从官网下载，也可以直接使用`sudo apt-get install mysql-server`进行安装。
+
+安装完成后使用`sudo mysql_secure_installation`命令进行初始化设置。
+
+再使用`sudo mysql -uroot -p`进行登录。`use database`使用数据库。
+
+具体的请参考mysql对应文章。
+
+### 8.3 使用c语言访问mysql
+
+使用样例：
+
+```c
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "mysql.h"
+
+MYSQL my_connection;
+MYSQL_RES *res_ptr;
+MYSQL_ROW sqlrow;
+
+int main(int argc, char *argv[]) {
+   int res;
+
+   mysql_init(&my_connection);  
+   if (mysql_real_connect(&my_connection, "localhost", "rick", 
+                                              "secret", "foo", 0, NULL, 0)) {
+   printf("Connection success\n");
+   
+   res = mysql_query(&my_connection, "SELECT childno, fname, age FROM children WHERE age > 5");
+
+   if (res) {
+      printf("SELECT error: %s\n", mysql_error(&my_connection));
+   } else {
+      res_ptr = mysql_store_result(&my_connection);
+      if (res_ptr) {
+       printf("Retrieved %lu rows\n", (unsigned long)mysql_num_rows(res_ptr));
+       while ((sqlrow = mysql_fetch_row(res_ptr))) {
+         printf("Fetched data...\n");
+       }
+       if (mysql_errno(&my_connection)) {
+         fprintf(stderr, "Retrive error: %s\n", mysql_error(&my_connection)); 
+       }
+       mysql_free_result(res_ptr);
+      }
+
+   }
+   mysql_close(&my_connection);
+
+   } else {
+      fprintf(stderr, "Connection failed\n");
+      if (mysql_errno(&my_connection)) {
+         fprintf(stderr, "Connection error %d: %s\n",
+                  mysql_errno(&my_connection), mysql_error(&my_connection));
+      }
+   }
+
+   return EXIT_SUCCESS;
+}
+```
+
+## 第 9 章 开发工具
+
+### 9.2 make命令和makefile
+
+make 选项参数：
+
+- -k:make发生错误时仍然继续执行。
+- -n:马克输出将要执行的操作而不进行执行。
+- -f:使用那个文件作为makefile文件。
+
+具体参看makefile相关文章
+
+- [跟我一起写makefile](https://wangpengcheng.github.io/2019/07/06/write_makefile_with_me/)
+
+### 9.3 源代码控制
+
+- SCCS:源代码控制系统
+- RCS：版本控制系统
+- CVS：并发版本控制系统
+- 
