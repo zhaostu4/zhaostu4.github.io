@@ -686,6 +686,8 @@ void *thread_function(void *arg) {
 
 ### 第 13 章 进程间通信：管道
 
+_参考链接：_ [Linux进程间通信-管道深入理解](https://www.linuxidc.com/Linux/2018-04/151680.htm)
+
 管道通常是把一个进程的输出通过管道连接到另外一个进程的输入。如下所示
 
 `cmd1 | cmd2`
@@ -694,3 +696,45 @@ shell负责安排两个命令的标准输入和标准输出
 - cmd1的标准输入来自终端键盘
 - cmd2的标准输出传递给cmd2,作为它的标准输入
 - cmd2的标准输出链接到终端屏幕。
+
+![管道流程图](../img/2019-09-20-10-48-12.png)
+
+### 13.2 进程管道
+
+进程之间的数据传递方法就是使用popen和pclose函数。使用原型如下所示：
+
+```c
+#include <stdio.h>
+FILE *popen(const char* command,const char *open_mode);
+int pclose(FILE *stream_to_close);
+```
+
+popen函数是将一个程序命令来作为一个新进程来启动。可以传递程序名和相关参数给它。open_mode必须是"r"(被调用程序的输出可以被调用程序使用，返回FILE*文件流指针)或"w"(可以使用fwrite调用向被调用程序发送数据)。
+
+程序结束时使用`pclose`函数关闭与之关联的文件流。`pclose`调用只在`popen`启动的进程结束之后才返回。下面是一个简单的实验程序
+
+```c
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+int main()
+{
+    FILE *read_fp;
+    char buffer[BUFSIZE+1];
+    int chars_read;
+    memset(buffer,'\0',sizeof(buffer));
+    read_fp=popen("uname -a","r");
+    if(read_fp!=NULL){
+        chars_read=fread(buffer,sizeof(char),BUFSIZ,read_fp);
+        if(chars_read>0){
+            printf("Output was: -\n%s\n",buffer);
+        }
+        pclose(read_fp);
+        exit(EXIT_SUCCESS);
+    }
+    exit(EXIT_FAILURE);
+}
+```
+
