@@ -842,7 +842,7 @@ void assert(int expression);
 
 两个用户同时运行相同程序的进程资源分布图
 
-![两个用户同时运行相同程序](../img/2019-09-18-18-44-44.png)
+![两个用户同时运行相同程序](https://wangpengcheng.github.io/img/2019-09-18-18-44-44.png)
 
 使用`ps -ef`指令进行进程表的查询。
 
@@ -850,7 +850,7 @@ void assert(int expression);
 
 下面是stat状态码
 
-![stat状态码](../img/2019-09-18-18-56-40.png)
+![stat状态码](https://wangpengcheng.github.io/img/2019-09-18-18-56-40.png)
 
 在Linux中执行期短的突发性任务比持续占用处理器来进行计算或者不断轮训系统来查看是否有新的输入达到的程序要更好。这个是是进程优先级的重要因素。称为nice,一个进程的nice值默认为0并将根据这个程序的表现而不断变化。长期不剪短运行的程序的优先级一般会比较低。这样可以帮助与用户进行呼叫的程序保持及时的响应。
 
@@ -900,7 +900,7 @@ int execve(const char *path,char *const argv[],char *const envp[]);
 
 pid_t fork(void);
 ```
-![fork函数的使用示意图](../img/2019-09-18-19-46-39.png)
+![fork函数的使用示意图](https://wangpengcheng.github.io/img/2019-09-18-19-46-39.png)
 
 一个简单的fork示例：
 
@@ -968,7 +968,7 @@ pid_t waitpid(pid_t pid,int *stat_loc,int options);
 
 wait系统调用将暂停父进程直到它的子进程结束为止，这个调用返回子进程的PID。
 
-![wait信号处理](../img/2019-09-18-20-19-14.png)
+![wait信号处理](https://wangpengcheng.github.io/img/2019-09-18-20-19-14.png)
 
 ```
 
@@ -996,11 +996,11 @@ if(pid!=0){
 
 linux中由(raise)表示一个信号的产生，使用术语(catch)表示接收到一个信号。信号的名称在头文件`signal.h`中定义的。它们以SIG开头
 
-![相关操作的实现](../img/2019-09-18-20-38-49.png)
+![相关操作的实现](https://wangpengcheng.github.io/img/2019-09-18-20-38-49.png)
 
 如果进程接收到这些信号中的一个，但事先没有安排捕获它，进程将会立刻终止。**系统将生成核心转储存文件core**,并将其放在当前目录下。该文件是进程在内存中的映像，它对程序的调试很有用处。
 
-![其它信号](../img/2019-09-18-20-41-32.png)
+![其它信号](https://wangpengcheng.github.io/img/2019-09-18-20-41-32.png)
 
 相关函数
 ```c
@@ -1082,25 +1082,25 @@ int sigsuspend(const sigset_t *sigmask);
 
 sigprocmask中how的取值如下
 
-![sigprocmask中how的取值](../img/2019-09-18-21-14-51.png)
+![sigprocmask中how的取值](https://wangpengcheng.github.io/img/2019-09-18-21-14-51.png)
 
 **sigaction标志**
 
-![sigaction标志](../img/2019-09-18-21-23-13.png)
+![sigaction标志](https://wangpengcheng.github.io/img/2019-09-18-21-23-13.png)
 
 **Linux常用信号参考**
 
-![linux常用信号参考](../img/2019-09-18-21-24-33.png)
+![linux常用信号参考](https://wangpengcheng.github.io/img/2019-09-18-21-24-33.png)
 
 引起信号异常终止信号：
 
-![引起信号异常终止信号](../img/2019-09-18-21-25-37.png)
+![引起信号异常终止信号](https://wangpengcheng.github.io/img/2019-09-18-21-25-37.png)
 
 接收之后挂起的信号
 
-![接收之后挂起的信号](../img/2019-09-18-21-26-43.png)
+![接收之后挂起的信号](https://wangpengcheng.github.io/img/2019-09-18-21-26-43.png)
 
 下面信号是重启被暂停的进程
 
-![重启被暂停的进程](../img/2019-09-18-21-27-46.png)
+![重启被暂停的进程](https://wangpengcheng.github.io/img/2019-09-18-21-27-46.png)
 
