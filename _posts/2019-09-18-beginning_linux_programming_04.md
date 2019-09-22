@@ -490,8 +490,11 @@ void *thread_function(void *arg) {
 
 ```c
 #include <stdio.h>
+
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <pthread.h>
 
 void *thread_function(void *arg);
@@ -686,7 +689,7 @@ void *thread_function(void *arg) {
 
 ### 第 13 章 进程间通信：管道
 
-_参考链接：_ [Linux进程间通信-管道深入理解](https://www.linuxidc.com/Linux/2018-04/151680.htm)
+_参考链接：_ [Linux进程间通信-管道深入理解](https://www.linuxidc.com/Linux/2018-04/151680.htm);[Linux进程间通信的几种方式总结](https://blog.csdn.net/gatieme/article/details/50908749)
 
 管道通常是把一个进程的输出通过管道连接到另外一个进程的输入。如下所示
 
@@ -915,7 +918,7 @@ popen的本质还是使用shell进行命令的发送和接收。一次每次执�
 
 int pipe(int file_descriptor[2]);
 ```
-![pipe函数](../img/2019-09-20-14-15-04.png)
+![pipe函数](https://wangpengcheng.github.io/img/2019-09-20-14-15-04.png)
 
 使用示例：
 
@@ -1031,8 +1034,11 @@ pip4代码如下所示：
 // The 'consumer' program, pipe4.c, that reads the data is much simpler.
 
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <stdio.h>
+
 #include <string.h>
 
 int main(int argc, char *argv[])
@@ -1070,11 +1076,11 @@ int dup(int file_descriptor);
 int dup2(int file_descriptor_one,int file_descriptor_two);
 ```
 
-![dup操作](../img/2019-09-20-15-44-30.png)
+![dup操作](https://wangpengcheng.github.io/img/2019-09-20-15-44-30.png)
 
 关闭文件描述符，调用dup发生了什么的最简单方法，4个文件描述符的状态在这一个过程中的改变情况。
 
-![相关描述符操作](../img/2019-09-20-15-46-48.png)
+![相关描述符操作](https://wangpengcheng.github.io/img/2019-09-20-15-46-48.png)
 
 下面是文件描述符的相关操作
 
@@ -1148,7 +1154,7 @@ int main()
 od成都读取写到管道中的3个字节数据之后，后续的读操作将返回0字节，表示已到达文件末尾，当读操作返回0时，od程序就会退出运行。相当于运行od命令然后Ctrl+D组合键发送文件尾部标志。
 
 
-![管道情况对比](../img/2019-09-20-17-07-52.png)
+![管道情况对比](https://wangpengcheng.github.io/img/2019-09-20-17-07-52.png)
 
 **注意:管道的大小最多为64KB**
 
@@ -1517,5 +1523,454 @@ done
 - 当read返回0时，关闭并重新打开服务器，使得服务器进程阻塞在open调用处以等待客户的到来。
 
 
-### 第 14 章 信号量、共享内存和消息队列
+## 第 14 章 信号量、共享内存和消息队列
+
+### 14.1 信号量
+
+操作系统中存在的临界区域会，造成较大的影响。**临界区域**中代码的更新和执行都是独占式的。
+
+信号量：只允许对它进行等待和发送信号这个两个操作。
+
+- P(信号量变量):用于等待
+- V(信号量变量)：用于发送信号
+
+二进制信号(最简单的信号)sv,其pv操作结果如下所示
+
+![操作定义表](../img/2019-09-22-15-01-05.png)
+
+下面代码展示了简单的临界区工作：
+
+```
+semaphore sv=1;
+loop forever{
+    P(sv);
+    critical code section;
+    V(sv);
+    noncritical code section;
+}
+```
+
+![pv操作守护临界区](../img/2019-09-22-15-03-56.png)
+
+下面是信号量函数的定义
+
+```c
+#include <sys/sem.h>
+
+
+int semctl(int sem_id,int sem_num,int comman,...);
+//创建一个新信号量或者取得一个已有信号量的键，num_sems函数基本都为1
+
+int semget(key_t key,int num_sems,int sem_flags);
+//
+
+int semop(int sem_id,struct sembuf *sen_ops,size_t num_sem_ops);
+```
+
+上面的key作用很像一个文件名，它代表程序可能要使用的某个资源。不同的进程可以使用它访问同一个信号量。**程序对所有信号量的访问都是间接的，先提供一个键，再生成一个相应的信号量标识符。** 只有semget函数才直接使用信号量。函数使用成功时返回一个正数值，作为**其它信号量函数将用到的信号量标识符**
+
+**2.semop函数**
+
+改变信号量的值，其中`sem_id`是semget返回的信号量标识符。第二个参数sem_ops结构如下所示：
+
+```c
+struct sembuf{
+    short sem_num;//信号量编号，一般为0
+    short sem_op;//信号量需要改变的值
+    short sem_flg;//通常为SEM_UNDO，让进程在没有释放该信号量的情况下终止
+}
+```
+
+**3.semctl函数**
+
+直接控制信号量信息。sem_id是信号量标识符。sem_num参数是信号量编号。对成组信号量需要用到这个，此时会有第四个参数关键结构如下：
+
+```c
+union semun{
+    int val;
+    struct semid_ds *buf;
+    unsigned short *array;
+}
+```
+command参数值如下：
+
+- SETVAL:将信号量初始化为一个已知的值。
+- IPC_RMID:用于深处一个已经无需继续使用的信号量标识符。
+
+下面是信号量的一个简单使用
+
+```c
+#include <unistd.h>
+
+#include <stdlib.h>
+
+#include <stdio.h>
+
+#include <sys/sem.h>
+
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+    /* union semun is defined by including <sys/sem.h> */
+#else
+    /* according to X/OPEN we have to define it ourselves */
+    union semun {
+        int val;                    /* value for SETVAL */
+        struct semid_ds *buf;       /* buffer for IPC_STAT, IPC_SET */
+        unsigned short int *array;  /* array for GETALL, SETALL */
+        struct seminfo *__buf;      /* buffer for IPC_INFO */
+    };
+#endif
+//设置静态韩式
+
+static int set_semvalue(void);
+static void del_semvalue(void);
+static int semaphore_p(void);
+static int semaphore_v(void);
+
+static int sem_id;
+
+int main(int argc,char *argv[])
+{
+    int i;
+    int pause_time;
+    char op_char='O';
+
+    srand((int)getpid());
+    //创建信号量标识符sem_id
+
+    sem_id=semget((key_t)1234,0666|IPC_CREAT);
+    //如果程序第一此被调用，带有一个参数argc>1
+
+     printf("pid:%d,sem_id%d \n",getpid(),sem_id);fflush(stdout);
+    if(argc>1){
+        //成功初始化信号量
+
+        if(set_semvalue()){
+
+            fprintf(stderr,"Failed to initialize semaphore\n");
+            exit(EXIT_FAILURE);
+        }
+        //设置op_char，第一个是使用的X
+
+        op_char='X';
+        sleep(2);
+    }
+    //循环10次不断进入和离开临界区
+
+    for(i=0;i<10;++i){
+        //程序进入临界区域时设置信号量以等待进入
+
+        if(!semaphore_p()) exit(EXIT_FAILURE);
+        //输出对应值
+
+        printf("%c",op_char);
+        //刷新缓冲，立即输出
+
+        fflush(stdcout);
+        //睡眠1-3秒
+
+        pause_time=rand()%3;
+        sleep(pause_time);
+        //离开临界区时，打印一个字符
+
+        printf("%c",op_char);
+        fflush(stdout);
+        //执行v操作释放临界区域
+
+        if(!semaphore_v()) exit(EXIT_FAILURE);
+        pause_time=rand()%2;
+        sleep(pause_time);
+    }
+    printf("\n %d-finished\n ",getpid());
+    if(argc>1){
+        sleep(10);
+        del_semvalue();
+    }
+    exit(EXIT_SUCCESS);
+}
+//其它相关函数的定义
+
+static int set_semvalue(void)
+{
+    union semun sem_union;
+    sem_union.val=1;
+    //初始化信号量
+
+    if(semctl(sem_id,0,SETVAL,sem_union)==-1) return(0);
+    return(1);
+}
+
+
+static int del_semvalue(void)
+{
+    union semun sem_union;
+    sem_union.val=1;
+    //删除信号量
+
+    if(semctl(sem_id,0,IPC_RMID,sem_union)==-1) {
+        fprintf(stderr,"Failed to delete semaphore\n");
+    }
+}
+//对信号量做减一操作
+
+static int semaphore_p(void)
+{
+    struct sembuf sem_b;
+    sem_b.sem_num=0;
+    sem_b.sem_op=-1;
+    sem_b.sem_flg=SEM_UNDO;
+    if(semop(sem_id,&sem_b,1)==-1){
+        fprintf(stderr,"semaphore_p failed\n");
+        return(0);
+    }
+    return(1);
+}
+
+//释放操作，信号量+1
+
+static int semaphore_v(void)
+{
+    struct sembuf sem_b;
+    sem_b.sem_num=0;
+    sem_b.sem_op=1;
+    sem_b.sem_flg=SEM_UNDO;
+    if(semop(sem_id,&sem_b,1)==-1){
+        fprintf(stderr,"semaphore_p failed\n");
+        return(0);
+    }
+    return(1);
+}
+```
+
+上述程序可以使用多次启用的方法来进行使用。注意这里的临界区就是输出缓冲。并且在执行时，二者的sem_id相同。
+
+### 14.2 共享内存
+
+_参考链接：_ 
+- [进程间通信之-共享内存Shared Memory--linux内核剖析（十一）](https://blog.csdn.net/gatieme/article/details/51005811)
+- []()
+
+共享内存允许两个相关的进程访问同一个逻辑内存。共享内存四在两个正在运行的进程之间传递数据的一种非常有效的方式。
+
+共享内存是由IPC为进程创建的一个特殊的地址范围，它将出现在该进程的地址空间中。使用起来好像就是自己分配的一样。但是并未提供同步机制。共享内存的访问同步控制必须由程序员自己来负责
+
+![共享内存方式](../img/2019-09-22-16-55-29.png)
+
+共享内存使用的函数类似于信号量函数，他们的定义如下：
+
+```c
+#include <sys/shm.h>
+
+void *shmat(int shm_id,const void *shm_addr,int shmflg);
+int shmct1(int shm_id,int cmd,struct shmid_ds *buf);
+int shmdt(const void *shm_addr);
+int shmget(key_t key,size_t size,int shmflg);
+```
+
+#### 14.2.1 shmget函数
+
+`int shmget(key_t key,size_t size,int shmflg);`
+
+使用key可以创建共享内存，并为共享内存段命名。成功执行返回一个内存标识符。shmflg包括9个比特的权限标志。`IPC_CREAT`定义的特殊比特必须和权限标志按位或才能创建一个新的共享内存段。如果失败就返回-1。
+
+#### 14.2.2 shmat函数
+
+`void *shmat(int shm_id,const void *shm_addr,int shmflg);`
+
+内存分配后，不能被任何进程访问。这时需要将其连接到一个进程的地址空间中。这项工作由shmat函数完成。shm_addr指定的是共享内存链接到当前进程中的地址位置。它通常是一个空指针，表示让系统来选择共享内存出现的地址。这个主要是映射共享内存。
+shmflg是一组标志，可能取值是`SHM_RND`和`SHM_RDONLY`(内存只读)。调用成功，他返回指向共享内存第一个字节的指针；如果失败，它就返回-1。
+
+#### 14.2.3 shmdt
+
+将共享内存从当前进程中分离。参数是shmat返回的地址指针。成功时返回0，失败时返回-1。这里只是使得共享内存对当前进程不再可用。
+
+#### 14.2.4 shmct1
+
+`int shmct1(int shm_id,int cmd,struct shmid_ds *buf);`
+
+共享内存控制函数，`shmid_ds`结构至少包括一下内容：
+```c
+struct shmid_da{
+    uid_t shm_perm.uid;
+    uid_t shm_perm.gid;
+    mode_t shm_perm.mode;
+}
+```
+command参数是要采取的动作，它可以取3个值，如下所示：
+
+![command动作](../img/2019-09-22-19-26-12.png)
+
+buf是一个指针，它指向包含共享内存模式和访问权限的结构。成功时返回0，失败时返回-1。通常被删除的共享内存段还能继续使用，直到它从最后一个进程中分离为止。
+
+下面是一段简单的实验代码
+**公共头文件，定义共享内存结构**
+
+```c
+//file shm_com.h
+
+#define TEXT_SZ 2048
+
+struct shared_use_st{
+    int written_by_you;
+    char some_text[TEXT_SZ];
+}
+
+```
+**shm1.c消费者程序**
+
+```c
+#include <unistd.h>
+
+#include <stdlib.h>
+
+#include <stdio.h>
+
+#include <string.h>
+
+#include <sys/shm.h>
+
+#include "shm_com.h"
+
+int main()
+{
+    int running=1;
+    //创建内存空指针
+
+    void *shared_memory=(void*)0;
+    //定义内存结构体模型
+    
+    struct shared_use_st *shared_stuff;
+    int shmid;
+
+    srand((unsigned int)getpid());
+    //进行内存分配
+
+    shmid=shmget((key_t)1234,sizeof(struct shared_use_st),0666|IPC_CREAT);
+    if(shmid==-1){
+        fprintf(stderr,"shmget failed\n");
+        exit(EXIT_FAILURE);
+    }
+    //将共享内存指向当前进程的指针。
+
+    shared_memory=shmat(shmid,(void*)0,0);
+    //内存映射失败，返回错误值
+
+    if(shared_memory==(void*)-1){
+        fprintf(stderr,"shmat failed\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("Memory attached at %X\n",(int)shared_memory);
+    //将指针中的内存转换为可用的指针格式
+
+    shared_stuff=(struct shared_use_st*)shared_memory;
+    share_stuff->written_by_you=0;
+    while(running){
+        //如果其中的数据被写入
+
+        if(shared_stuff->witten_by_you){
+            printf("You wrote:%s",shared_stuff->some_text);
+            //休眠一段时间让其它进程等待
+
+            sleep(rang()%4);
+            shared_stuff->written_by_you=0;
+        }
+    }
+    //最后分离共享内存
+
+    if(shmdt(shared_memory)==-1){
+        fprintf(stderr,"shmdt failed \n");
+        exit(EXIT_FAILURE);
+    }
+    //删除和释放共享内存
+
+    if(shmctl(shmid,IPC_RMID,0)==-1){
+        fprintf(stderr,"shmctk(IPC_RMID) faild\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+```
+
+**shm2.c生产者程序**
+
+向消费者程序输入数据，与shml.c很相似。主要代码如下：
+
+```c
+#include <unistd.h>
+
+#include <stdlib.h>
+
+#include <stdio.h>
+
+#include <string.h>
+
+#include <sys/shm.h>
+
+#include "shm_com.h"
+
+int main()
+{
+    int running=1;
+    void *shared_memory=(void*)0;
+    struct shared_use_st *shared_stuff;
+    //程序缓冲
+
+    char buffer[BUFSIZ];
+    //共享内存标识符
+
+    int shmid;
+    //注意这里再次分配一块已经存在的内存块，不会创建新的页面，而只会返回一个标识内存块的标识符
+
+    shmid = shmget((key_t)1234, sizeof(struct shared_use_st), 0666 | IPC_CREAT);
+
+    if (shmid == -1) {
+        fprintf(stderr, "shmget failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    shared_memory = shmat(shmid, (void *)0, 0);
+    if (shared_memory == (void *)-1) {
+        fprintf(stderr, "shmat failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Memory attached at %X\n", (int)shared_memory);
+    //将内存转换为指针
+
+    shared_stuff = (struct shared_use_st *)shared_memory;
+    while(running) {
+        while(shared_stuff->written_by_you == 1) {
+            sleep(1);            
+            printf("waiting for client...\n");
+        }
+        //等待输入
+
+        printf("Enter some text: ");
+        fgets(buffer, BUFSIZ, stdin);
+        //输入的buffer拷贝到shared_stuff中
+
+        strncpy(shared_stuff->some_text, buffer, TEXT_SZ);
+        //重置信号量，表示已经生产了字符
+
+        shared_stuff->written_by_you = 1;
+        //buffer后检查到了end字符
+
+        if (strncmp(buffer, "end", 3) == 0) {
+                //停止工作
+
+                running = 0;
+        }
+    }
+    //从当前进程中卸载内存。
+
+    if (shmdt(shared_memory) == -1) {
+        fprintf(stderr, "shmdt failed\n");
+        exit(EXIT_FAILURE);
+    }
+    exit(EXIT_SUCCESS);
+}
+
+```
+先后执行shm1和shm2就可以创建简单的读写者程序。其实上面更改为信号量来可能更加合适。
+
+
 
