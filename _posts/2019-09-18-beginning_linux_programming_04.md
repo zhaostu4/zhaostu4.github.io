@@ -1536,7 +1536,7 @@ done
 
 二进制信号(最简单的信号)sv,其pv操作结果如下所示
 
-![操作定义表](.https://wangpengcheng.github.io/img/2019-09-22-15-01-05.png)
+![操作定义表](https://wangpengcheng.github.io/img/2019-09-22-15-01-05.png)
 
 下面代码展示了简单的临界区工作：
 
@@ -1550,7 +1550,7 @@ loop forever{
 }
 ```
 
-![pv操作守护临界区](.https://wangpengcheng.github.io/img/2019-09-22-15-03-56.png)
+![pv操作守护临界区](https://wangpengcheng.github.io/img/2019-09-22-15-03-56.png)
 
 下面是信号量函数的定义
 
@@ -1753,7 +1753,7 @@ _参考链接：_
 
 共享内存是由IPC为进程创建的一个特殊的地址范围，它将出现在该进程的地址空间中。使用起来好像就是自己分配的一样。但是并未提供同步机制。共享内存的访问同步控制必须由程序员自己来负责
 
-![共享内存方式](.https://wangpengcheng.github.io/img/2019-09-22-16-55-29.png)
+![共享内存方式](https://wangpengcheng.github.io/img/2019-09-22-16-55-29.png)
 
 共享内存使用的函数类似于信号量函数，他们的定义如下：
 
@@ -1761,7 +1761,7 @@ _参考链接：_
 #include <sys/shm.h>
 
 void *shmat(int shm_id,const void *shm_addr,int shmflg);
-int shmct1(int shm_id,int cmd,struct shmid_ds *buf);
+int shmctl(int shm_id,int cmd,struct shmid_ds *buf);
 int shmdt(const void *shm_addr);
 int shmget(key_t key,size_t size,int shmflg);
 ```
@@ -1783,9 +1783,9 @@ shmflg是一组标志，可能取值是`SHM_RND`和`SHM_RDONLY`(内存只读)。
 
 将共享内存从当前进程中分离。参数是shmat返回的地址指针。成功时返回0，失败时返回-1。这里只是使得共享内存对当前进程不再可用。
 
-#### 14.2.4 shmct1
+#### 14.2.4 shmctl
 
-`int shmct1(int shm_id,int cmd,struct shmid_ds *buf);`
+`int shmctl(int shm_id,int cmd,struct shmid_ds *buf);`
 
 共享内存控制函数，`shmid_ds`结构至少包括一下内容：
 ```c
@@ -1797,7 +1797,7 @@ struct shmid_da{
 ```
 command参数是要采取的动作，它可以取3个值，如下所示：
 
-![command动作](.https://wangpengcheng.github.io/img/2019-09-22-19-26-12.png)
+![command动作](https://wangpengcheng.github.io/img/2019-09-22-19-26-12.png)
 
 buf是一个指针，它指向包含共享内存模式和访问权限的结构。成功时返回0，失败时返回-1。通常被删除的共享内存段还能继续使用，直到它从最后一个进程中分离为止。
 
@@ -1976,5 +1976,235 @@ int main()
 
 消息队列提供了一种从一个进程向另外一个进程发送一个数据块的方法。独立于发送和接收进程而存在。消除了在同步命名管道的打开和关闭时可能产生的一些困难。但是消息与管道一样存在着数据块大小的限制。这些限制被写在`MSGMAX`和`MSGMNB`这两个系统宏定义中。
 
+消息队列函数的定义如下
+
+```c
+#include <sys/msg.h>
+
+int msgctl(int msqid,int cmd,struct msqid_ds *buf);
+int msgget(key_t key,int msgflg);
+int msgrcv(int msgid,void *msg_ptr,size_t msg_sz,long int msgtype,int msgflg);
+int msgsnd(int msqid,const void *msg_ptr,size_t mag_sz,int magflg);
+```
+
+#### 14.3.1 msgget函数
+
+利用键值来命名某个特定的消息队列。特殊键值IPC_PRIVATE用于创建私有队列，应该只能被当前进程访问。但是在实际的操作系统中存在许多不同的状况。由IPC_CREAT定义的一个特殊位必须和权限标志按位或才能创建一个新的消息队列。
+
+#### 14.3.2 msgsnd函数
+
+消息的结构的成都必须小于系统规定的上限，其次，它必须以一个长整形变量成员开始，接受函数将用这个成员变量来确定消息的类型。当使用消息时，最好把消息结构定义为下面这样：
+
+```c
+struct my_message{
+    long int message_type;
+}
+```
+函数参数`msg_ptr`是一个指向准备发送消息的指针，消息必须像刚才说的呢样以一个长整型成员变量开始。`msg_sz`和`msg_ptr`指向的消息的长度，不能包括长整型消息类型成员变量的长度。
+
+在msgflg中设置了IPC_NOWAIT标志，函数将立刻返回，不发送消息就返回-1.如果立即放松标志被秦楚，则发送进程将挂起以等待队列中腾出可用空间。
+
+#### 14.3.3 msgrcv函数
+
+从一个消息队列中获取消息,
+
+`int msgrcv(int msgid,void *msg_ptr,size_t msg_sz,long int msgtype,int msgflg);`
+
+msg_ptr指向一个准备接受消息的指针，消息必须以一个长整型成员变量开始。
+msg_sz和msg_ptr指向的消息的长度，它不包括长整型消息类型成员变量的长度。
+msgtype是一个长整数，可以实现简单形式的接首优先级。如果其值为0，就获取队列中的第一个可用消息(按照消息发送的顺序来接收他们)。如果大于0，将获取具有相同消息类型的第一个消息(接收某一特定类型的消息)。如果小于0，将获取消息类型等于或小鱼msgtype的绝对值的第一个消息(接受类型小于或者等于n的消息)。
 
 
+#### 14.3.4 msgctl函数
+
+它的作用与共享内存的控制函数非常相似:
+
+`int msgctl(int msqid,int cmd,struct msqid_ds *buf);`
+
+msqid_ds结构至少包括以下成员函数
+
+```c
+struct msqid_ds{
+
+    uid_t msg_perm.uid;
+    uid_t msg_perm.gid;
+    mode_t msg_perm,mode;
+}
+```
+
+command可用参数值如下
+
+![command可用参数](../img/2019-09-23-16-10-52.png)
+
+下面是一个接受者和使用者的消息队列示例：
+
+**接受者msg1.c**
+
+```c
+/* Here's the receiver program. */
+
+#include <stdlib.h>
+
+#include <stdio.h>
+
+#include <string.h>
+
+#include <errno.h>
+
+#include <unistd.h>
+
+#include <sys/msg.h>
+
+//定义接收的结构体
+
+struct my_msg_st {
+    //消息的类型
+
+    long int my_msg_type;
+    //主要的消息字段
+
+    char some_text[BUFSIZ];
+};
+
+int main()
+{
+    int running = 1;
+    int msgid;
+    struct my_msg_st some_data;
+    long int msg_to_receive = 0;
+
+    //创建消息队列
+
+    msgid = msgget((key_t)1234, 0666 | IPC_CREAT);
+
+    if (msgid == -1) {
+        fprintf(stderr, "msgget failed with error: %d\n", errno);
+        exit(EXIT_FAILURE);
+    }
+    //循环从队列中获取消息，直到遇到end消息为止
+
+    while(running) {
+        //接受消息
+
+        if (msgrcv(msgid, (void *)&some_data, BUFSIZ,msg_to_receive, 0) == -1) {
+            fprintf(stderr, "msgrcv failed with error: %d\n", errno);
+            exit(EXIT_FAILURE);
+        }
+        printf("You wrote: %s", some_data.some_text);
+        if (strncmp(some_data.some_text, "end", 3) == 0) {
+            running = 0;
+        }
+    }
+    //接受消息完毕之后，销毁消息
+
+    if (msgctl(msgid, IPC_RMID, 0) == -1) {
+        fprintf(stderr, "msgctl(IPC_RMID) failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    exit(EXIT_SUCCESS);
+}
+
+```
+
+**生产者msg2.c**
+
+```c
+
+/* The sender program is very similar to msg1.c. In the main set up, delete the
+ msg_to_receive declaration and replace it with buffer[BUFSIZ], remove the message
+ queue delete and make the following changes to the running loop.
+ We now have a call to msgsnd to send the entered text to the queue. */
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+
+#include <sys/msg.h>
+
+#define MAX_TEXT 512
+
+struct my_msg_st {
+    long int my_msg_type;
+    char some_text[MAX_TEXT];
+};
+
+int main()
+{
+    int running = 1;
+    struct my_msg_st some_data;
+    int msgid;
+    char buffer[BUFSIZ];
+    //创建消息
+
+    msgid = msgget((key_t)1234, 0666 | IPC_CREAT);
+
+    if (msgid == -1) {
+        fprintf(stderr, "msgget failed with error: %d\n", errno);
+        exit(EXIT_FAILURE);
+    }
+    //一直在运行
+    
+    while(running) {
+        printf("Enter some text: ");
+        //获取标准输入
+
+        fgets(buffer, BUFSIZ, stdin);
+        //设置消息类型
+
+        some_data.my_msg_type = 1;
+        //将文字转换到some_data结构体中
+
+        strcpy(some_data.some_text, buffer);
+        //获取消息返回
+
+        if (msgsnd(msgid, (void *)&some_data, MAX_TEXT, 0) == -1) {
+            fprintf(stderr, "msgsnd failed\n");
+            exit(EXIT_FAILURE);
+        }
+        //检查是否输入end
+
+        if (strncmp(buffer, "end", 3) == 0) {
+            running = 0;
+        }
+    }
+
+    exit(EXIT_SUCCESS);
+}
+
+```
+
+上述程序执行结果如下：
+
+```bash
+./msg2
+Enter some text: 123456
+Enter some text: 123564
+Enter some text: 121355
+Enter some text: end
+./msg1
+You wrote: 123456
+You wrote: 123564
+You wrote: 121355
+You wrote: end
+
+
+```
+
+### 14.5 IPC状态命令
+
+大多数linux提供了一组命令，用于从命令行上访问IPC信息以及清理游离的IPC机制。`ipcs`和`ipcrm`来清理程序执行过程中遗留的IPC资源(如消息队列中的数据)。
+
+#### 14.5.1 显示信号量状态
+
+使用`ipcs -s`显示信号量状态并使用`ipcrm -s smgid`来对信号量进行删除。
+
+#### 14.5.2 显示共享内存状态
+
+使用`ipcs -m`显示共享内存状态。
+
+#### 14.5.3 显示消息队列状态
+
+使用`ipcs -q`和`ipcrm -q <id>`可以显示消息的状态。
