@@ -2034,7 +2034,7 @@ struct msqid_ds{
 
 command可用参数值如下
 
-![command可用参数](../img/2019-09-23-16-10-52.png)
+![command可用参数](https://wangpengcheng.github.io/img/2019-09-23-16-10-52.png)
 
 下面是一个接受者和使用者的消息队列示例：
 
