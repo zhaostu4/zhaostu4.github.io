@@ -201,7 +201,7 @@ int socket(int domain,int type,int protocol);
 
 domain参数可以指定的协议族如下：
 
-![](../img/2019-09-23-20-45-18.png)
+![](https://wangpengcheng.github.io/img/2019-09-23-20-45-18.png)
 
 #### 15.2.3 套接字地址
 
@@ -260,7 +260,7 @@ bind将address中的地址分配给与文件描述符socket关联的未命名套
 
 **地址的长度和格式取决于地址族**，然后bind调用一个特定的地址结构指针转换为指向通用的地址类型(struct sockaddr*);调用成功返回0，失败返回-1，并设置errno为表15-2中的一个值
 
-![套接字域和错误码](../img/2019-09-23-21-07-48.png)
+![套接字域和错误码](https://wangpengcheng.github.io/img/2019-09-23-21-07-48.png)
 
 #### 15.2.5 创建套接字队列
 
@@ -296,4 +296,101 @@ fcntl(socket,F_SETFL,O_NONBLOCK|flags);
 
 #### 15.2.7 请求连接
 
+客户端使用未命名套接字和服务器监听套接字之间建立连接的方法来连接到服务器。它们通过connect调用来完成这个工作。
 
+```c
+#include <sys/socket.h>
+
+int connect(int socket,const struct sockaddr *address,size_t address_len);
+```
+socket指定的套接字是通过socket调用获得的一个有效的文件描述符。connect调用成功返回0，失败返回-1.可能的错误代码如下：
+
+![可能存在的错误码](../img/2019-09-24-10-14-07.png)
+
+如果不能立刻建立连接，connect将调用阻塞一段不确定的时间。一旦超过这个时间到达，连接将被放弃。connect调用失败。但如果连接被信号中断，该信号又得到了处理，connect调用还是会失败，但是连接尝试并不会被放弃。而是以异步的方式继续建立。
+
+#### 15.2.8 关闭套接字
+
+使用close来关闭套接字。服务器read返回0时关闭套接字;但如果套接字是一个面向连接类型的，并且设置了SOCK_LINGER选项，close调用会在该套接字还有未传输数据时阻塞。
+
+#### 15.2.9 套接字通信
+
+应该尽量使用网络socket，文件系统的socket的缺点是，操作系统创建的套接字将创建子啊服务器程序的当前目录下。对于网路socket只需要选择一个未被使用的端口号即可。
+
+端口号以及它们提供的服务通常都列在系统文件`/etc/services`中。
+
+下面是一个修改过的客户端程序client2.c，它通过回路网络连接到一个网络套接字。这个程序有一个硬件相关的细微错误，我们将在本章的后面再讨论它
+
+```c
+#include <sys/types.h>
+
+#include <sys/socket.h>
+
+#include <stdio.h>
+
+#include <netinet/in.h>
+
+#include <arpa/inet.h>
+
+#include <unistd.h>
+
+#include <stdlib.h>
+
+int main()
+{
+  int sockfd;
+  int len;
+  struct sockaddr_in address;
+  int result;
+  char ch='A';
+  //为客户创建一个socket
+
+  sockfd=socket(AF_INET,SOCK_STREAM,0);
+  //命名套接字，与服务器保持一致
+
+  address.sin_family=AF_INET;
+  address.sin_addr.s_addr=inet_addr("127.0.0.1");
+  address.sin_port=9734;
+  len=sizeof(address);
+}
+```
+
+这个程序会查找本地的9734端口。
+
+服务器端(server2.c)需要添加的设置如下：
+
+```c
+#include <sys/types.h>
+
+#include <sys/socket.h>
+
+#include <stdio.h>
+
+#include <netinet/in.h>
+
+#include <arpa/inet.h>
+
+#include <unistd.h>
+
+#include <stdlib.h>
+
+int main()
+{
+  int server_sockfd,client+sockfd;
+  int server_len,client_len;
+  struct sockaddr_in server_address;
+  struct sockaddr_in client_address;
+  //创建一个未命名的套接字
+
+  server_sockfd=socket(AF_INET,SOCK_STREAM,0);
+  //设置套接字名字
+
+  server_address.sin_family=AF_INET;
+  server_address.sin_addr.s_addr=inet_addr("127.0.0.1");
+  server_address.sin_port=9734;
+  server_len=sizeof(server_address);
+  bind(server_socked,(struct sockaddr *)&server_address,server_len);
+
+}
+
+```
