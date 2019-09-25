@@ -394,3 +394,223 @@ int main()
 }
 
 ```
+
+### 15.2.10 主机字节序和网络字节序
+
+可以使用`netstat`命令来查看网络连接状况。
+
+### 15.3 网络信息
+
+一般可以通过网络信息函数决定应该使用的地址和端口号
+
+可以将自己的服务添加到/etc/services文件中的已知服务列表中。并且在这个文件中为端口号分配一个名字，使用户可以使用符号化的服务名字而不是端口号的名字。
+
+主句地址映射函数定义在netdb.h中，函数接口如下所示：
+
+```c
+#include <netdb.h>
+//查询host地址
+
+struct hostent *gethostbyaddr(const void *addr,size_t len,int type);
+struct hostent *gethostbyname(const char *name);
+/*查询端口号相关信息*/
+
+struct servent *getservbyname(const char *name,const char *proto);
+struct servent *getservbyport(int port,const char *proto);
+```
+
+返回的hostnet和event结构中至少包含一下几个成员:
+
+```c
+struct hostent{
+  char *h_name;
+  char **h_aliases;
+  int h_addrtype;
+  int h_length;
+}
+
+struct servent{
+  char *s_name;
+  char **s_aliases;
+  int s_port;
+  char *s_proto;
+}
+```
+
+要把返回的地址列表转换为正确的地址类型，并用函数`inet_ntoa`将它们从网络字节序转换为可打印的字符。函数`inet_ntoa`的定义如下。
+
+```c
+#include <arpa/inet.h>
+//将一个intel主机地址转换为一个点四元组格式的字符串，它在失败时返回-1,
+
+char *inet_ntoa(struct in_addr in);
+
+#include <unistd.h>
+//将当前主机的名字写入name指向的字符串中。主机名以null结尾。参数namelength指定了字符串name的长度。如果主机名太长会被截断
+
+int gethostname(char *name,int namelength);
+```
+
+下面使用getname.c来获取一台主机的信息
+
+```c
+/*  As usual, make the appropriate includes and declare the variables.  */
+
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[])
+{
+    char *host, **names, **addrs;
+    struct hostent *hostinfo;
+
+/* 将host变量设置为getname程序所提供的命令行参数，或默认设置为用户主机的主机名 */
+
+    if(argc == 1) {
+        char myname[256];
+        gethostname(myname, 255);
+        host = myname;
+    }
+    else
+        host = argv[1];
+
+/* 调用gethostname,如果未找到相应的信息就报告一条错误 */
+
+    hostinfo = gethostbyname(host);
+    if(!hostinfo) {
+        fprintf(stderr, "cannot get info for host: %s\n", host);
+        exit(1);
+    }
+
+/* 显示主机名和它可能有的所有别名 */
+
+    printf("results for host %s:\n", host);
+    printf("Name: %s\n", hostinfo -> h_name);
+    printf("Aliases:");
+    names = hostinfo -> h_aliases;
+    while(*names) {
+        printf(" %s", *names);
+        names++;
+    }
+    printf("\n");
+
+/* 如果查询的主机不是一个IP主机，就发出警告并退出 */
+
+    if(hostinfo -> h_addrtype != AF_INET) {
+        fprintf(stderr, "not an IP host!\n");
+        exit(1);
+    }
+
+/* 否则，显示它的所有IP地址 */
+
+    addrs = hostinfo -> h_addr_list;
+    while(*addrs) {
+        printf(" %s", inet_ntoa(*(struct in_addr *)*addrs));
+        addrs++;
+    }
+    printf("\n");
+    exit(0);
+}
+
+
+
+```
+
+下面是连接到标准服务，查看服务器的当前日期和时间
+
+```c
+
+/* 准备必要的头文件 */
+
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+
+#include <netdb.h>
+
+#include <stdio.h>
+
+#include <unistd.h>
+
+#include <stdlib.h>
+
+int main(int argc, char *argv[])
+{
+    char *host;
+    int sockfd;
+    int len, result;
+    struct sockaddr_in address;
+    struct hostent *hostinfo;
+    struct servent *servinfo;
+    char buffer[128];
+
+    if(argc == 1)
+        host = "localhost";
+    else
+        host = argv[1];
+
+/* 查找host对应的信息 */
+
+    hostinfo = gethostbyname(host);
+    if(!hostinfo) {
+        fprintf(stderr, "no host: %s\n", host);
+        exit(1);
+    }
+
+/* 查找主机时间服务信息 */
+
+    servinfo = getservbyname("daytime", "tcp");
+    if(!servinfo) {
+        fprintf(stderr,"no daytime service\n");
+        exit(1);
+    }
+    printf("daytime port is %d\n", ntohs(servinfo -> s_port));
+
+/* 创建一个socket */
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+/* 设置对应的连接参数 */
+
+    address.sin_family = AF_INET;
+    address.sin_port = servinfo -> s_port;
+    address.sin_addr = *(struct in_addr *)*hostinfo -> h_addr_list;
+    len = sizeof(address);
+
+/* 连接并且获取相关信息 */
+
+    result = connect(sockfd, (struct sockaddr *)&address, len);
+    if(result == -1) {
+        perror("oops: getdate");
+        exit(1);
+    }
+
+    result = read(sockfd, buffer, sizeof(buffer));
+    buffer[result] = '\0';
+    printf("read %d bytes: %s", result, buffer);
+
+    close(sockfd);
+    exit(0);
+}
+```
+
+#### 15.3.1 因特网守护进程(xineted/inetd)
+
+超级服务程序同时监听许多端口地址上的连接。当有客户端连接到某项服务时，守护进程就运行相应的服务器。这使得针对各项网络服务的服务器不需要一直运行着。可以在需要时启动。
+
+因特网守护进程在现代linux系统中是通过xinetd来实现的。xinetd实现方式取代了原来的UNIX的inetd。可以直接修改`/etc/xinetd.conf`和`/etc/xinetd.d`目录中的文件来进行配置。
+
+#### 15.3.2 套接字选项
+
+可以使用`setsocket`函数用于控制这些选项。它的定义如下：
+
+```c
+#include <sys/socket.h>
+
+int setsocket(int socket,int level,int option_name,const void *option_value,size_t option_len);
+```
+
