@@ -614,3 +614,461 @@ int main(int argc, char *argv[])
 int setsocket(int socket,int level,int option_name,const void *option_value,size_t option_len);
 ```
 
+level是相关的协议等级，想要正常使用，必须设置对应的编号。option_name和option_value分别指向需要设置参数名称和值。level设置参数如下
+
+![相关参数设置](../img/2019-09-25-22-16-47.png)
+
+#### 15.4.1 select系统调用
+
+在编写Linux程序时，经常会遇到需要检查键盘等设备的输入而不得不进行忙等待循环。这种比较消耗CPU时间。
+
+select系统调用允许程序同时在多个底层文件描述符上等待输入的到达。主要是对数据结构`fd_set`进行操作，它是由打开的文件描述符构成的集合。有一组定义好的宏可以来控制这个集合。
+
+```c
+
+#include <sys/types.h>
+
+#include <sys/time.h>
+
+/* 将fd_set初始化为空 */
+void FD_ZERO(fd_set *fdset);
+/* 清除传递的文件符 */
+void FD_CLR(int fd,fd_set *fdset);
+/* 设置传递的文件符 */
+void FD_SET(int fd,fd_set *fdset);
+/* 检查fd设置的文件描述符是否是fdset集合中的元素 */
+void FD_ISSET(int fd,fd_set *fdset);
+```
+
+select函数可以设置一个超值来防止无限期的阻塞。这个超时值由一个timeval结构给出。这个结构定义在头文件`sys/time.h`中，它由以下几个成员组成:
+
+```c
+struct timeval{
+    time_t tv_sec; /* seconds */
+    long   tv_usec; /* microseconds */
+}
+```
+
+select系统调用的原型如下：
+
+```c
+#include <sys/types.h>
+
+#include <sys/time.h>
+
+int select(int nfds,fd_set *readfds,fd_set *writefds, fd_set *errorfds,struct timeval *timeout);
+```
+
+nfds指定需要测试的文件描述符数目，测试的描述符范围从0到nfds-1。3个描述符集合都可以被设置为空指针，这表示不执行相应的测试。
+
+select函数会在以下情况时返回:
+- readfds集合中有描述符可读
+- writefds集合中有描述符可写
+- errorfds集合中有描述符遇到错误条件
+
+如果以上三种条件都没有发生，select将在timeout指定的超时时间经过后返回。如果timeout参数是一个空指针并且套接字上也没有任何活动，这个调用将一直阻塞下去。
+
+下面是一个简单的select调用实验：
+
+```c
+/* 开始和必要的头文件 */
+
+#include <sys/types.h>
+
+#include <sys/time.h>
+
+#include <stdio.h>
+
+#include <fcntl.h>
+
+#include <sys/ioctl.h>
+
+#include <unistd.h>
+
+#include <stdlib.h>
+
+int main()
+{
+    char buffer[128];
+    int result, nread;
+
+    fd_set inputs, testfds;
+    struct timeval timeout;
+
+    FD_ZERO(&inputs);
+    FD_SET(0,&inputs);
+
+/*  设置标准输入最多等待输入2.5s  */
+
+    while(1) {
+        testfds = inputs;
+        timeout.tv_sec = 2;
+        timeout.tv_usec = 500000;
+        /* 进行选择等待输入 */
+        result = select(FD_SETSIZE, &testfds, (fd_set *)0, (fd_set *)0, &timeout);
+
+/*  经过这段时间之后，对result进行测试。如果没有输入，程序将再次循环，出现一个错误，程序将退出运行  */
+
+        switch(result) {
+        case 0:
+            printf("timeout\n");
+            break;
+        case -1:
+            perror("select");
+            exit(1);
+
+/* 如果在等待期间，对文件描述符采取了一些动嘴，程序将读取标准输入stdin上的输入，并在接收到行尾字符之后将他们都回显到屏幕上。ctrl+D，就退出程序 */
+
+        default:
+            if(FD_ISSET(0,&testfds)) {
+                ioctl(0,FIONREAD,&nread);
+                if(nread == 0) {
+                    printf("keyboard done\n");
+                    exit(0);
+                }
+                nread = read(0,buffer,nread);
+                buffer[nread] = 0;
+                printf("read %d from keyboard: %s", nread, buffer);
+            }
+            break;
+        }
+    }
+}
+```
+
+#### 15.4.2 多客户端
+
+服务器可以让select调用同时检查监听套接字和客户端的连接套接字。一旦select调用指示有活动发生，就可以用FD_ISSET来遍历所有可能的文件描述符，以检查是哪个上面有活动发生。然后调用accept而不用担心发生阻塞的可能。如果是一个客户描述符，则该描述符上有一个客户端请求需要我们读取和处理。如果读取返回0个字节，这表示有一个客户进程已经结束，你可以关闭该套接字并把它从集合中删除。
+
+下面是一个简单的使用示例：
+
+```c
+/*  For our final example, server5.c, 
+    we include the sys/time.h and sys/ioctl.h headers in place of signal.h
+    in our last program and declare some extra variables to deal with select.  */
+
+#include <sys/types.h>
+
+#include <sys/socket.h>
+
+#include <stdio.h>
+
+#include <netinet/in.h>
+
+#include <sys/time.h>
+
+#include <sys/ioctl.h>
+
+#include <unistd.h>
+
+#include <stdlib.h>
+
+int main()
+{
+    int server_sockfd, client_sockfd;
+    int server_len, client_len;
+    struct sockaddr_in server_address;
+    struct sockaddr_in client_address;
+    int result;
+    fd_set readfds, testfds;
+
+    /* 为服务器创建一个socket描述符 */
+
+    server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    //
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+    server_address.sin_port = htons(9734);
+    server_len = sizeof(server_address);
+
+    bind(server_sockfd, (struct sockaddr *)&server_address, server_len);
+
+/*  创建一个连接队列，初始化readfds以处理来自server_sockfd的输入  */
+
+    listen(server_sockfd, 5);
+
+    FD_ZERO(&readfds);
+    FD_SET(server_sockfd, &readfds);
+
+/* 在while循环中等待客户和请求的到来。 */
+
+    while(1) {
+        char ch;
+        int fd;
+        int nread;
+
+        testfds = readfds;
+
+        printf("server waiting\n");
+        /* 注意这里timeout参数传递的是一个空指针，因此select调用将不会发生超时状况 */
+
+        result = select(FD_SETSIZE, &testfds, (fd_set *)0, 
+            (fd_set *)0, (struct timeval *) 0);
+
+        if(result < 1) {
+            perror("server5");
+            exit(1);
+        }
+
+ /* 一旦有活动发生，可以使用FD_ISSET来依次检查每个描述符，以发现活动发生在那个描述符上 */
+
+        for(fd = 0; fd < FD_SETSIZE; fd++) {
+            if(FD_ISSET(fd,&testfds)) {
+
+/* 活动发生在server_sockfd上，它肯定是一个新的连接请求，将相关client_sockfd添加到描述符集合中 */
+
+                if(fd == server_sockfd) {
+                    client_len = sizeof(client_address);
+                    client_sockfd = accept(server_sockfd, 
+                        (struct sockaddr *)&client_address, &client_len);
+                    FD_SET(client_sockfd, &readfds);
+                    printf("adding client on fd %d\n", client_sockfd);
+                }
+
+/*  没有发生在服务器socket server_sockfd上,则是一个新的连接请求生成相关的client_sockfd添加到描述符集合中 */
+
+                else {
+                    ioctl(fd, FIONREAD, &nread);
+                    //判断是否是离开的请求，如果是就直接将其文件描述符删除
+
+                    if(nread == 0) {
+                        close(fd);
+                        FD_CLR(fd, &readfds);
+                        printf("removing client on fd %d\n", fd);
+                    }
+                    //否则直接进行读取和输出
+
+                    else {
+                        read(fd, &ch, 1);
+                        sleep(5);
+                        printf("serving client on fd %d\n", fd);
+                        ch++;
+                        write(fd, &ch, 1);
+                    }
+                }
+            }
+        }
+    }
+}
+
+```
+
+### 15.5 数据报(UDP)
+
+UDP使用的是不稳定链接，因此不需要进行过多的更改和连接状态的确定。UDP在局域网中非常可靠。一样使用套接字和close系统调用，但是需要使用**sendto和recvfrom**来代替原来使用在套接字上的read和write调用。下面是一个修改过的getdate.c版本
+
+```c
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+
+#include <netdb.h>
+
+#include <stdio.h>
+
+#include <unistd.h>
+
+#include <stdlib.h>
+
+int main(int argc,char *argv[])
+{
+    //host主机地址
+
+    char *host;
+    int sockfd;
+    int len,result;
+    struct sockaddr_in address;
+    struct hostent *hostinfo;
+
+    struct servent *serinfo;
+    //缓冲buffer队列
+
+    char buffer[128];
+    if(argc==1)
+        host="localhost";
+    else
+        host=argv[1];
+    /* 通过名字在host中查找对用的ip地址和信息 */
+    hostinfo=gethostbyname(host);
+
+    if(!hostinfo){
+        fprintf(stderr,"no host: %s\n",host);
+        exit(1);
+    }
+    /* 确认服务器时钟 */
+    servinfo=getservbyname("daytime","udp");
+    if(!servinfo){
+        fprintf(stderr,"no daytime service \n");
+        exit(1);
+    }
+    printf("daytime port is %d \n",ntohs(servinfo->s_port));
+    /* 创建一个udp socket */
+
+    sockfd=socket(AF_INET,SOCK_DGRAM,0);
+    /* 设置address相关参数 */
+    address.sin_family=AF_INEF;
+    address.sin_port=servinfo->s_port;
+    address.sin_addr=*(struct in_addr*)*hostinfo->h_addr_list;
+    len=sizeof(address);
+    /* 进行消息发送 */
+    result=sendto(sockfd，buffer,1,0,(struct sockaddr*)&address,len);
+    /* 返回接收的最后位置 */
+    result=recvfrom(sockfd,buffer,sizeof(buffer),0),(struct sockaddr*)&address,&len);
+    buffer[result]='\0';
+    printf("read %d bytes:% s".result,buffer);
+    close(sockfd);
+    exit(0);
+}
+```
+
+UDP关键函数如下：
+
+```c
+/* 这里的flags参数一般被设置为0 */
+
+int sendto(int sockfd,void *buffer,size_t len,int flags,struct sockaddr *to,socklen_t tolen);
+
+int recvfrom(int sockfd,void *buffer,size_t len,int flags,struct sockaddr *from,socklent_t *fromlen);
+```
+
+上述失败时会返回-1,并设置errno，可能错误表如下所示：
+
+![错误信息](../img/2019-09-27-20-41-54.png)
+
+## 第 16 章 使用GTK+进行gnome编程
+
+### 16.1 x视窗系统简介
+
+X服务，运行在用户的本地机器上，在屏幕上完成底层的绘图工作。X服务通过鼠标和键盘监听用户输入，将键盘按键和鼠标点击传输给X客户端应用程序。这个被称为(event)事件。
+
+#### 16.1.2 X客户端
+
+X客户端可以以X视窗作为GUI的任何程序。X客户端不需要和X服务运行在同一台机器上。
+
+#### 16.1.3 X协议
+
+X服务器与X客户端之间使用X协议进行通信。这使得客户端和服务器可以通过网络进行分离。
+
+#### 16.1.4 Xlib库
+
+Xlib是X客户端间用于产生X协议消息的库。
+
+#### 16.1.5 X工具包
+X工具包是一个GUI库，X客户端可以利用它来极大地简化窗口、菜单和按钮等的创建。
+
+#### 16.1.6 窗口管理器
+
+X中负责定位屏幕上的窗口。窗口管理器通常支持独立的“工作区域”，这些工作区将桌面分割，增大用户可以互交的区域。常见窗口管理器有如下内容:
+
+- Metacity:GNOME桌面的默认窗口管理器
+- KWin:KDE桌面的默认窗口管理器
+- Openbox:旨在节约资源，用于较老的、较慢的系统中。
+- Enlightenment:一个有着出色图形和效果的窗口管理器。
+
+### 16.2 GTX+简介
+
+GTK+是一个函数库，提供了一组已经制作好的被成为构建的组件。可以使用逻辑组合，极大地简化了GUI的创建。主要函数模块如下：
+
+- GLib:提供底层数据结构、类型、线程支持、事件循环和动态加载
+- GObject:使用c语言而不是C++语言实现了一个面向对象系统
+- Pango:支持文本渲染和布局
+- ATK:用来创建可访问引用程序，并允许用户使用屏幕阅读器和其它协助工具来运行你的程序。
+- GDK(GIMP绘图工具包)：在Xlib之上处理底层图形渲染。
+- GdkPixbuf:在GTK+程序中帮助处理图像。
+- Xlib:在linux和UNIX系统上提供底层图形
+
+### 16.2.3 GNOME简介
+
+GTK+之上的一个扩展图像桌面
+
+### 16.3 事件、信号和回调函数
+
+这个是所有GUI中都存在的必然相关程序。具体的不再过多赘述。
+
+### 16.4 组装盒构建
+
+与QTGUI布局相似，存在`gtk_hbox_new`和`gtk_vbox_new`等函数。
+
+### 16.5 GTK+中的对应构件
+
+_参考连接：_
+
+- [GTK+中的构件II(Widgets)](https://www.cnblogs.com/xchsp/p/4322028.html)
+- [GTK+中的构件（GTK+ Widgets）](https://www.cnblogs.com/boer-utopia/articles/2261422.html)
+- [GTK+构件](https://blog.csdn.net/u012150792/article/details/50607723)
+
+
+
+GTK+主要构件列表和API如下表：
+
+- GtxWindow:窗口基本元素，用来持有构件
+![主要窗口层级](../img/2019-09-27-21-17-17.png)
+- GtkEntry:单行文本输入构件，用于输入简单的文本信息。
+![GtkEntry](../img/2019-09-27-21-18-49.png)
+- GtkSpinButton:可选数字输入框
+![GtkSpinButton](../img/2019-09-27-21-20-18.png)
+- GtkButton:按钮选项
+![GtkButton](../img/2019-09-27-21-22-20.png)  
+    1. GtkToogleButton：
+    ![GtkToogleButton](../img/2019-09-27-21-23-05png)
+    2. GtkCheckButton:单选确认框
+    ![GtkCheckButton](../img/2019-09-27-21-24-32.png) 
+    3. GtkRadioButton:圆形按钮
+    ![GtkRadioButton](../img/2019-09-27-21-25-38.png)
+- GtkTreeView:树状结构;
+    ![](../img/2019-09-27-21-27-15.png)
+    其主要组成部分如下：
+    - GtkTreeView:树和列表视图
+    - GtkTreeViewColumn:代表一个列表或树的列
+    - GtkCellRenderer:控制绘图单元
+    - GtkTreeModel:代表树和列表数据
+  
+### 16.7 GNOME菜单
+就是Qt中的QMenu选项，主要结构和内容如下：
+
+![下拉菜单选项](../img/2019-09-27-21-31-02.png)
+
+### 16.8 对话框
+
+#### 16.8.1 GtkDialog
+GtkDialog是GtkWindow的一个子类，继承了其所有函数和属性：
+
+![GtkDialog](../img/2019-09-27-21-32-59.png)
+
+#### 16.8.2 模式对话框
+
+设置GTK_DIALOG_MODEAL标记和调用gtk_widget_show函数，将一个对话框转变为模式对话框。可以使用gtk_dialog_run通过阻止程序的进一步执行。返回对应的选择的结果类型。
+
+#### 16.8.3 非模式对话框
+
+不使用gtk_dialog_run而是使用GtkDialog的“response”信号(按钮按下或窗口被关闭时发出)。将回调函数连接到信号，但是存在一个额外的response参数。
+
+#### 16.8.4 GtkMessageDialog
+
+一个简单对话框
+
+![GtkMessageDialog](../img/2019-09-27-21-38-53.png)
+
+还可以选择一个GTK_MESSAGE_OTHER值如下
+
+![GTK_MESSAGE_OTHER](../img/2019-09-27-21-40-09.png)
+
+## 第 17 章 使用Qt进行KDE编程
+
+这个不需要多说了,看参考连接。。。。
+
+_参考连接：_
+
+- [Qt Documentation](https://doc.qt.io/qt-5/reference-overview.html)
+
+## 第 18 章 Linux标准
+
+### 18.1 C语言编程标准
+
+没什么好说的
+
+### 18.2 接口和LSB
+
+c语言之上，高一个层次由操作系统提供的接口(系统接口)。
+
+权威文档是[LSB](https://www.linuxbase.org)。
