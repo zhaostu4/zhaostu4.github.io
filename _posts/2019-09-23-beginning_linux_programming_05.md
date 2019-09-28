@@ -305,7 +305,7 @@ int connect(int socket,const struct sockaddr *address,size_t address_len);
 ```
 socket指定的套接字是通过socket调用获得的一个有效的文件描述符。connect调用成功返回0，失败返回-1.可能的错误代码如下：
 
-![可能存在的错误码](../img/2019-09-24-10-14-07.png)
+![可能存在的错误码](https://wangpengcheng.github.io/img/2019-09-24-10-14-07.png)
 
 如果不能立刻建立连接，connect将调用阻塞一段不确定的时间。一旦超过这个时间到达，连接将被放弃。connect调用失败。但如果连接被信号中断，该信号又得到了处理，connect调用还是会失败，但是连接尝试并不会被放弃。而是以异步的方式继续建立。
 
@@ -616,7 +616,7 @@ int setsocket(int socket,int level,int option_name,const void *option_value,size
 
 level是相关的协议等级，想要正常使用，必须设置对应的编号。option_name和option_value分别指向需要设置参数名称和值。level设置参数如下
 
-![相关参数设置](../img/2019-09-25-22-16-47.png)
+![相关参数设置](https://wangpengcheng.github.io/img/2019-09-25-22-16-47.png)
 
 #### 15.4.1 select系统调用
 
@@ -933,7 +933,7 @@ int recvfrom(int sockfd,void *buffer,size_t len,int flags,struct sockaddr *from,
 
 上述失败时会返回-1,并设置errno，可能错误表如下所示：
 
-![错误信息](../img/2019-09-27-20-41-54.png)
+![错误信息](https://wangpengcheng.github.io/img/2019-09-27-20-41-54.png)
 
 ## 第 16 章 使用GTK+进行gnome编程
 
@@ -1002,21 +1002,21 @@ _参考连接：_
 GTK+主要构件列表和API如下表：
 
 - GtxWindow:窗口基本元素，用来持有构件
-![主要窗口层级](../img/2019-09-27-21-17-17.png)
+![主要窗口层级](https://wangpengcheng.github.io/img/2019-09-27-21-17-17.png)
 - GtkEntry:单行文本输入构件，用于输入简单的文本信息。
-![GtkEntry](../img/2019-09-27-21-18-49.png)
+![GtkEntry](https://wangpengcheng.github.io/img/2019-09-27-21-18-49.png)
 - GtkSpinButton:可选数字输入框
-![GtkSpinButton](../img/2019-09-27-21-20-18.png)
+![GtkSpinButton](https://wangpengcheng.github.io/img/2019-09-27-21-20-18.png)
 - GtkButton:按钮选项
-![GtkButton](../img/2019-09-27-21-22-20.png)  
+![GtkButton](https://wangpengcheng.github.io/img/2019-09-27-21-22-20.png)  
     1. GtkToogleButton：
-    ![GtkToogleButton](../img/2019-09-27-21-23-05png)
+    ![GtkToogleButton](https://wangpengcheng.github.io/img/2019-09-27-21-23-05png)
     2. GtkCheckButton:单选确认框
-    ![GtkCheckButton](../img/2019-09-27-21-24-32.png) 
+    ![GtkCheckButton](https://wangpengcheng.github.io/img/2019-09-27-21-24-32.png) 
     3. GtkRadioButton:圆形按钮
-    ![GtkRadioButton](../img/2019-09-27-21-25-38.png)
+    ![GtkRadioButton](https://wangpengcheng.github.io/img/2019-09-27-21-25-38.png)
 - GtkTreeView:树状结构;
-    ![](../img/2019-09-27-21-27-15.png)
+    ![](https://wangpengcheng.github.io/img/2019-09-27-21-27-15.png)
     其主要组成部分如下：
     - GtkTreeView:树和列表视图
     - GtkTreeViewColumn:代表一个列表或树的列
@@ -1026,14 +1026,14 @@ GTK+主要构件列表和API如下表：
 ### 16.7 GNOME菜单
 就是Qt中的QMenu选项，主要结构和内容如下：
 
-![下拉菜单选项](../img/2019-09-27-21-31-02.png)
+![下拉菜单选项](https://wangpengcheng.github.io/img/2019-09-27-21-31-02.png)
 
 ### 16.8 对话框
 
 #### 16.8.1 GtkDialog
 GtkDialog是GtkWindow的一个子类，继承了其所有函数和属性：
 
-![GtkDialog](../img/2019-09-27-21-32-59.png)
+![GtkDialog](https://wangpengcheng.github.io/img/2019-09-27-21-32-59.png)
 
 #### 16.8.2 模式对话框
 
@@ -1047,11 +1047,11 @@ GtkDialog是GtkWindow的一个子类，继承了其所有函数和属性：
 
 一个简单对话框
 
-![GtkMessageDialog](../img/2019-09-27-21-38-53.png)
+![GtkMessageDialog](https://wangpengcheng.github.io/img/2019-09-27-21-38-53.png)
 
 还可以选择一个GTK_MESSAGE_OTHER值如下
 
-![GTK_MESSAGE_OTHER](../img/2019-09-27-21-40-09.png)
+![GTK_MESSAGE_OTHER](https://wangpengcheng.github.io/img/2019-09-27-21-40-09.png)
 
 ## 第 17 章 使用Qt进行KDE编程
 
@@ -1072,3 +1072,25 @@ _参考连接：_
 c语言之上，高一个层次由操作系统提供的接口(系统接口)。
 
 权威文档是[LSB](https://www.linuxbase.org)。
+
+Linux中的常见系统运行级别表
+
+![运行级别](../img/2019-09-28-10-01-02.png)
+
+`/etc/init.d/`目录下存在不同的脚本，提供其服务相关联的名字
+
+![配置脚本目录](../img/2019-09-28-10-03-08.png)
+
+### 18.3 文件系统层次结构标准
+
+[层次结构标准](https://www.pathname.com/fhs/),主要目的是定义Linux文件系统的标准路径。
+下面是一些顶级目录结构和一些必须存在的子目录和一小部分可选目录
+
+![目录结构](../img/2019-09-28-10-07-35.png)
+
+### 18.4 更多标准
+
+查看一下参考连接获取相关资料
+
+- [事物标准化](http://www.openi18n.org/)
+- [GNU网站](http://www.gnu.org)s
