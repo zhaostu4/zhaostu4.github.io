@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      更改USB设备设置
-subtitle:   ubuntu 添加USB rules配置，实现USB设备的固定配置
+subtitle:   ubuntu 添加USB rules配置，实现USB设备的固定设备名称
 date:       2019-09-18
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
@@ -17,6 +17,14 @@ tags:
 ---
 
 # 更改USB设备配置
+
+_参考链接：_
+
+- [ubuntu16.04 中永久修改USB设备权限](https://blog.csdn.net/jiangchao3392/article/details/76227180)
+- [Ubuntu下USB权限问题以及udev规则文件笔记](https://blog.csdn.net/bigdog_1027/article/details/79009603)
+- [ubuntu 为USB串口绑定固定的设备名](https://blog.csdn.net/xinmei4275/article/details/88620984)
+- [为 USB设备绑定固定的设备名](https://blog.csdn.net/scx837685002/article/details/80316176)
+
 
 在嵌入式开发和其它过程中，往往会出现USB设备的接入。但是对于多个USB设备接入时，由于操作系统的`ttyUSB*`的动态分配原则，不同设备之间可能存在USB设备文件更新不及时的冲突。而且设备驱动和ROS的launch文件也经常需要更换`ttyUSB*`的设备编号配置。**并且每一次需要更新设备读写权限**，较为麻烦。
 
@@ -34,7 +42,7 @@ tags:
 
 一般USB设备插入，会自动分配`ttyUSB*`的设备编号，可以使用`ls -ahl /dev/ttyUSB*`查看所有的USB接口。显示内容如下
 
-![usb显示内容](../img/2019-10-04-13-32-58.png)
+![usb显示内容](https://wangpengcheng.github.io/img/2019-10-04-13-32-58.png)
 
 
 也可以直接使用，如下命令查看USB设备的详细信息
@@ -113,10 +121,10 @@ sudo service udev restart
 
 使用`cutecom`查看串口通信结果如下：
 
-![串口测试](../img/2019-10-04-14-00-50.png)
+![串口测试](https://wangpengcheng.github.io/img/2019-10-04-14-00-50.png)
 
 表示能够正常使用。
 
 **注意：这里是根据设备芯片类进行的配置具有唯一性，一个规则只能配置中设备，两个设备是同种设备时不能由设备芯片进行识别区分**
 
-![](../img/2019-10-04-14-10-26.png)
+![](https://wangpengcheng.github.io/img/2019-10-04-14-10-26.png)
