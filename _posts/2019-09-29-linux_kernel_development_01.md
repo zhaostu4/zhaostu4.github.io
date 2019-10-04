@@ -213,10 +213,12 @@ Linux和unix中所有的进程都是PID为1的init进程的后代。内核在系
 
 每个task_struct都包含一个指针指向其父进程task_struct的parent指针。也有一个children的子进程链表。可以通过如下代码依次访问父进程和子进程
 
-```cpp
+```c++
 //获取父进程
+
 struct task_struct *my_parent=current->parent;
 //依次访问子进程
+
 struct task_struct* task;
 struct list_head *list;
 list_for_each(list,&current->children){
@@ -225,11 +227,110 @@ list_for_each(list,&current->children){
 ```
 init进程的进程描述符是作为init_task静态分配的。下面的代码可以很好的演示所有进程之间的关系:
 
-```cpp
+```c++
+
+struct task_struct *task;
+//一直指向直到查找到init进程
+
+for(task==current;task!=&init_task;task=task->parent){
+
+}
+
+//获取链表的下一个进程
+
+list_entry(task->task.next,struct task_struct task);
+//获取前一个进程
+
+list_entry(task->task.prev,struct task_struct task);
 ```
 
+### 3.3 创建进程
 
+#### 3.3.1 写拷贝
 
+linux d fork()使用写时拷贝(copy-on-write)页实现。fork()时内核并不复制整个进程地址空间，而是让父进程和子进程共享一个拷贝。只有在需要写入的时候，数据才会被复制。之前都是以只读方式共享。因此fork()的实际开销在于复制父进程的页表以及给子进程创建唯一的进程描述符。
 
+#### 3.3.2 fork()
+
+fork()函数调用clone()系统调用，再由clone()去调用do_fork(),do_fork()调用copy_process()函数，然后让进程开始运行。copy_process()完成的工作内容如下：
+
+1. 调用dup_task_struct()为新进程创建一个内核栈、thread_info结构和task_struct，这些值与当前进程的值相同。此时，子进程和父进程的描述符是完全相同的
+2. 检查确认子进程后，确认当前用户所拥有的进程数目没有超出它分配的资源
+3. 子进程开始设置与父进程的差异值。进程描述符中许多成员都要被清0或者重新初始化
+4. 子进程状态被设置为TASK_UNINTERRUPTIBLE，防止被投入运行
+5. copy_process()调用copy_flags()以更新task_struct的flags成员。
+6. 调用alloc_pid()为新进程分配一个有效的pid
+7. 根据clone()函数接收到的参数，为copy_process()拷贝或共享打开的文件、文件系统信息、信号处理函数、进程地址空间和命名空间等
+8. 最后，copy_process()做扫尾工作，并返回一个指向子进程的指针。
+
+最终层层调用回归，kernel会优先选择执行子进程，因为一般子进程都会马上调用exec()函数。避免额写拷贝开销。如果父进程先执行，则可能会开开始向地址空间中写入。
+
+#### 3.3.3 vfork()
+
+vfork()不拷贝父进程的页表项，其它基本相同；子进程作为父进程的一个单独的线程在它的地址空间中运行。不过现在基本没什么作用了。
+
+### 3.4 线程在Linux中的实现
+
+Linux中将所有的线程都当做进程来实现，内核并没有准备特别的线程调度算法或特定数据结构。线程仅仅被视为一个与其它进程共享某些资源的进程。每个线程都拥有唯一一个task_struct。(Windows或者Solaris都在内核中提供了专门的线程支持机制--轻量级进程)
+
+#### 3.4.1 创建线程
+
+创建线程与进程相似，不过是在调用clone时需要传递参数来指明需要共享的资源。
+
+```c
+//普通fork实现
+
+clone(SIGCHLD,0);
+//vfork()实现
+
+clone(CLONE_VFORK|CLONE_VM|SIGCHLD,0);
+```
+clone的标志位可选内容如下：
+
+![clone参数1](../img/2019-10-02-21-57-04.png)
+![clone参数2](../img/2019-10-02-21-58-01.png)
+
+### 3.4.2 内核线程
+
+内核中也是存在线程，称为内核线程。内核线程没有独立的地址空间(实际上指向地址空间的mm指针被设置为NULL)。他们只在内核空间运行，从来不切换到用户空间去。使用`ps -ef`可以查看到内核线程。
+
+从现有内核中创建一个新的内核线程的方法如下：
+
+```c
+struct task_struct *kthread_create(int (*threadfn)(void *data),void *data,const char namefmt[],...)
+
+struct task_struct *kthread_run(int(*threadfn)(void *data),void data,const char namefmt[],...)
+```
+
+新创建的进程不会主动运行。需要使用kthread_run()函数来让进程运行起来。kthread_run()是以宏实现的具体实现代码如下：
+
+```c
+#define kthread_run(threadfn,data,namefmt,...)                      \
+{                                                                   \
+    struct task_struct *k;                                          \
+    k=kthread_create(threadfn,data,namefmt,##__VA_ARGS__);          \
+    if(!IS_ERR(k))                                                  \
+        wake_up_process(k);                                         \
+    k;                                                              \
+}                                                                   \
+```
+
+### 3.5 进程终结
+
+一般进程的析构是自身引起的，发生在exit()被调用时。C语言编译器会在main函数的return 之后调用exit()函数。exit()函数的主要任务由do_exit()来完成。主要完成下面的几个工作：
+
+1. 将task_struct中的标志成员设置为PF_EXITING;
+2. 调用del_timer_sync()删除任一内核定时器。取消CPU排队。
+3. 如果BSD()的进程记账功能是开启的，会调用acct_update_integrals()来输出记账信息。
+4. 调用exit_mm()来释放进程占用的mm_struct。内存没有被共享就彻底释放他们。
+5. 调用sem_exit()函数。取消正在等待的IPC信号队列
+6. 调用exit_files()和exit_fs()，分别递减文件描述符、文件系统数据的引用计数。计数为0释放资源
+7. 将存放在task_struct中的exit_code成员中的退出代码设置为exit()提供的退出代码。供父进程随时检索
+8. 调用exit_notify()向父进程发送信号，并给子进程重新虚招养父(线程组中的其它线程或者init进程)，把进程状态(task_struct结构中的exit_state)设置为EXIT_ZOMBIE。
+9. 调用schedule()切换到新的进程。处于EXIT_ZOMBIE状态的进程不会再被调度。
+
+上述操作之后，进程存在的唯一目的就是向它的父进程提供信息。父进程检索到信息之后(或通知内核子进程信息是无关信息后)。进程持有的剩余内存(task_struct)被释放。所有资源回归给系统。
+
+#### 3.5.1 删除进程描述符
 
 
