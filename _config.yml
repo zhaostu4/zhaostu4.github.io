@@ -1,13 +1,13 @@
 # Site settings
 title: My Blog
-SEOTitle: 破戒僧的个人博客 | BY Blog
+SEOTitle: zhaostu4 | BY Blog
 header-img: img/post-bg-desk.jpg
-email: wangpengcheng2018@gmail.com
+email: zhaostu4@gmail.com
 description: "Leaning and function with your new object."
-keyword: "BY, BY Blog, 破戒僧的个人博客, OpenCV, 王鹏程, Qt, C++, 流媒体，计算机视觉，高性能计算"
-url: "https://wangpengcheng.github.io/"          # your host, for absolute URL
+keyword: "BY, BY Blog,zhao个人博客, slam, cv"
+url: "https://zhaostu4.github.io/"          # your host, for absolute URL
 baseurl: ""      # for example, '/blog' if your blog hosted on 'host/blog'
-github_repo: "https://github.com/wangpengcheng/wangpengcheng.github.io.git" # you code repository
+github_repo: "https://github.com/zhaostu4/zhaostu4.github.io.git" # you code repository
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
@@ -19,8 +19,8 @@ sidebar-avatar: /img/avatar_m.jpg      # use absolute URL, seeing it's used in b
 # SNS settings
 RSS: false
 # weibo_username:     qiubaiying
-zhihu_username:     山野破戒僧
-github_username:    wangpengcheng
+zhihu_username:     Zerry
+github_username:    zhaostu4
 facebook_username:  baiying.qiu.7
 jianshu_username:   
 #twitter_username:   qiubaiying
