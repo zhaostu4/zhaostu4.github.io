@@ -1,4 +1,16 @@
-﻿@[toc](C++ 再探)
+---
+layout:     post
+title:      C++ 再探
+subtitle:   C++ 再探
+date:       2019-11-26
+author:     zhaostu4
+header-img: img/post-bg-ios10.jpg
+catalog: true
+tags:
+    - C++
+    - 面经总结
+---
+ 
 ## 1. 引用和指针的区别？
 1) 指针是一个实体，需要分配内存空间。引用只是变量的别名，不需要分配内存空间。
 2) 引用在定义的时候必须进行初始化，并且不能够改变。指针在定义的时候不一定要初始化，并且指向的空间可变。(注：不能有引用的值不能为`NULL`)
