@@ -1,4 +1,21 @@
-﻿@[TOC](More Effective C++)
+﻿---
+layout:     post
+title:      More Effective C++
+subtitle:   More Effective C++
+date:       2019/11/28
+author:     zhaostu4
+header-img: img/post-bg-ios10.jpg
+catalog: true
+tags:
+	- C++
+    - More Effective
+    - More Effective C++
+    - 学习笔记
+---
+
+>> T:2019/11/28  W:四 17:0:11
+[HTML]: @[TOC](More Effective C++)
+
 # 基础
 ## 仔细区别 pointers 和 references
 - 引用不可以为空（必须指向某个对象），而指针可以为空。

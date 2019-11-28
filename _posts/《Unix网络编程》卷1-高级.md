@@ -7,7 +7,7 @@ author:     zhaostu4
 header-img: img/post-bg-ios10.jpg
 catalog: true
 tags:
-    - C++
+    - Unix
 	- Unix网络编程
 	- Unix网络编程-卷1
 	- Unix网络编程-卷1-高级
@@ -17,6 +17,7 @@ tags:
 >> T:2019/11/28  W:四 17:0:11
 
 [HTML]:@[TOC](《Unix网络编程》卷1 高级)
+
 # 第12章 IPv4和IPv6的互操作性
 ## 12.1 概述
 > 未来，因特网会逐渐从`IPv4`转换到`IPv6`所以**应用程序能够对两种协议协同工作**是很重要的，我们将讨论`IPv4应用`如何与`IPv6`进行通信
