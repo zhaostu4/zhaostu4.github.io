@@ -1,4 +1,4 @@
-﻿---
+---
 layout:     post
 title:      More Effective C++
 subtitle:   More Effective C++
