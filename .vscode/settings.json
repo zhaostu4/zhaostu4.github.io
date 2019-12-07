@@ -1,3 +1,4 @@
 {
-    "window.zoomLevel": -0.001
+    "window.zoomLevel": -0.001,
+    "search.followSymlinks": false
 }
